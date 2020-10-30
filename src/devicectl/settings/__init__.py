@@ -242,7 +242,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # IXCTL Base
 
-MIDDLEWARE += ("django_devicectl.middleware.RequestAugmentation",)
+MIDDLEWARE += ("fullctl.django.middleware.RequestAugmentation",)
 
 INSTALLED_APPS += (
     "dal",
@@ -253,14 +253,15 @@ INSTALLED_APPS += (
     "rest_framework",
     "social_django",
     "reversion",
+    "fullctl.django.apps.DjangoFullctlConfig",
     "django_devicectl.apps.DjangoDevicectlConfig",
 )
 
 TEMPLATES[0]["OPTIONS"]["context_processors"] += [
     "social_django.context_processors.backends",
     "social_django.context_processors.login_redirect",
-    "django_devicectl.context_processors.account_service",
-    "django_devicectl.context_processors.permissions",
+    "fullctl.django.context_processors.account_service",
+    "fullctl.django.context_processors.permissions",
 ]
 
 LOGIN_REDIRECT_URL = "/"
@@ -301,7 +302,7 @@ if OAUTH_TWENTYC or MANAGED_BY_OAUTH:
     SOCIAL_AUTH_TWENTYC_KEY = OAUTH_TWENTYC_KEY
     SOCIAL_AUTH_TWENTYC_SECRET = OAUTH_TWENTYC_SECRET
     AUTHENTICATION_BACKENDS = [
-        "django_devicectl.social.backends.twentyc.TwentycOAuth2",
+        "fullctl.django.social.backends.twentyc.TwentycOAuth2",
     ] + AUTHENTICATION_BACKENDS
 
     if MANAGED_BY_OAUTH:
@@ -315,7 +316,7 @@ if OAUTH_PDB:
     SOCIAL_AUTH_PEERINGDB_KEY = OAUTH_PDB_KEY
     SOCIAL_AUTH_PEERINGDB_SECRET = OAUTH_PDB_SECRET
     AUTHENTICATION_BACKENDS = [
-        "django_devicectl.social.backends.peeringdb.PeeringDBOAuth2",
+        "fullctl.django.social.backends.peeringdb.PeeringDBOAuth2",
     ] + AUTHENTICATION_BACKENDS
 
 
@@ -330,9 +331,8 @@ SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.user.create_user",
     "social_core.pipeline.social_auth.associate_user",
     "social_core.pipeline.social_auth.load_extra_data",
-    "django_devicectl.social.pipelines.sync_organizations",
-    "django_devicectl.social.pipelines.sync_api_keys",
-    "django_devicectl.social.pipelines.sync_peeringdb",
+    "fullctl.django.social.pipelines.sync_organizations",
+    "fullctl.django.social.pipelines.sync_api_keys",
     "social_core.pipeline.user.user_details",
 )
 
@@ -350,9 +350,9 @@ COUNTRIES_OVERRIDE = {
 # DJANGO REST FRAMEWORK
 
 REST_FRAMEWORK = {
-    "DEFAULT_RENDERER_CLASSES": ("django_devicectl.rest.renderers.JSONRenderer",),
+    "DEFAULT_RENDERER_CLASSES": ("fullctl.django.rest.renderers.JSONRenderer",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "django_devicectl.rest.authentication.APIKeyAuthentication",
+        "fullctl.django.rest.authentication.APIKeyAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
     # Use hyperlinked styles by default.
@@ -363,9 +363,9 @@ REST_FRAMEWORK = {
     # Handle rest of permissioning via django-namespace-perms
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated",],
     # FIXME: need to somehow allow different drf settings by app
-    "EXCEPTION_HANDLER": "django_devicectl.rest.exception_handler",
+    "EXCEPTION_HANDLER": "fullctl.django.rest.core.exception_handler",
     "DEFAULT_THROTTLE_RATES": {"email": "1/minute"},
-    "DEFAULT_SCHEMA_CLASS": "django_devicectl.api_schema.BaseSchema",
+    "DEFAULT_SCHEMA_CLASS": "fullctl.django.rest.api_schema.BaseSchema",
 }
 
 

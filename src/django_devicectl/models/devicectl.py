@@ -11,8 +11,9 @@ import django_peeringdb.models.concrete as pdb_models
 
 from django_grainy.decorators import grainy_model
 
-from django_devicectl.models.base import PdbRefModel
-from django_devicectl.models.common import Instance
+from fullctl.django.models.concrete import Instance
+from fullctl.django.models.abstract import PdbRefModel
+
 import django_devicectl.enum
 
 @reversion.register()

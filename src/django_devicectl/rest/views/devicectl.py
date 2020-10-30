@@ -8,14 +8,17 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from django_devicectl.rest import BadRequest
 
+from fullctl.django.rest.filters import CaseInsensitiveOrderingFilter
+from fullctl.django.rest.decorators import grainy_endpoint as _grainy_endpoint, load_object
+from fullctl.django.rest.renderers import PlainTextRenderer
+from fullctl.django.util import verified_asns
+from fullctl.django.rest.serializers.org import Serializers as OrgSerializers
+
+
 import django_devicectl.models as models
 from django_devicectl.rest.route.devicectl import route
 
 from django_devicectl.rest.serializers.devicectl import Serializers
-from django_devicectl.rest.filters import CaseInsensitiveOrderingFilter
-from django_devicectl.rest.decorators import grainy_endpoint as _grainy_endpoint, load_object
-from django_devicectl.rest.renderers import PlainTextRenderer
-from django_devicectl.util import verified_asns
 
 class grainy_endpoint(_grainy_endpoint):
     def __init__(self, *args, **kwargs):
@@ -27,34 +30,6 @@ class grainy_endpoint(_grainy_endpoint):
         )
         if "namespace" not in kwargs:
             self.namespace += ["devicectl"]
-
-
-class PeeringDBImportSchema(AutoSchema):
-    def __init__(self, *args, **kwargs):
-        super(AutoSchema, self).__init__(*args, **kwargs)
-
-    def get_operation(self, path, method):
-        operation = super().get_operation(path, method)
-        operation["responses"] = self._get_responses(path, method)
-        return operation
-
-    def _get_operation_id(self, path, method):
-        return "ix.import_peeringdb"
-
-    def _get_responses(self, path, method):
-        self.response_media_types = self.map_renderers(path, method)
-        serializer = Serializers.ix()
-        response_schema = self._map_serializer(serializer)
-        status_code = "200"
-
-        return {
-            status_code: {
-                "content": {
-                    ct: {"schema": response_schema} for ct in self.response_media_types
-                },
-                "description": "",
-            }
-        }
 
 
 @route
@@ -90,20 +65,19 @@ class Network(viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
-@route
 class User(viewsets.GenericViewSet):
 
     """
     List users at the organization
     """
 
-    serializer_class = Serializers.orguser
+    serializer_class = OrgSerializers.orguser
     queryset = models.OrganizationUser.objects.all()
     ref_tag = "user"
 
     @grainy_endpoint()
     def list(self, request, org, *args, **kwargs):
-        serializer = Serializers.orguser(
+        serializer = OrgSerializers.orguser(
             org.user_set.all(),
             many=True,
             context={"user": request.user, "perms": request.perms,},

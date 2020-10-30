@@ -4,12 +4,12 @@ from django.shortcuts import render, redirect
 
 import django_devicectl.forms
 
-from django_devicectl.models import (
+from fullctl.django.models import (
     Instance,
     Organization,
 )
 
-from django_devicectl.decorators import (
+from fullctl.django.decorators import (
     load_instance,
     require_auth,
 )
@@ -27,8 +27,6 @@ def make_env(request, **kwargs):
 @load_instance()
 def view_instance(request, instance, **kwargs):
     env = make_env(request, instance=instance, org=instance.org)
-    env["forms"] = {"import_ix": django_devicectl.forms.ImportIXForm()}
-
     return render(request, "devicectl/index.html", env)
 
 
