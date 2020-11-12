@@ -24,11 +24,29 @@ import django_devicectl.models as models
 
 Serializers, register = serializer_registry()
 
+@register
+class Device(ModelSerializer):
+    class Meta:
+        model = models.Device
+        fields = ["name", "type", "description"]
+
 
 @register
-class Network(ModelSerializer):
+class PhysicalPort(ModelSerializer):
     class Meta:
-        model = models.Network
-        fields = ["pdb_id", "asn", "name", "display_name"]
+        model = models.PhysicalPort
+        fields = ["device", "name", "logport", "description"]
 
 
+@register
+class LogicalPort(ModelSerializer):
+    class Meta:
+        model = models.LogicalPort
+        fields = ["name", "trunk", "channel", "description"]
+
+
+@register
+class VirtualPort(ModelSerializer):
+    class Meta:
+        model = models.VirtualPort
+        fields = ["logport", "vlan_id"]

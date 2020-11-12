@@ -24,6 +24,7 @@ django-grainy = ">=1.8.0,<2"
 pyyaml = "*"
 pip = "*"
 celery = "<6,>=5"
+django-extensions = "*"
 
 [requires]
 python_version = "3.7"

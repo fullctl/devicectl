@@ -11,5 +11,4 @@ urlpatterns = [
         include(("django_devicectl.rest.urls.devicectl", "devicectl_api"), namespace="devicectl_api"),
     ),
     path("<str:org_tag>/", views.view_instance, name="devicectl-home"),
-    path("", views.org_redirect),
 ]

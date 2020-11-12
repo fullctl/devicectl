@@ -161,6 +161,8 @@ set_option("DEFAULT_FROM_EMAIL", SERVER_EMAIL)
 
 AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
 
+SERVICE_TAG = "devicectl"
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -250,6 +252,7 @@ INSTALLED_APPS += (
     "django_handleref",
     "django_peeringdb",
     "django_grainy",
+    "django_extensions",
     "rest_framework",
     "social_django",
     "reversion",
