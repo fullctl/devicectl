@@ -117,7 +117,7 @@ try_include(env_file)
 print_debug(f"Release env is '{RELEASE_ENV}'")
 
 # set version, default from /srv/service/etc/VERSION
-set_option("PACKAGE_VERSION", read_file(os.path.join(BASE_DIR, "Ctl/VERSION")).strip())
+set_option("PACKAGE_VERSION", read_file(os.path.join(BASE_DIR, "etc/VERSION")).strip())
 
 # Contact email, from address, support email
 set_from_env("SERVER_EMAIL")
