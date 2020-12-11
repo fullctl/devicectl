@@ -58,31 +58,6 @@ manage devicectl_peeringdb_sync
 The environment file you copied from `example.env` contains variables for configuring both the Django and Postgres services- if you change the database name, user, or password, you must ensure the values still match between the Django and Postgres settings. The Django database variables are passed directly into the Django application settings so all five `DATABASE_` settings should remain defined.
 
 
-## Routeserver config generation
-
-Routeserver configs are generated using [https://github.com/pierky/arouteserver](arouteserver)
-
-Pipenv will have installed all the necessary libraries, but you still need to run the
-initial setup for it.
-
-```sh
-Ctl/dev/run.sh /bin/sh
-arouteserver setup
-```
-
-Afterwards you can run the following command regenerate the routeserver config for any devicectl routeserver entries that have outdated configs.
-
-```sh
-cd main
-python manage.py devicectl_rsconf_generate
-```
-
-(optionally) add a cron job that does this every minute
-
-```sh
-* * * * * python manage.py devicectl_rsconf_generate
-```
-
 ## API Key auth
 
 ### Method 1: HTTP Header
