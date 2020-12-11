@@ -1,7 +1,5 @@
-*.pyc
-*.swp
-*.swo
-*.sqlite3
-*.sql
-*.egg-info
+**/*.pyc
+**/.*.sw*
+*.tar
 __pycache__
+Ctl/dev/postgres_data/.
