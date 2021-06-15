@@ -2,6 +2,8 @@ from rest_framework import routers
 
 
 router = routers.DefaultRouter()
+
+
 def route(viewset):
     if hasattr(viewset, "ref_tag"):
         ref_tag = viewset.ref_tag

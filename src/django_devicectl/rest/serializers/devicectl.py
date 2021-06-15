@@ -24,6 +24,7 @@ import django_devicectl.models as models
 
 Serializers, register = serializer_registry()
 
+
 @register
 class Device(ModelSerializer):
     class Meta:
@@ -35,7 +36,15 @@ class Device(ModelSerializer):
 class PhysicalPort(ModelSerializer):
     class Meta:
         model = models.PhysicalPort
-        fields = ["device", "device_name", "name", "display_name", "logical_port", "logical_port_name", "description"]
+        fields = [
+            "device",
+            "device_name",
+            "name",
+            "display_name",
+            "logical_port",
+            "logical_port_name",
+            "description",
+        ]
 
 
 @register
@@ -49,4 +58,10 @@ class LogicalPort(ModelSerializer):
 class VirtualPort(ModelSerializer):
     class Meta:
         model = models.VirtualPort
-        fields = ["name", "display_name", "logical_port", "logical_port_name", "vlan_id"]
+        fields = [
+            "name",
+            "display_name",
+            "logical_port",
+            "logical_port_name",
+            "vlan_id",
+        ]

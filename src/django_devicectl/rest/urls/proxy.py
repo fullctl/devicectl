@@ -2,12 +2,16 @@ from django.conf import settings
 from fullctl.django.rest.urls.proxy import setup, proxy_api
 
 PROXY_HOST = getattr(settings, "DEVICECTL_PROXY", None)
-ENDPOINTS = getattr(settings, "DEVICECTL_PROXY_ENDPOINTS", [
-    "device",
-    "phyport",
-    "virtport",
-    "logport",
-])
+ENDPOINTS = getattr(
+    settings,
+    "DEVICECTL_PROXY_ENDPOINTS",
+    [
+        "device",
+        "phyport",
+        "virtport",
+        "logport",
+    ],
+)
 
 if PROXY_HOST:
 

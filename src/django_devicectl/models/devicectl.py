@@ -18,7 +18,10 @@ from fullctl.django.inet.const import *
 
 
 @reversion.register()
-@grainy_model(namespace="device", namespace_instance="device.{instance.org.permission_id}.{instance.id}")
+@grainy_model(
+    namespace="device",
+    namespace_instance="device.{instance.org.permission_id}.{instance.id}",
+)
 class Device(HandleRefModel):
     instance = models.ForeignKey(
         Instance, related_name="device_set", on_delete=models.CASCADE
@@ -66,9 +69,11 @@ class Device(HandleRefModel):
         return f"{self.name} [#{self.id}]"
 
 
-
 @reversion.register()
-@grainy_model(namespace="physical_port", namespace_instance="physical_port.{instance.org.permission_id}.{instance.id}")
+@grainy_model(
+    namespace="physical_port",
+    namespace_instance="physical_port.{instance.org.permission_id}.{instance.id}",
+)
 class PhysicalPort(HandleRefModel):
     device = models.ForeignKey(
         Device,
@@ -109,15 +114,15 @@ class PhysicalPort(HandleRefModel):
     def logical_port_name(self):
         return self.logical_port.name
 
-
     def __str__(self):
         return f"{self.name} [{self.org} #{self.id}]"
 
 
-
-
 @reversion.register()
-@grainy_model(namespace="logical_port", namespace_instance="logical_port.{instance.org.permission_id}.{instance.id}")
+@grainy_model(
+    namespace="logical_port",
+    namespace_instance="logical_port.{instance.org.permission_id}.{instance.id}",
+)
 class LogicalPort(HandleRefModel):
     """
     Logical port a peering session is build on
@@ -141,7 +146,6 @@ class LogicalPort(HandleRefModel):
         verbose_name = _("Logical Port")
         verbose_name_plural = _("Logical Ports")
 
-
     @property
     def display_name(self):
         return self.name
@@ -153,8 +157,12 @@ class LogicalPort(HandleRefModel):
     def __str__(self):
         return f"{self.name} [{self.org} #{self.id}]"
 
+
 @reversion.register()
-@grainy_model(namespace="virtual_port", namespace_instance="virtual_port.{instance.org.permission_id}.{instance.id}")
+@grainy_model(
+    namespace="virtual_port",
+    namespace_instance="virtual_port.{instance.org.permission_id}.{instance.id}",
+)
 class VirtualPort(HandleRefModel):
     """
     Port a peering session is build on, ties a virtual port back to a logical port
@@ -191,11 +199,5 @@ class VirtualPort(HandleRefModel):
     def logical_port_name(self):
         return self.logical_port.name
 
-
-
     def __str__(self):
         return f"#{self.id} [{self.logical_port}]"
-
-
-
-
