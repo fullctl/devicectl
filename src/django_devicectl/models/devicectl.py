@@ -97,6 +97,19 @@ class PhysicalPort(HandleRefModel):
     def org(self):
         return self.device.instance.org
 
+    @property
+    def display_name(self):
+        return self.name
+
+    @property
+    def device_name(self):
+        return self.device.name
+
+    @property
+    def logical_port_name(self):
+        return self.logical_port.name
+
+
     def __str__(self):
         return f"{self.name} [{self.org} #{self.id}]"
 
@@ -130,6 +143,10 @@ class LogicalPort(HandleRefModel):
 
 
     @property
+    def display_name(self):
+        return self.name
+
+    @property
     def org(self):
         return self.instance.org
 
@@ -142,6 +159,8 @@ class VirtualPort(HandleRefModel):
     """
     Port a peering session is build on, ties a virtual port back to a logical port
     """
+
+    name = models.CharField(max_length=255, blank=True)
 
     logical_port = models.ForeignKey(
         LogicalPort,
@@ -163,6 +182,15 @@ class VirtualPort(HandleRefModel):
     @property
     def org(self):
         return self.logical_port.instance.org
+
+    @property
+    def display_name(self):
+        return self.name
+
+    @property
+    def logical_port_name(self):
+        return self.logical_port.name
+
 
 
     def __str__(self):

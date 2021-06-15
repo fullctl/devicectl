@@ -28,25 +28,25 @@ Serializers, register = serializer_registry()
 class Device(ModelSerializer):
     class Meta:
         model = models.Device
-        fields = ["name", "type", "description"]
+        fields = ["name", "display_name", "type", "description", "instance"]
 
 
 @register
 class PhysicalPort(ModelSerializer):
     class Meta:
         model = models.PhysicalPort
-        fields = ["device", "name", "logical_port", "description"]
+        fields = ["device", "device_name", "name", "display_name", "logical_port", "logical_port_name", "description"]
 
 
 @register
 class LogicalPort(ModelSerializer):
     class Meta:
         model = models.LogicalPort
-        fields = ["name", "trunk", "channel", "description"]
+        fields = ["name", "display_name", "trunk", "channel", "description", "instance"]
 
 
 @register
 class VirtualPort(ModelSerializer):
     class Meta:
         model = models.VirtualPort
-        fields = ["logical_port", "vlan_id"]
+        fields = ["name", "display_name", "logical_port", "logical_port_name", "vlan_id"]
