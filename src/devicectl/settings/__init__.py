@@ -242,7 +242,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# IXCTL Base
+# DEVICECTL Base
 
 MIDDLEWARE += ("fullctl.django.middleware.RequestAugmentation",)
 
