@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_devicectl', '0001_initial'),
+        ("django_devicectl", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='virtualport',
-            name='name',
+            model_name="virtualport",
+            name="name",
             field=models.CharField(blank=True, max_length=255),
         ),
     ]
