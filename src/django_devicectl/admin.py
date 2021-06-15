@@ -19,8 +19,8 @@ class LogicalPortAdmin(VersionAdmin):
 
 @admin.register(PhysicalPort)
 class PhysicalPortAdmin(VersionAdmin):
-    list_display = ("id","org", "device", "name", "logport", "created", "updated")
+    list_display = ("id","org", "device", "name", "logical_port", "created", "updated")
 
 @admin.register(VirtualPort)
 class VirtualPortAdmin(VersionAdmin):
-    list_display = ("id","org", "logport", "vlan_id", "created", "updated")
+    list_display = ("id","org", "logical_port", "vlan_id", "created", "updated")

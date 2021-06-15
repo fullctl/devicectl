@@ -35,7 +35,7 @@ class Device(ModelSerializer):
 class PhysicalPort(ModelSerializer):
     class Meta:
         model = models.PhysicalPort
-        fields = ["device", "name", "logport", "description"]
+        fields = ["device", "name", "logical_port", "description"]
 
 
 @register
@@ -49,4 +49,4 @@ class LogicalPort(ModelSerializer):
 class VirtualPort(ModelSerializer):
     class Meta:
         model = models.VirtualPort
-        fields = ["logport", "vlan_id"]
+        fields = ["logical_port", "vlan_id"]

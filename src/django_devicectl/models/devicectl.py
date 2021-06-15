@@ -46,17 +46,17 @@ class Device(HandleRefModel):
         return self.name
 
     @property
-    def logport_qs(self):
-        logport_ids = [p.logport_id for p in self.phyport_qs.all()]
-        return LogicalPort.objects.filter(id__in=logport_ids)
+    def logical_port_qs(self):
+        logical_port_ids = [p.logical_port_id for p in self.physical_port_qs.all()]
+        return LogicalPort.objects.filter(id__in=logical_port_ids)
 
     @property
-    def virtport_qs(self):
-        return VirtualPort.objects.filter(logport__in=self.logport_qs)
+    def virtual_port_qs(self):
+        return VirtualPort.objects.filter(logical_port__in=self.logical_port_qs)
 
     @property
     def port_qs(self):
-        return Port.objects.filter(virtport__in=self.virtport_qs)
+        return Port.objects.filter(virtual_port__in=self.virtual_port_qs)
 
     @property
     def org(self):
@@ -68,28 +68,28 @@ class Device(HandleRefModel):
 
 
 @reversion.register()
-@grainy_model(namespace="phyport", namespace_instance="phyport.{instance.org.permission_id}.{instance.id}")
+@grainy_model(namespace="physical_port", namespace_instance="physical_port.{instance.org.permission_id}.{instance.id}")
 class PhysicalPort(HandleRefModel):
     device = models.ForeignKey(
         Device,
-        related_name="phyport_set",
+        related_name="physical_port_set",
         on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=255)
     description = DeviceDescriptionField()
 
-    logport = models.ForeignKey(
+    logical_port = models.ForeignKey(
         "django_devicectl.LogicalPort",
         help_text=_("Logical port this physical port is a member of"),
-        related_name="phyport_qs",
+        related_name="physical_port_qs",
         on_delete=models.CASCADE,
     )
 
     class HandleRef:
-        tag = "phyport"
+        tag = "physical_port"
 
     class Meta:
-        db_table = "devicectl_phyport"
+        db_table = "devicectl_physical_port"
         verbose_name = _("Physical Port")
         verbose_name_plural = _("Physical Ports")
 
@@ -104,7 +104,7 @@ class PhysicalPort(HandleRefModel):
 
 
 @reversion.register()
-@grainy_model(namespace="logport", namespace_instance="logport.{instance.org.permission_id}.{instance.id}")
+@grainy_model(namespace="logical_port", namespace_instance="logical_port.{instance.org.permission_id}.{instance.id}")
 class LogicalPort(HandleRefModel):
     """
     Logical port a peering session is build on
@@ -113,7 +113,7 @@ class LogicalPort(HandleRefModel):
     """
 
     instance = models.ForeignKey(
-        Instance, related_name="logport_set", on_delete=models.CASCADE
+        Instance, related_name="logical_port_set", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255, blank=True)
     description = DeviceDescriptionField()
@@ -121,10 +121,10 @@ class LogicalPort(HandleRefModel):
     channel = models.IntegerField(blank=True, null=True)
 
     class HandleRef:
-        tag = "logport"
+        tag = "logical_port"
 
     class Meta:
-        db_table = "devctl_logport"
+        db_table = "devctl_logical_port"
         verbose_name = _("Logical Port")
         verbose_name_plural = _("Logical Ports")
 
@@ -137,36 +137,36 @@ class LogicalPort(HandleRefModel):
         return f"{self.name} [{self.org} #{self.id}]"
 
 @reversion.register()
-@grainy_model(namespace="virtport", namespace_instance="virtport.{instance.org.permission_id}.{instance.id}")
+@grainy_model(namespace="virtual_port", namespace_instance="virtual_port.{instance.org.permission_id}.{instance.id}")
 class VirtualPort(HandleRefModel):
     """
     Port a peering session is build on, ties a virtual port back to a logical port
     """
 
-    logport = models.ForeignKey(
+    logical_port = models.ForeignKey(
         LogicalPort,
         help_text="logical port",
-        related_name="virtport_set",
+        related_name="virtual_port_set",
         on_delete=models.CASCADE,
     )
 
     vlan_id = models.IntegerField()
 
     class HandleRef:
-        tag = "virtport"
+        tag = "virtual_port"
 
     class Meta:
-        db_table = "devicectl_virtport"
+        db_table = "devicectl_virtual_port"
         verbose_name = _("Virtual Port")
         verbose_name_plural = _("Virtual Ports")
 
     @property
     def org(self):
-        return self.logport.instance.org
+        return self.logical_port.instance.org
 
 
     def __str__(self):
-        return f"#{self.id} [{self.logport}]"
+        return f"#{self.id} [{self.logical_port}]"
 
 
 
