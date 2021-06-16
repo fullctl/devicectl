@@ -107,9 +107,12 @@ class PhysicalPort(HandleRefModel):
 @grainy_model(namespace="logport", namespace_instance="logport.{instance.org.permission_id}.{instance.id}")
 class LogicalPort(HandleRefModel):
     """
-    Logical port a peering session is build on
-    could be a vlan ID on a physical port
-    for LAGS, would be the ae port
+    Logical port defines how to interact with multiple physical interfaces.
+
+    For example:
+        - an access port to a vlan ID on a physical port
+        - trunk port
+        - a LAG (ae port)
     """
 
     instance = models.ForeignKey(
