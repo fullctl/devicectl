@@ -5,6 +5,11 @@ function migrate_all() {
   manage migrate
 }
 
+function collect_static() {
+  echo collecting static files
+  manage collectstatic --no-input
+}
+
 
 cd $DEVICECTL_HOME
 case "$@" in
@@ -13,6 +18,10 @@ case "$@" in
     if [[ -z "$NO_MIGRATE" ]]; then
       migrate_all
     fi
+    if [[ -z "$NO_COLLECT_STATIC" ]]; then
+      collect_static
+    fi
+    echo launching uwsgi ${UWSGI_HTTP}
     exec venv/bin/uwsgi --ini etc/django-uwsgi.ini
     ;;
 	# good to keep it as a separate arg incase we end up with multi stage migrations tho
@@ -21,14 +30,14 @@ case "$@" in
     ;;
   "run_tests" )
     source venv/bin/activate
-    cd main
     export DJANGO_SETTINGS_MODULE=devicectl.settings
-    pytest tests/
+    export RELEASE_ENV=run_tests
+    cd main
+    pytest tests/ -vv --cov-report=term-missing --cov-report=xml --cov=django_devicectl --cov=devicectl
     ;;
   "test_mode" )
     source venv/bin/activate
     cd main
-    export DJANGO_SETTINGS_MODULE=devicectl.settings
     echo dropping to shell
     exec "/bin/sh"
     ;;

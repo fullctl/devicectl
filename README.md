@@ -1,4 +1,4 @@
-# DEVICECTL 
+# DEVICECTL
 
 ## Quickstart / Documentation
 

@@ -18,6 +18,4 @@ ARS_NO_EXPORT_ACTIONS = (
     ("strip", _("Strip (Treat as non-transitive)")),
 )
 
-PERMISSION_REQUEST_TYPES = (
-    ("net_ix", _("Manage network at exchange")),
-)
+PERMISSION_REQUEST_TYPES = (("net_ix", _("Manage network at exchange")),)

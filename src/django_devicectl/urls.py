@@ -8,7 +8,10 @@ import django_devicectl.views as views
 urlpatterns = [
     path(
         "api/<str:org_tag>/",
-        include(("django_devicectl.rest.urls.devicectl", "devicectl_api"), namespace="devicectl_api"),
+        include(
+            ("django_devicectl.rest.urls.devicectl", "devicectl_api"),
+            namespace="devicectl_api",
+        ),
     ),
     path("<str:org_tag>/", views.view_instance, name="devicectl-home"),
 ]

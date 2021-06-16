@@ -9,6 +9,7 @@
 
 {% block "css" %}
 {{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "devicectl/themes/dark.css" %}" />
 {% endblock %}
 
 {% block "header_middle" %}
@@ -40,6 +41,11 @@
   </div>
 </div>
 {% endif %}
+
+{% include "devicectl/tool/devices/main.html" %}
+{% include "devicectl/tool/logical_ports/main.html" %}
+{% include "devicectl/tool/physical_ports/main.html" %}
+{% include "devicectl/tool/virtual_ports/main.html" %}
 
 {% endblock %}
 
