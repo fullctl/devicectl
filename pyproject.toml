@@ -35,7 +35,7 @@ django-grainy = ">=1.9.0,<2"
 pyyaml = "*"
 pip = "*"
 celery = "<6,>=5"
-fullctl = { url = "https://github.com/fullctl/fullctl/archive/refs/heads/prep_prod.zip" }
+fullctl = { url = "https://github.com/fullctl/fullctl/archive/refs/heads/prep-release.zip" }
 peeringdb = "^1.1.0"
 confu = ">=1.5,<2"
 uWSGI = "^2.0.19"
