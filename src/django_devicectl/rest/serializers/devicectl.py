@@ -14,8 +14,6 @@ from rest_framework.validators import UniqueTogetherValidator
 
 from django_inet.rest import IPAddressField
 
-import django_peeringdb.models.concrete as pdb_models
-
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import RequireContext, ModelSerializer
 

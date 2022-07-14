@@ -7,8 +7,6 @@ from django_inet.models import (
     ASNField,
 )
 
-import django_peeringdb.models.concrete as pdb_models
-
 from django_grainy.decorators import grainy_model
 
 from fullctl.django.models.concrete import Instance
