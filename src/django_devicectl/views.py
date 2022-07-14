@@ -1,18 +1,10 @@
-from django.http import Http404, HttpResponse
 from django.conf import settings
-from django.shortcuts import render, redirect
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect, render
+from fullctl.django.decorators import load_instance, require_auth
+from fullctl.django.models import Instance, Organization
 
 import django_devicectl.forms
-
-from fullctl.django.models import (
-    Instance,
-    Organization,
-)
-
-from fullctl.django.decorators import (
-    load_instance,
-    require_auth,
-)
 
 # Create your views here.
 

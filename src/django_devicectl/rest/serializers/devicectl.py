@@ -1,22 +1,18 @@
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CDumper as Dumper
+    from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader, Dumper
 
 import yaml
-
-from django.utils.translation import ugettext_lazy as _
 from django.core.validators import RegexValidator
-
+from django.utils.translation import ugettext_lazy as _
+from django_inet.rest import IPAddressField
+from fullctl.django.rest.decorators import serializer_registry
+from fullctl.django.rest.serializers import ModelSerializer, RequireContext
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
-
-from django_inet.rest import IPAddressField
-
-from fullctl.django.rest.decorators import serializer_registry
-from fullctl.django.rest.serializers import RequireContext, ModelSerializer
-
 
 import django_devicectl.models as models
 

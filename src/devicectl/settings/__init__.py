@@ -106,4 +106,3 @@ settings.print_debug(f"loaded settings for version {PACKAGE_VERSION} (DEBUG: {DE
 
 
 settings_manager.set_option("PREFIXCTL_URL", "")
-
