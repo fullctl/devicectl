@@ -88,10 +88,17 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "fullctl.django.rest.api_schema.BaseSchema",
 }
 
+# SERVICE BRIDGE MAPPING
+
+settings_manager.set_option("SERVICE_BRIDGE_REF_DEVICE", "")
+settings_manager.set_option("SERVICE_BRIDGE_REF_FACILITY", "fullctl.service_bridge.pdbctl.Facility")
 
 # OUTSIDE SERVICES
 
 settings_manager.set_option("GOOGLE_ANALYTICS_ID", "")
+
+settings_manager.set_option("NAUTOBOT_URL", "")
+settings_manager.set_option("NAUTOBOT_TOKEN", "")
 
 # FINALIZE
 
