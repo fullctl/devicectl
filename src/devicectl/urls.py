@@ -1,7 +1,7 @@
-from django.urls import path, include
-from django.contrib import admin
-
 import fullctl.django.views as views
+from django.contrib import admin
+from django.urls import include, path
+
 import django_devicectl.urls
 
 urlpatterns = [

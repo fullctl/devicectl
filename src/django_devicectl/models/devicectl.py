@@ -1,20 +1,12 @@
+import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-import reversion
-
-from django_inet.models import (
-    ASNField,
-)
-
-import django_peeringdb.models.concrete as pdb_models
-
 from django_grainy.decorators import grainy_model
-
-from fullctl.django.models.concrete import Instance
-from fullctl.django.models.abstract import PdbRefModel, HandleRefModel
-from fullctl.django.inet.fields import DeviceDescriptionField
+from django_inet.models import ASNField
 from fullctl.django.inet.const import *
+from fullctl.django.inet.fields import DeviceDescriptionField
+from fullctl.django.models.abstract import HandleRefModel, PdbRefModel
+from fullctl.django.models.concrete import Instance
 
 
 @reversion.register()
