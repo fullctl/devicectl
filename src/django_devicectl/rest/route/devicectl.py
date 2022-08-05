@@ -9,4 +9,12 @@ def route(viewset):
     else:
         ref_tag = viewset.serializer_class.ref_tag
 
-    router.register(ref_tag, viewset, basename=ref_tag)
+
+    if getattr(viewset, "facility_tag_needed", None):
+        prefix = f"{ref_tag}/(?P<org_tag>[^/]+)/(?P<facility_tag>[^/]+)"
+    else:
+        prefix = f"{ref_tag}/(?P<org_tag>[^/]+)"
+
+    router.register(prefix, viewset, basename=ref_tag)
+
+    return viewset

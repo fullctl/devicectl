@@ -15,7 +15,7 @@
       <label for="physical_port-device">{% trans "Device" %}</label>
       <span class="modal-control">
       <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-      <select data-api-base="{% url "devicectl_api:device-list" org_tag=request.org.slug %}" data-api-action="" class="form-control" id="physical_port-device" name="device">
+      <select data-api-base="{% url "devicectl_api:facility-devices" org_tag=request.org.slug facility_tag="facility_tag" %}" data-api-action="" class="form-control" id="physical_port-device" name="device">
       <select>
       </span>
     </div>

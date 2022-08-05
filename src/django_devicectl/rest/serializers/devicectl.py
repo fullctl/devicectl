@@ -23,14 +23,15 @@ Serializers, register = serializer_registry()
 class Facility(ModelSerializer):
     class Meta:
         model = models.Facility
-        fields = ["id", "name", "address1", "city", "country", "floor", "suite", "zipcode", "reference", "instance"]
+        fields = ["id", "name", "slug", "address1", "city", "country", "floor", "suite", "zipcode", "reference", "reference_source", "reference_is_sot", "reference_ux_url", "reference_api_url", "instance"]
 
 @register
 class Device(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Device
-        fields = ["name", "display_name", "type", "facility", "facility_name", "reference", "description", "instance"]
+        fields = ["name", "display_name", "type", "facility", "facility_name", "reference", "reference_source", "reference_is_sot", "reference_ux_url", "reference_api_url","description", "instance"]
 
     def get_facility_name(self, obj):
         if obj.facility is None:

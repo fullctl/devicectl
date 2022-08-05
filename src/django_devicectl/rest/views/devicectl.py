@@ -5,7 +5,7 @@ from fullctl.django.rest.api_schema import PeeringDBImportSchema
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import billable, load_object
 from fullctl.django.rest.filters import CaseInsensitiveOrderingFilter
-from fullctl.django.rest.mixins import CachedObjectMixin, OrgQuerysetMixin
+from fullctl.django.rest.mixins import CachedObjectMixin, OrgQuerysetMixin, ContainerQuerysetMixin
 from fullctl.django.rest.renderers import PlainTextRenderer
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -16,13 +16,17 @@ from django_devicectl.rest.decorators import grainy_endpoint
 from django_devicectl.rest.route.devicectl import route
 from django_devicectl.rest.serializers.devicectl import Serializers
 
+
 @route
 class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     serializer_class = Serializers.facility
     queryset = models.Facility.objects.all()
-    lookup_url_kwarg = "facility_id"
+    lookup_url_kwarg = "facility_tag"
     ref_tag = "facility"
-    lookup_field = "id"
+    lookup_field = "slug"
+
+    #def get_queryset(self):
+    #    return super().get_queryset().filter(instance__org__slug=self.kwargs["org_tag"])
 
     @grainy_endpoint(namespace="facility.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
@@ -37,8 +41,8 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
-    @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_id}")
-    @load_object("facility", models.Facility, instance="instance", id="facility_id")
+    @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_tag}")
+    @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def retrieve(self, request, org, instance, facility, *args, **kwargs):
         serializer = Serializers.facility(
             instance=facility,
@@ -52,19 +56,20 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     def create(self, request, org, instance, *args, **kwargs):
         data = request.data
         data["instance"] = instance.id
+
         serializer = Serializers.facility(data=data)
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         facility = serializer.save()
-        facility.save()
 
         return Response(Serializers.facility(instance=facility).data)
 
     @auditlog()
-    @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_id}")
-    @load_object("facility", models.Facility, instance="instance", id="facility_id")
+    @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_tag}")
+    @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def update(self, request, org, instance, facility, *args, **kwargs):
         request.data["instance"] = instance.id
+
         serializer = Serializers.facility(
             facility,
             data=request.data,
@@ -73,17 +78,63 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         facility = serializer.save()
-        facility.save()
 
         return Response(Serializers.facility(instance=facility).data)
 
     @auditlog()
-    @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_id}")
-    @load_object("facility", models.Facility, instance="instance", id="facility_id")
+    @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_tag}")
+    @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def destroy(self, request, org, instance, facility, *args, **kwargs):
         r = Response(Serializers.facility(instance=facility).data)
         facility.delete()
         return r
+
+
+
+    @action(detail=True, methods=["POST"])
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
+    def add_device(self, request, org, instance, facility, *args, **kwargs):
+        device = models.Device.objects.get(instance=instance, id=request.data.get("device"))
+        device.facility = facility
+        device.save()
+
+        serializer = Serializers.device(device)
+
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["DELETE"], url_path="remove_device/(?P<device_id>[^/.]+)")
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    @load_object("device", models.Device, instance="instance", facility__slug="facility_tag", id="device_id")
+    @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
+    def remove_device(self, request, org, instance, facility, device, *args, **kwargs):
+        serializer = Serializers.device(device)
+        response = Response(serializer.data)
+
+        device.delete()
+
+        return response
+
+
+    @action(detail=True)
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    def devices(self, request, org, instance, *args, **kwargs):
+        ordering_filter = CaseInsensitiveOrderingFilter(["facility_id", "name", "type"])
+
+        facility = self.get_object()
+
+        queryset = facility.devices.all()
+
+        if request.GET.get("include-unassigned"):
+            queryset |= models.Device.objects.filter(facility__isnull=True)
+
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+
+        serializer = Serializers.device(
+            queryset,
+            many=True,
+        )
+        return Response(serializer.data)
 
 
 
@@ -107,6 +158,19 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
             many=True,
         )
         return Response(serializer.data)
+
+    @action(detail=False)
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    def list_unassigned(self, request, org, instance, *args, **kwargs):
+        ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
+        queryset = instance.devices.filter(facility__isnull=True)
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+        serializer = Serializers.device(
+            queryset,
+            many=True,
+        )
+        return Response(serializer.data)
+
 
     @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_pk}")
     @load_object("device", models.Device, instance="instance", id="device_id")

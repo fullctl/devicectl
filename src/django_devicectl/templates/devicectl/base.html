@@ -7,6 +7,11 @@
 <script src="{% static "devicectl/devicectl.js" %}" type="text/javascript"></script>
 <script src="{% static "devicectl/devicectl.settings.js" %}" type="text/javascript"></script>
 <script>
+{% if select_facility %}
+$(fullctl.application).on("initialized", function(e, devicectl, id) {
+  devicectl.preselect_facility = {{ select_facility.id }};
+});
+{% endif %}
 $(document).ready(() => {
 });
 </script>
@@ -46,9 +51,36 @@ $(document).ready(() => {
 {% endwith %}
 {% endblock %}
 
-{% block "app_content_toolbar_outer" %}
-<!-- devicectl does not have an extra toolbar atm -->
+{% block "app_content_toolbar" %}
+
+<div class="row">
+  <div class="col-6 col-md-8">
+    <div class="toolbar-control-group">
+
+
+      <span class="inline-label">{% trans "Facility:" %}</span>
+      <span class="toolbar-control">
+        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+      <select
+        data-api-load="yes"
+        data-api-base="{% url "devicectl_api:facility-list" org_tag=request.org.slug %}"
+        data-element="select_facility"></select>
+      </span>
+
+    </div>
+
+  </div>
+
+  <div class="col-6 col-md-4 right">
+      <button type="button" class="button" data-element="button_create_facility">
+        <span class="icon fullctl icon-add"></span>
+        <span class="label">{% trans "Create" %}</span>
+      </button>
+  </div>
+</div>
+
 {% endblock %}
+
 
 {% block "app_show_config" %}
 {% endblock %}

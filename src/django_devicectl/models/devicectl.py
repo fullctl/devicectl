@@ -5,7 +5,7 @@ from django_grainy.decorators import grainy_model
 from django_inet.models import ASNField
 from fullctl.django.inet.const import *
 from fullctl.django.inet.fields import DeviceDescriptionField
-from fullctl.django.models.abstract import HandleRefModel, PdbRefModel, GeoModel
+from fullctl.django.models.abstract import HandleRefModel, PdbRefModel, GeoModel, ServiceBridgeReferenceModel
 from fullctl.django.models.concrete import Instance
 from fullctl.django.fields.service_bridge import ReferencedObjectCharField
 
@@ -14,7 +14,7 @@ from fullctl.django.fields.service_bridge import ReferencedObjectCharField
     namespace="facility",
     namespace_instance="facility.{instance.org.permission_id}.{instance.id}",
 )
-class Facility(GeoModel, HandleRefModel):
+class Facility(GeoModel, ServiceBridgeReferenceModel):
     instance = models.ForeignKey(
         Instance, related_name="facilities", on_delete=models.CASCADE
     )
@@ -22,18 +22,54 @@ class Facility(GeoModel, HandleRefModel):
     name = models.CharField(max_length=255)
 
     reference = ReferencedObjectCharField(bridge_type="facility", max_length=255, null=True, blank=True)
+    slug = models.SlugField(max_length=64, unique=False, blank=False, null=False)
+
 
     class HandleRef:
         tag = "facility"
         verbose_name = _("Facility")
         verbose_name_plural = _("Facilities")
 
+    class ServiceBridge:
+        map_pdbctl = {
+            "name" : "name",
+            "address1" : "address1",
+            "address2" : "address2",
+            "zipcode" : "zipcode",
+            "city": "city",
+            "country": "country",
+            "longitude": "longitude",
+            "latitude": "latitude",
+        }
+
+        map_nautobot = {
+            "name" : "name",
+            "custom_fields.devicectl_id" : "id",
+            "address": "address1",
+            #"latitude" : "latitude",
+            #"longitude" : "longitude",
+            "status": "nautobot_status",
+        }
+
+
     class Meta:
         db_table = "devicectl_facility"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["instance", "slug"], name="unique_slug_instance_pair"
+            )
+        ]
+
 
     @property
     def org(self):
         return self.instance.org
+
+    @property
+    def nautobot_status(self):
+        if self.status == "ok":
+            return "active"
+
 
     def __str__(self):
         return f"{self.name} [#{self.id}]"
@@ -45,7 +81,7 @@ class Facility(GeoModel, HandleRefModel):
     namespace="device",
     namespace_instance="device.{instance.org.permission_id}.{instance.id}",
 )
-class Device(HandleRefModel):
+class Device(ServiceBridgeReferenceModel):
     instance = models.ForeignKey(
         Instance, related_name="devices", on_delete=models.CASCADE
     )
@@ -59,7 +95,6 @@ class Device(HandleRefModel):
     type = models.CharField(
         max_length=255,
         help_text=_("Type of device (software)"),
-        choices=DEVICE_TYPES,
     )
 
     reference = ReferencedObjectCharField(bridge_type="device", max_length=255, null=True, blank=True)
@@ -67,6 +102,13 @@ class Device(HandleRefModel):
     class HandleRef:
         tag = "device"
         unique_together = (("instance", "name"),)
+
+    class ServiceBridge:
+        map_nautobot = {
+            "display": "name",
+            "comments": "description",
+            "device_type.model": "type",
+        }
 
     class Meta:
         db_table = "devicectl_device"

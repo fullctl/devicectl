@@ -74,6 +74,11 @@ $ctl.application.Devicectl.Settings = $tc.extend(
       */
     },
 
+    wire_slug_auto_input : function(name_field, slug_field) {
+      name_field.on("keyup", () => {
+        slug_field.val(fullctl.util.slugify(name_field.val()))
+      });
+    },
 
     create_facility : function() {
 
@@ -110,10 +115,17 @@ $ctl.application.Devicectl.Settings = $tc.extend(
       rs_pdb_list.formatters.row = (row, data) => {
         row.find('button').click(() =>{
           data.reference = data.id;
+          data.slug = fullctl.util.slugify(data.name);
           form.fill(data);
           rs_wiz.set_step(2);
         });
       };
+
+      this.wire_slug_auto_input(
+        form.element.find('#name'),
+        form.element.find('#slug')
+      );
+
 
       $(rs_pdb_list).on("load:after", () => {
         /*
@@ -159,6 +171,17 @@ $ctl.application.Devicectl.Settings = $tc.extend(
       form.method = "put";
       form.format_request_url = this.format_request_url;
 
+      form.element.find('#reference-is-sot').change(function() {
+        console.log("sup", $(this))
+
+        if($(this).prop("checked")) {
+          form.element.find('[data-sot-toggled=yes] *').prop("disabled", true);
+        } else {
+          form.element.find('[data-sot-toggled=yes] *').prop("disabled", false);
+        }
+
+      });
+
 
       $(form).on("api-write:before", (ev, e, payload) => {
         payload["ix"] = rs.ix;
@@ -177,8 +200,8 @@ $ctl.application.Devicectl.Settings = $tc.extend(
         this.unload_dialog();
       });
 
-
       form.fill(rs);
+      form.element.find('#reference-is-sot').trigger("change");
 
     }
 
@@ -194,7 +217,7 @@ $($ctl).on("init_tools", (e, app) => {
 
   $('#settings-tab').on('show.bs.tab', () => {
     app.$t.settings.sync();
-    app.$t.settings.general_settings();
+    app.$t.settings.create_facility();
   });
 });
 
