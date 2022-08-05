@@ -208,6 +208,10 @@ $ctl.application.Devicectl.Devices = $tc.extend(
       };
 
       this.initialize_sortable_headers("name");
+
+      $(this.$w.list).on("api_callback_remove:after", () => {
+        $ctl.devicectl.sync();
+      });
     },
 
     menu : function() {
@@ -375,6 +379,10 @@ $ctl.application.Devicectl.LogicalPorts = $tc.extend(
       };
 
       this.initialize_sortable_headers("name");
+
+      $(this.$w.list).on("api_callback_remove:after", () => {
+        $ctl.devicectl.sync();
+      });
     },
 
     menu : function() {
