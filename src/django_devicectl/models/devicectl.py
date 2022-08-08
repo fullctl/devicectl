@@ -1,20 +1,79 @@
+import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-import reversion
-
-from django_inet.models import (
-    ASNField,
-)
-
-import django_peeringdb.models.concrete as pdb_models
-
 from django_grainy.decorators import grainy_model
-
-from fullctl.django.models.concrete import Instance
-from fullctl.django.models.abstract import PdbRefModel, HandleRefModel
+from fullctl.django.fields.service_bridge import ReferencedObjectCharField
 from fullctl.django.inet.fields import DeviceDescriptionField
-from fullctl.django.inet.const import *
+from fullctl.django.models.abstract import (
+    GeoModel,
+    HandleRefModel,
+    ServiceBridgeReferenceModel,
+)
+from fullctl.django.models.concrete import Instance
+
+
+@reversion.register()
+@grainy_model(
+    namespace="facility",
+    namespace_instance="facility.{instance.org.permission_id}.{instance.id}",
+)
+class Facility(GeoModel, ServiceBridgeReferenceModel):
+    instance = models.ForeignKey(
+        Instance, related_name="facilities", on_delete=models.CASCADE
+    )
+
+    name = models.CharField(max_length=255)
+
+    reference = ReferencedObjectCharField(
+        bridge_type="facility", max_length=255, null=True, blank=True
+    )
+    slug = models.SlugField(max_length=64, unique=False, blank=False, null=False)
+
+    class HandleRef:
+        tag = "facility"
+        verbose_name = _("Facility")
+        verbose_name_plural = _("Facilities")
+
+    class ServiceBridge:
+        map_pdbctl = {
+            "name": "name",
+            "address1": "address1",
+            "address2": "address2",
+            "zipcode": "zipcode",
+            "city": "city",
+            "country": "country",
+            "longitude": "longitude",
+            "latitude": "latitude",
+        }
+
+        map_nautobot = {
+            "name": "name",
+            "custom_fields.devicectl_id": "id",
+            "address": "address1",
+            # "latitude" : "latitude",
+            # "longitude" : "longitude",
+            "status": "nautobot_status",
+        }
+
+    class Meta:
+        db_table = "devicectl_facility"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["instance", "slug"], name="unique_slug_instance_pair"
+            )
+        ]
+
+    @property
+    def org(self):
+        return self.instance.org
+
+    @property
+    def nautobot_status(self):
+        if self.status == "ok":
+            return "active"
+
+    def __str__(self):
+        return f"{self.name} [#{self.id}]"
 
 
 @reversion.register()
@@ -22,9 +81,17 @@ from fullctl.django.inet.const import *
     namespace="device",
     namespace_instance="device.{instance.org.permission_id}.{instance.id}",
 )
-class Device(HandleRefModel):
+class Device(ServiceBridgeReferenceModel):
     instance = models.ForeignKey(
-        Instance, related_name="device_set", on_delete=models.CASCADE
+        Instance, related_name="devices", on_delete=models.CASCADE
+    )
+    facility = models.ForeignKey(
+        Facility,
+        related_name="devices",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text=_("Device is located in this facility"),
     )
 
     name = models.CharField(max_length=255)
@@ -32,17 +99,30 @@ class Device(HandleRefModel):
     type = models.CharField(
         max_length=255,
         help_text=_("Type of device (software)"),
-        choices=DEVICE_TYPES,
+    )
+
+    reference = ReferencedObjectCharField(
+        bridge_type="device", max_length=255, null=True, blank=True
     )
 
     class HandleRef:
         tag = "device"
         unique_together = (("instance", "name"),)
 
+    class ServiceBridge:
+        map_nautobot = {
+            "display": "name",
+            "comments": "description",
+            "device_type.model": "type",
+        }
+
     class Meta:
         db_table = "devicectl_device"
         verbose_name = _("Device")
         verbose_name_plural = _("Devices")
+        indexes = [
+            models.Index("reference", name="device_reference"),
+        ]
 
     @property
     def display_name(self):
@@ -59,7 +139,9 @@ class Device(HandleRefModel):
 
     @property
     def port_qs(self):
-        return Port.objects.filter(virtual_port__in=self.virtual_port_qs)
+        return None
+        # TODO Port?
+        # return Port.objects.filter(virtual_port__in=self.virtual_port_qs)
 
     @property
     def org(self):
@@ -77,7 +159,7 @@ class Device(HandleRefModel):
 class PhysicalPort(HandleRefModel):
     device = models.ForeignKey(
         Device,
-        related_name="physical_port_set",
+        related_name="physical_ports",
         on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=255)
@@ -134,7 +216,7 @@ class LogicalPort(HandleRefModel):
     """
 
     instance = models.ForeignKey(
-        Instance, related_name="logical_port_set", on_delete=models.CASCADE
+        Instance, related_name="logical_ports", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255, blank=True)
     description = DeviceDescriptionField()
@@ -176,7 +258,7 @@ class VirtualPort(HandleRefModel):
     logical_port = models.ForeignKey(
         LogicalPort,
         help_text="logical port",
-        related_name="virtual_port_set",
+        related_name="virtual_ports",
         on_delete=models.CASCADE,
     )
 

@@ -1,13 +1,9 @@
 from django.contrib import admin
-from django.utils.translation import gettext as _
+
+# from django.utils.translation import gettext as _
 from django_handleref.admin import VersionAdmin
 
-from django_devicectl.models import (
-    Device,
-    PhysicalPort,
-    LogicalPort,
-    VirtualPort,
-)
+from django_devicectl.models import Device, LogicalPort, PhysicalPort, VirtualPort
 
 
 @admin.register(Device)

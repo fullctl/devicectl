@@ -7,10 +7,47 @@ $ctl.application.Devicectl = $tc.extend(
       this.Application("devicectl");
 
       this.urlkeys = {}
-      this.exchanges = {}
+      this.facilities = {}
+      this.facility_slugs = {}
       this.initial_load = false
 
       this.$c.header.app_slug = "device";
+
+      this.$c.toolbar.widget("select_facility", ($e) => {
+        var w = new twentyc.rest.Select($e.select_facility);
+        $(w).on("load:after", (event, element, data) => {
+          var i;
+          for(i = 0; i < data.length; i++) {
+            this.urlkeys[data[i].id] = data[i].urlkey;
+            this.facilities[data[i].id] = data[i];
+            this.facility_slugs[data[i].id] = data[i].slug;
+          }
+
+          if(data.length == 0) {
+            $e.select_facility.attr('disabled', true);
+            this.permission_ui();
+          } else {
+            $e.select_facility.attr('disabled', false)
+            this.permission_ui();
+          }
+        });
+        return w
+
+      });
+
+      $(this.$c.toolbar.$w.select_facility).one("load:after", () => {
+        if(this.preselect_facility) {
+          this.select_facility(this.preselect_facility)
+        } else {
+          this.sync();
+          this.sync_url(this.$c.toolbar.$e.select_facility.val());
+        }
+      });
+
+      $(this.$c.toolbar.$e.select_facility).on("change", () => {
+        this.sync();
+        this.sync_url(this.$c.toolbar.$e.select_facility.val())
+      });
 
       this.tool("devices", () => {
         return new $ctl.application.Devicectl.Devices();
@@ -28,6 +65,12 @@ $ctl.application.Devicectl = $tc.extend(
         return new $ctl.application.Devicectl.VirtualPorts();
       });
 
+      $(this.$c.toolbar.$e.button_create_facility).click(() => {
+        fullctl.devicectl.page('settings');
+        fullctl.devicectl.$t.settings.create_facility();
+      });
+
+
 
       $($ctl).trigger("init_tools", [this]);
 
@@ -37,7 +80,78 @@ $ctl.application.Devicectl = $tc.extend(
       this.$t.virtual_ports.activate();
 
       this.sync();
+    },
+
+
+    facility : function() {
+      return this.$c.toolbar.$w.select_facility.element.val();
+    },
+
+    facility_slug : function() {
+      return this.facility_slugs[this.facility()];
+    },
+
+    facility_object: function() {
+      return this.facilities[this.facility()]
+    },
+
+    urlkey : function() {
+      return this.urlkeys[this.facility()];
+    },
+
+    unload_facility : function(id) {
+      delete this.facilities[id];
+      delete this.urlkeys[id];
+      delete this.facility_slugs[id];
+    },
+
+
+
+    select_facility : function(id) {
+      if(id)
+        this.$c.toolbar.$e.select_facility.val(id);
+      else {
+        id = this.$c.toolbar.$e.select_facility.find('option').val();
+        this.$c.toolbar.$e.select_facility.val(id);
+      }
+
+      this.sync();
+      this.sync_url(id);
+    },
+
+    permission_ui : function() {
+      let $e = this.$c.toolbar.$e;
+      let facility = this.facilities[this.facility()];
+      let org = $ctl.org.id;
+
+      //$e.button_create_facility.grainy_toggle(`facility.${org}`, "c");
+      //$e.button_import_facility.grainy_toggle(`facility.${org}`, "c");
+    },
+
+
+    sync_url: function(id) {
+      var facility = this.facilities[id];
+      var url = new URL(window.location)
+      console.log("SUP", facility)
+      if(!facility) {
+        $('#no-facility-notify').show();
+        url.pathname = `/${fullctl.org.slug}/`
+      } else {
+        url.pathname = `/${fullctl.org.slug}/${facility.slug}/`
+        $('#no-facility-notify').hide();
+      }
+      window.history.pushState({}, '', url);
+    },
+
+    refresh : function() {
+      return this.refresh_select_facility();
+    },
+
+    refresh_select_facility : function() {
+      return this.$c.toolbar.$w.select_facility.refresh();
     }
+
+
   },
   $ctl.application.Application
 );
@@ -46,6 +160,7 @@ $ctl.application.Devicectl.Devices = $tc.extend(
   "Devices",
   {
     Devices : function() {
+      this.sot = false;
       this.Tool("devices");
     },
     init : function() {
@@ -54,7 +169,30 @@ $ctl.application.Devicectl.Devices = $tc.extend(
           this.template("list", this.$e.body)
         );
       })
+
+
+      this.$w.list.format_request_url = (url) => {
+        if(!$ctl.devicectl)
+          return url;
+        return url.replace(/facility_tag/, $ctl.devicectl.facility_slug());
+      }
+
+      this.$w.list.formatters.facility_name = (value, data) => {
+        if(!value)
+          return "-";
+        return value;
+      };
+
       this.$w.list.formatters.row = (row, data) => {
+
+        if(data.reference_is_sot) {
+          row.find('[data-sot=external]').show();
+          row.find("[data-action=link_to_reference]").attr("href", data.reference_ux_url);
+        } else {
+          row.find('[data-sot=devicectl]').show();
+        }
+
+
         row.find('a[data-action="edit_device"]').click(() => {
           var device = row.data("apiobject");
           new $ctl.application.Devicectl.ModalDevice(device);
@@ -70,13 +208,22 @@ $ctl.application.Devicectl.Devices = $tc.extend(
       };
 
       this.initialize_sortable_headers("name");
+
+      $(this.$w.list).on("api_callback_remove:after", () => {
+        $ctl.devicectl.sync();
+      });
     },
 
     menu : function() {
       var menu = this.Tool_menu();
       menu.find('[data-element="button_add_device"]').click(() => {
-        return new $ctl.application.Devicectl.ModalDevice();
+        if(this.sot) {
+          return new $ctl.application.Devicectl.ModalDevice();
+        } else {
+          return new $ctl.application.Devicectl.ModalAssignDevice();
+        }
       });
+
       return menu;
     },
 
@@ -87,8 +234,10 @@ $ctl.application.Devicectl.Devices = $tc.extend(
         this.apply_ordering();
         this.$w.list.load();
 
+        var facility_tag = ($ctl.devicectl ? $ctl.devicectl.facility_slug() : '')
+
         this.$e.menu.find('[data-element="button_api_view"]').attr(
-          "href", this.$w.list.base_url + "/" + this.$w.list.action +"?pretty"
+          "href", this.$w.list.base_url.replace(/facility_tag/g,facility_tag) + "/" + this.$w.list.action +"?pretty"
         )
 
         this.$e.menu.find('[data-element="button_add_device"]').grainy_toggle(namespace, "c")
@@ -100,6 +249,38 @@ $ctl.application.Devicectl.Devices = $tc.extend(
   },
   $ctl.application.Tool
 );
+
+$ctl.application.Devicectl.ModalAssignDevice = $tc.extend(
+  "ModalDevice",
+  {
+    ModalDevice : function() {
+      var modal = this;
+      var title = "Add device to facility"
+      var form = this.form = new twentyc.rest.Form(
+        $ctl.template("form_assign_device")
+      );
+
+      this.select_device = new twentyc.rest.Select(this.form.element.find('#device'));
+
+      this.select_device.load();
+
+      $(this.form).on("api-write:success", (ev, e, payload, response) => {
+        $ctl.devicectl.$t.devices.$w.list.load();
+        modal.hide();
+      });
+
+      this.form.format_request_url = (url) => {
+        return url.replace(/facility_tag/, $ctl.devicectl.facility_slug());
+      };
+
+      this.Modal("save", title, form.element);
+      form.wire_submit(this.$e.button_submit);
+    }
+  },
+  $ctl.application.Modal
+);
+
+
 
 $ctl.application.Devicectl.ModalDevice = $tc.extend(
   "ModalDevice",
@@ -166,6 +347,8 @@ $ctl.application.Devicectl.ModalDevice = $tc.extend(
   $ctl.application.Modal
 );
 
+
+
 // LOGICAL PORTS
 
 $ctl.application.Devicectl.LogicalPorts = $tc.extend(
@@ -196,6 +379,10 @@ $ctl.application.Devicectl.LogicalPorts = $tc.extend(
       };
 
       this.initialize_sortable_headers("name");
+
+      $(this.$w.list).on("api_callback_remove:after", () => {
+        $ctl.devicectl.sync();
+      });
     },
 
     menu : function() {
@@ -344,6 +531,11 @@ $ctl.application.Devicectl.ModalPhysicalPort = $tc.extend(
       var device_select = this.device_select = new twentyc.rest.Select(
         form.element.find('select[name="device"]')
       )
+
+      device_select.format_request_url = (url) => {
+        return url.replace(/facility_tag/, $ctl.devicectl.facility_slug());
+      };
+
       device_select.load().then(() => {
         if(physical_port) { device_select.element.val(physical_port.device) }
       });
