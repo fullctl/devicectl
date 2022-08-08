@@ -6,18 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_devicectl', '0009_reference_is_sot'),
+        ("django_devicectl", "0009_reference_is_sot"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='facility',
-            name='slug',
-            field=models.SlugField(default='fac-1', max_length=64),
+            model_name="facility",
+            name="slug",
+            field=models.SlugField(default="fac-1", max_length=64),
             preserve_default=False,
         ),
         migrations.AddConstraint(
-            model_name='facility',
-            constraint=models.UniqueConstraint(fields=('instance', 'slug'), name='unique_slug_instance_pair'),
+            model_name="facility",
+            constraint=models.UniqueConstraint(
+                fields=("instance", "slug"), name="unique_slug_instance_pair"
+            ),
         ),
     ]

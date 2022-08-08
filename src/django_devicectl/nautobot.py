@@ -1,7 +1,7 @@
 import fullctl.service_bridge.nautobot as nautobot
-from fullctl.utils import rgetattr
 
 import django_devicectl.models.devicectl as models
+
 
 def pull(org, *args, **kwargs):
 
@@ -13,7 +13,9 @@ def pull(org, *args, **kwargs):
     references = []
 
     for nautobot_device in nautobot.Device().objects():
-        device, created = models.Device.objects.get_or_create(reference=nautobot_device.id, instance=instance)
+        device, created = models.Device.objects.get_or_create(
+            reference=nautobot_device.id, instance=instance
+        )
         print(f"Syncing {nautobot_device.name} from nautobot")
         references.append(device.reference)
         changed = device.sync_from_reference(ref_obj=nautobot_device)
@@ -22,7 +24,9 @@ def pull(org, *args, **kwargs):
             device.save()
 
     # delete devices that no longer exist in nautobot
-    qset_remove =  models.Device.objects.exclude(reference__in=references).exclude(reference__isnull=True)
+    qset_remove = models.Device.objects.exclude(reference__in=references).exclude(
+        reference__isnull=True
+    )
 
     print(f"Removing {qset_remove.count()} devices..")
 

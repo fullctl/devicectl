@@ -1,12 +1,9 @@
 from django.conf import settings
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect, render
 from fullctl.django.decorators import load_instance, require_auth
-from fullctl.django.models import Instance, Organization
 
 from django_devicectl.models.devicectl import Facility
-
-import django_devicectl.forms
 
 # Create your views here.
 
@@ -22,6 +19,7 @@ def make_env(request, **kwargs):
 def view_instance(request, instance, **kwargs):
     env = make_env(request, instance=instance, org=instance.org)
     return render(request, "devicectl/index.html", env)
+
 
 @require_auth()
 @load_instance()

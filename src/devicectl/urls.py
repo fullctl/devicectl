@@ -2,7 +2,7 @@ import fullctl.django.views as views
 from django.contrib import admin
 from django.urls import include, path
 
-import django_devicectl.urls
+# import django_devicectl.urls
 
 urlpatterns = [
     path("admin/", admin.site.urls),

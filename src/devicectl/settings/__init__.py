@@ -91,7 +91,9 @@ REST_FRAMEWORK = {
 # SERVICE BRIDGE MAPPING
 
 settings_manager.set_option("SERVICE_BRIDGE_REF_DEVICE", "")
-settings_manager.set_option("SERVICE_BRIDGE_REF_FACILITY", "fullctl.service_bridge.pdbctl.Facility")
+settings_manager.set_option(
+    "SERVICE_BRIDGE_REF_FACILITY", "fullctl.service_bridge.pdbctl.Facility"
+)
 
 # OUTSIDE SERVICES
 

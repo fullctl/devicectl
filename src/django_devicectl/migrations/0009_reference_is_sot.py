@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_devicectl', '0008_facility_fields'),
+        ("django_devicectl", "0008_facility_fields"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='device',
-            name='reference_is_sot',
+            model_name="device",
+            name="reference_is_sot",
             field=models.BooleanField(default=True),
         ),
         migrations.AddField(
-            model_name='facility',
-            name='reference_is_sot',
+            model_name="facility",
+            name="reference_is_sot",
             field=models.BooleanField(default=True),
         ),
     ]

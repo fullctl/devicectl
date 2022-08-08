@@ -27,4 +27,3 @@ class Device(ModelSerializer):
 
     def get_org_id(self, device):
         return device.instance.org.permission_id
-

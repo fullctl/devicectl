@@ -1,12 +1,11 @@
 import fullctl.service_bridge.pdbctl as pdbctl
-
 from fullctl.django.auditlog import auditlog
-from fullctl.django.rest.api_schema import PeeringDBImportSchema
 from fullctl.django.rest.core import BadRequest
-from fullctl.django.rest.decorators import billable, load_object
+from fullctl.django.rest.decorators import load_object
 from fullctl.django.rest.filters import CaseInsensitiveOrderingFilter
-from fullctl.django.rest.mixins import CachedObjectMixin, OrgQuerysetMixin, ContainerQuerysetMixin
-from fullctl.django.rest.renderers import PlainTextRenderer
+from fullctl.django.rest.mixins import (  # ContainerQuerysetMixin,; OrgQuerysetMixin,
+    CachedObjectMixin,
+)
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -25,7 +24,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     ref_tag = "facility"
     lookup_field = "slug"
 
-    #def get_queryset(self):
+    # def get_queryset(self):
     #    return super().get_queryset().filter(instance__org__slug=self.kwargs["org_tag"])
 
     @grainy_endpoint(namespace="facility.{request.org.permission_id}")
@@ -49,7 +48,6 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
             many=False,
         )
         return Response(serializer.data)
-
 
     @auditlog()
     @grainy_endpoint(namespace="facility.{request.org.permission_id}")
@@ -89,13 +87,13 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         facility.delete()
         return r
 
-
-
     @action(detail=True, methods=["POST"])
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def add_device(self, request, org, instance, facility, *args, **kwargs):
-        device = models.Device.objects.get(instance=instance, id=request.data.get("device"))
+        device = models.Device.objects.get(
+            instance=instance, id=request.data.get("device")
+        )
         device.facility = facility
         device.save()
 
@@ -103,9 +101,17 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
 
         return Response(serializer.data)
 
-    @action(detail=True, methods=["DELETE"], url_path="remove_device/(?P<device_id>[^/.]+)")
+    @action(
+        detail=True, methods=["DELETE"], url_path="remove_device/(?P<device_id>[^/.]+)"
+    )
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
-    @load_object("device", models.Device, instance="instance", facility__slug="facility_tag", id="device_id")
+    @load_object(
+        "device",
+        models.Device,
+        instance="instance",
+        facility__slug="facility_tag",
+        id="device_id",
+    )
     @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def remove_device(self, request, org, instance, facility, device, *args, **kwargs):
         serializer = Serializers.device(device)
@@ -114,7 +120,6 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         device.delete()
 
         return response
-
 
     @action(detail=True)
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
@@ -135,7 +140,6 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
             many=True,
         )
         return Response(serializer.data)
-
 
 
 @route
@@ -170,7 +174,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
             many=True,
         )
         return Response(serializer.data)
-
 
     @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_pk}")
     @load_object("device", models.Device, instance="instance", id="device_id")
@@ -260,9 +263,7 @@ class PhysicalPort(CachedObjectMixin, viewsets.GenericViewSet):
     @auditlog()
     @grainy_endpoint(namespace="physical_port.{request.org.permission_id}")
     def create(self, request, org, instance, *args, **kwargs):
-        device = models.Device.objects.get(
-            instance=instance, id=request.data.get("device")
-        )
+        models.Device.objects.get(instance=instance, id=request.data.get("device"))
         serializer = Serializers.physical_port(data=request.data)
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
@@ -485,9 +486,7 @@ class VirtualPort(CachedObjectMixin, viewsets.GenericViewSet):
 
 
 @route
-class PeeringDBFacilities(
-    CachedObjectMixin, viewsets.GenericViewSet
-):
+class PeeringDBFacilities(CachedObjectMixin, viewsets.GenericViewSet):
     serializer_class = Serializers.pdbfacility
     queryset = models.Facility.objects.all()
     ref_tag = "pdbfacility"

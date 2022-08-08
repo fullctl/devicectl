@@ -2,12 +2,15 @@ import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
-from django_inet.models import ASNField
-from fullctl.django.inet.const import *
-from fullctl.django.inet.fields import DeviceDescriptionField
-from fullctl.django.models.abstract import HandleRefModel, PdbRefModel, GeoModel, ServiceBridgeReferenceModel
-from fullctl.django.models.concrete import Instance
 from fullctl.django.fields.service_bridge import ReferencedObjectCharField
+from fullctl.django.inet.fields import DeviceDescriptionField
+from fullctl.django.models.abstract import (
+    GeoModel,
+    HandleRefModel,
+    ServiceBridgeReferenceModel,
+)
+from fullctl.django.models.concrete import Instance
+
 
 @reversion.register()
 @grainy_model(
@@ -21,9 +24,10 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
 
     name = models.CharField(max_length=255)
 
-    reference = ReferencedObjectCharField(bridge_type="facility", max_length=255, null=True, blank=True)
+    reference = ReferencedObjectCharField(
+        bridge_type="facility", max_length=255, null=True, blank=True
+    )
     slug = models.SlugField(max_length=64, unique=False, blank=False, null=False)
-
 
     class HandleRef:
         tag = "facility"
@@ -32,10 +36,10 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
 
     class ServiceBridge:
         map_pdbctl = {
-            "name" : "name",
-            "address1" : "address1",
-            "address2" : "address2",
-            "zipcode" : "zipcode",
+            "name": "name",
+            "address1": "address1",
+            "address2": "address2",
+            "zipcode": "zipcode",
             "city": "city",
             "country": "country",
             "longitude": "longitude",
@@ -43,14 +47,13 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         }
 
         map_nautobot = {
-            "name" : "name",
-            "custom_fields.devicectl_id" : "id",
+            "name": "name",
+            "custom_fields.devicectl_id": "id",
             "address": "address1",
-            #"latitude" : "latitude",
-            #"longitude" : "longitude",
+            # "latitude" : "latitude",
+            # "longitude" : "longitude",
             "status": "nautobot_status",
         }
-
 
     class Meta:
         db_table = "devicectl_facility"
@@ -59,7 +62,6 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
                 fields=["instance", "slug"], name="unique_slug_instance_pair"
             )
         ]
-
 
     @property
     def org(self):
@@ -70,10 +72,8 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         if self.status == "ok":
             return "active"
 
-
     def __str__(self):
         return f"{self.name} [#{self.id}]"
-
 
 
 @reversion.register()
@@ -86,8 +86,12 @@ class Device(ServiceBridgeReferenceModel):
         Instance, related_name="devices", on_delete=models.CASCADE
     )
     facility = models.ForeignKey(
-        Facility, related_name="devices", on_delete=models.CASCADE, null=True, blank=True,
-        help_text = _("Device is located in this facility")
+        Facility,
+        related_name="devices",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text=_("Device is located in this facility"),
     )
 
     name = models.CharField(max_length=255)
@@ -97,7 +101,9 @@ class Device(ServiceBridgeReferenceModel):
         help_text=_("Type of device (software)"),
     )
 
-    reference = ReferencedObjectCharField(bridge_type="device", max_length=255, null=True, blank=True)
+    reference = ReferencedObjectCharField(
+        bridge_type="device", max_length=255, null=True, blank=True
+    )
 
     class HandleRef:
         tag = "device"
@@ -114,7 +120,9 @@ class Device(ServiceBridgeReferenceModel):
         db_table = "devicectl_device"
         verbose_name = _("Device")
         verbose_name_plural = _("Devices")
-        indexes = [models.Index("reference", name="device_reference"),]
+        indexes = [
+            models.Index("reference", name="device_reference"),
+        ]
 
     @property
     def display_name(self):
@@ -131,7 +139,9 @@ class Device(ServiceBridgeReferenceModel):
 
     @property
     def port_qs(self):
-        return Port.objects.filter(virtual_port__in=self.virtual_port_qs)
+        return None
+        # TODO Port?
+        # return Port.objects.filter(virtual_port__in=self.virtual_port_qs)
 
     @property
     def org(self):

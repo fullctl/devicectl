@@ -1,7 +1,8 @@
 from fullctl.django.management.commands.base import CommandInterface
-
 from fullctl.django.models.concrete import Organization
+
 import django_devicectl.nautobot as nautobot
+
 
 class Command(CommandInterface):
 

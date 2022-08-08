@@ -1,13 +1,9 @@
-from fullctl.django.rest.decorators import grainy_endpoint
 from fullctl.django.rest.route.service_bridge import route
-from fullctl.django.rest.views.service_bridge import (
+from fullctl.django.rest.views.service_bridge import (  # MethodFilter,
     DataViewSet,
     HeartbeatViewSet,
-    MethodFilter,
     StatusViewSet,
 )
-from rest_framework.decorators import action
-from rest_framework.response import Response
 
 import django_devicectl.models.devicectl as models
 from django_devicectl.rest.serializers.service_bridge import Serializers
