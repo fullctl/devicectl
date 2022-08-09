@@ -11,43 +11,9 @@ $ctl.application.Devicectl = $tc.extend(
       this.facility_slugs = {}
       this.initial_load = false
 
+      this.init_container("facility", "facilities");
+
       this.$c.header.app_slug = "device";
-
-      this.$c.toolbar.widget("select_facility", ($e) => {
-        var w = new twentyc.rest.Select($e.select_facility);
-        $(w).on("load:after", (event, element, data) => {
-          var i;
-          for(i = 0; i < data.length; i++) {
-            this.urlkeys[data[i].id] = data[i].urlkey;
-            this.facilities[data[i].id] = data[i];
-            this.facility_slugs[data[i].id] = data[i].slug;
-          }
-
-          if(data.length == 0) {
-            $e.select_facility.attr('disabled', true);
-            this.permission_ui();
-          } else {
-            $e.select_facility.attr('disabled', false)
-            this.permission_ui();
-          }
-        });
-        return w
-
-      });
-
-      $(this.$c.toolbar.$w.select_facility).one("load:after", () => {
-        if(this.preselect_facility) {
-          this.select_facility(this.preselect_facility)
-        } else {
-          this.sync();
-          this.sync_url(this.$c.toolbar.$e.select_facility.val());
-        }
-      });
-
-      $(this.$c.toolbar.$e.select_facility).on("change", () => {
-        this.sync();
-        this.sync_url(this.$c.toolbar.$e.select_facility.val())
-      });
 
       this.tool("devices", () => {
         return new $ctl.application.Devicectl.Devices();
@@ -70,6 +36,10 @@ $ctl.application.Devicectl = $tc.extend(
         fullctl.devicectl.$t.settings.create_facility();
       });
 
+      $(this).one("no-containers", () => {
+        fullctl.devicectl.page('settings');
+        fullctl.devicectl.$t.settings.create_facility();
+      });
 
 
       $($ctl).trigger("init_tools", [this]);
@@ -82,43 +52,6 @@ $ctl.application.Devicectl = $tc.extend(
       this.sync();
     },
 
-
-    facility : function() {
-      return this.$c.toolbar.$w.select_facility.element.val();
-    },
-
-    facility_slug : function() {
-      return this.facility_slugs[this.facility()];
-    },
-
-    facility_object: function() {
-      return this.facilities[this.facility()]
-    },
-
-    urlkey : function() {
-      return this.urlkeys[this.facility()];
-    },
-
-    unload_facility : function(id) {
-      delete this.facilities[id];
-      delete this.urlkeys[id];
-      delete this.facility_slugs[id];
-    },
-
-
-
-    select_facility : function(id) {
-      if(id)
-        this.$c.toolbar.$e.select_facility.val(id);
-      else {
-        id = this.$c.toolbar.$e.select_facility.find('option').val();
-        this.$c.toolbar.$e.select_facility.val(id);
-      }
-
-      this.sync();
-      this.sync_url(id);
-    },
-
     permission_ui : function() {
       let $e = this.$c.toolbar.$e;
       let facility = this.facilities[this.facility()];
@@ -126,34 +59,11 @@ $ctl.application.Devicectl = $tc.extend(
 
       //$e.button_create_facility.grainy_toggle(`facility.${org}`, "c");
       //$e.button_import_facility.grainy_toggle(`facility.${org}`, "c");
-    },
-
-
-    sync_url: function(id) {
-      var facility = this.facilities[id];
-      var url = new URL(window.location)
-      console.log("SUP", facility)
-      if(!facility) {
-        $('#no-facility-notify').show();
-        url.pathname = `/${fullctl.org.slug}/`
-      } else {
-        url.pathname = `/${fullctl.org.slug}/${facility.slug}/`
-        $('#no-facility-notify').hide();
-      }
-      window.history.pushState({}, '', url);
-    },
-
-    refresh : function() {
-      return this.refresh_select_facility();
-    },
-
-    refresh_select_facility : function() {
-      return this.$c.toolbar.$w.select_facility.refresh();
     }
 
 
   },
-  $ctl.application.Application
+  $ctl.application.ContainerApplication
 );
 
 $ctl.application.Devicectl.Devices = $tc.extend(
@@ -208,6 +118,10 @@ $ctl.application.Devicectl.Devices = $tc.extend(
       };
 
       this.initialize_sortable_headers("name");
+
+      $(this.$w.list).on("api-request:error", ()=> {
+        this.$w.list.list_body.empty();
+      });
 
       $(this.$w.list).on("api_callback_remove:after", () => {
         $ctl.devicectl.sync();

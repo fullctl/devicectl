@@ -146,10 +146,11 @@ $ctl.application.Devicectl.Settings = $tc.extend(
       button_delete.click(() => { rs_wiz.set_step(1); form.reset(); form.fill(form_defaults) });
 
 
-      $(form).on("api-write:success", (ev, e, payload) => {
-        // fullctl.devicectl.$t.facilities.sync();
-        fullctl.devicectl.page('overview');
-        this.unload_dialog();
+      $(form).on("api-write:success", (ev, data, r_data, response) => {
+        $ctl.devicectl.refresh().then(()=>{
+          $ctl.devicectl.select_facility(response.first().id);
+          fullctl.devicectl.page('overview');
+        });
       });
 
     },
@@ -165,9 +166,9 @@ $ctl.application.Devicectl.Settings = $tc.extend(
         form.element.find('[data-element="rs_delete"]')
       );
       button_delete.format_request_url = this.format_request_url
-      button_delete.action = rs.id;
+      button_delete.action = rs.slug;
 
-      form.form_action = rs.id;
+      form.form_action = rs.slug;
       form.method = "put";
       form.format_request_url = this.format_request_url;
 
@@ -188,16 +189,20 @@ $ctl.application.Devicectl.Settings = $tc.extend(
         payload["id"] = rs.id;
       });
 
-
-      $(form).on("api-write:success", (ev, e, payload) => {
-        //fullctl.devicectl.$t.facilities.sync();
-        fullctl.devicectl.page('overview');
+      $(form).on("api-write:success", (ev, data, r_data, response) => {
+        $ctl.devicectl.refresh().then(()=>{
+          $ctl.devicectl.select_facility(response.first().id);
+          fullctl.devicectl.page('overview');
+        });
       });
 
       $(button_delete).on("api-write:success", (ev, e, payload) => {
-        //fullctl.devicectl.$t.facilities.sync();
-        fullctl.devicectl.page('overview');
-        this.unload_dialog();
+        $ctl.devicectl.refresh().then(() => {
+          $ctl.devicectl.unload_facility(rs.id);
+          $ctl.devicectl.select_facility();
+          $ctl.devicectl.refresh();
+          $ctl.devicectl.page("overview");
+        });
       });
 
       form.fill(rs);
