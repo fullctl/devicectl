@@ -1,18 +1,7 @@
-try:
-    from yaml import CDumper as Dumper
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader, Dumper
-
-import yaml
-from django.core.validators import RegexValidator
-from django.utils.translation import ugettext_lazy as _
-from django_inet.rest import IPAddressField
+# from django.utils.translation import ugettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
-from fullctl.django.rest.serializers import ModelSerializer, RequireContext
+from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-from rest_framework.validators import UniqueTogetherValidator
 
 import django_devicectl.models as models
 
@@ -23,14 +12,45 @@ Serializers, register = serializer_registry()
 class Facility(ModelSerializer):
     class Meta:
         model = models.Facility
-        fields = ["id", "name", "address1", "city", "country", "floor", "suite", "zipcode", "reference", "instance"]
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "address1",
+            "city",
+            "country",
+            "floor",
+            "suite",
+            "zipcode",
+            "reference",
+            "reference_source",
+            "reference_is_sot",
+            "reference_ux_url",
+            "reference_api_url",
+            "instance",
+        ]
+
 
 @register
 class Device(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Device
-        fields = ["name", "display_name", "type", "facility", "facility_name", "reference", "description", "instance"]
+        fields = [
+            "name",
+            "display_name",
+            "type",
+            "facility",
+            "facility_name",
+            "reference",
+            "reference_source",
+            "reference_is_sot",
+            "reference_ux_url",
+            "reference_api_url",
+            "description",
+            "instance",
+        ]
 
     def get_facility_name(self, obj):
         if obj.facility is None:
@@ -87,7 +107,6 @@ class PeeringDBFacility(serializers.Serializer):
     floor = serializers.CharField(read_only=True)
     latidude = serializers.DecimalField(read_only=True, max_digits=9, decimal_places=6)
     longitude = serializers.DecimalField(read_only=True, max_digits=9, decimal_places=6)
-
 
     class Meta:
         fields = ["id", "name"]

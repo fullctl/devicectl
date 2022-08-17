@@ -7,45 +7,79 @@
   <div class="row controls" style="display:flex">
     <div class="col-12">
 
-      <div class="row mb-3">
-        <div class="col-12" data-api-submit="yes">
-          <label for="reference" class="form-label">{% trans "Reference ID (developer-mode)" %}</label>
-          <input type="text" value="32" class="form-control" id="reference" name="reference" />
+      <div class="row">
+        <div class="col-4">
+
+          <div class="row form-check">
+            <div class="col-12" data-api-submit="yes">
+              <input type="checkbox" class="form-check-input" id="reference-is-sot" name="reference_is_sot" />
+              <label for="reference-is-sot" class="form-check-label">{% trans "PeeringDB is source of truth" %}</label>
+            </div>
+          </div>
+
+        </div>
+        <div class="col-8">
+
+          <div class="row mb-3">
+            <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
+              <label for="reference" class="form-label">{% trans "PeeringDB ID" %}</label>
+              <input type="text" value="32" class="form-control" id="reference" name="reference" />
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <div class="row mb-3">
-        <div class="col-12" data-api-submit="yes">
-          <label for="name" class="form-label">{% trans "Name" %}</label>
-          <input type="text" class="form-control" id="name" name="name" />
+      <div class="row">
+        <div class="col-6">
+
+          <div class="row mb-3">
+            <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
+              <label for="name" class="form-label">{% trans "Name" %}</label>
+              <input type="text" class="form-control" id="name" name="name" />
+            </div>
+          </div>
+
+        </div>
+        <div class="col-6">
+
+          <div class="row mb-3">
+            <div class="col-12" data-api-submit="yes" data-sot-toggled="no">
+              <label for="slug" class="form-label">{% trans "Slug" %}</label>
+              <input type="text" class="form-control" id="slug" name="slug" />
+            </div>
+          </div>
+
         </div>
       </div>
+
+
       <div class="row mb-3">
-        <div class="col-12" data-api-submit="yes">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
           <label for="address1" class="form-label">{% trans "Address" %}</label>
           <input type="text" class="form-control" id="address1" name="address1" />
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-12" data-api-submit="yes">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
           <label for="floor" class="form-label">{% trans "Floor" %}</label>
           <input type="text" class="form-control" id="floor" name="floor" />
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-12" data-api-submit="yes">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
           <label for="zipcode" class="form-label">{% trans "Postal code" %}</label>
           <input type="text" value="32" class="form-control" id="zipcode" name="zipcode" />
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-12" data-api-submit="yes">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
           <label for="city" class="form-label">{% trans "City" %}</label>
           <input type="text" value="32" class="form-control" id="city" name="city" />
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-12" data-api-submit="yes">
+        <div class="col-12" data-api-submit="yes" data-sot-toggled="yes">
           <label for="country" class="form-label">{% trans "Country" %}</label>
           <input type="text" value="32" class="form-control" id="country" name="country" />
         </div>

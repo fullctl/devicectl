@@ -1,7 +1,6 @@
+import fullctl.service_bridge.nautobot as nautobot
 from fullctl.django.models import Task
 from fullctl.django.tasks import register
-
-import fullctl.service_bridge.nautobot as nautobot
 
 import django_devicectl.models.devicectl as models
 
@@ -28,12 +27,13 @@ class NautobotPull(Task):
 
     def run(self, *args, **kwargs):
 
-        instance = models.Instance.objects.get(org=org)
+        instance = models.Instance.objects.get(org_id=self.org_id)
 
         # TODO allow per organization set up of nautobot url / token
 
         for n_device in nautobot.Device().objects():
-            device, _ = models.Device.objects.get_or_create(reference=n_device.id, instance=instance)
+            device, _ = models.Device.objects.get_or_create(
+                reference=n_device.id, instance=instance
+            )
             device.name = n_device.display
             device.save()
-

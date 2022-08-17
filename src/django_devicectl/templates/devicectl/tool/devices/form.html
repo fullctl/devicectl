@@ -1,6 +1,6 @@
 {% load static i18n %}
 <form data-template="form_device"
-  data-api-base="{% url "devicectl_api:device-list" org_tag=request.org.slug %}"
+  data-api-base="{% url "devicectl_api:facility-devices" org_tag=request.org.slug facility_tag="facility_tag" %}"
   data-api-action=""
   data-api-method="POST"
   >

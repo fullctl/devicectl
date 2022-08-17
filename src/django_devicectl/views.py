@@ -1,10 +1,9 @@
 from django.conf import settings
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect, render
 from fullctl.django.decorators import load_instance, require_auth
-from fullctl.django.models import Instance, Organization
 
-import django_devicectl.forms
+from django_devicectl.models.devicectl import Facility
 
 # Create your views here.
 
@@ -19,6 +18,20 @@ def make_env(request, **kwargs):
 @load_instance()
 def view_instance(request, instance, **kwargs):
     env = make_env(request, instance=instance, org=instance.org)
+    return render(request, "devicectl/index.html", env)
+
+
+@require_auth()
+@load_instance()
+def view_instance_load_facility(request, instance, facility_tag, **kwargs):
+    try:
+        facility = Facility.objects.get(instance=instance, slug=facility_tag)
+    except Facility.DoesNotExist:
+        raise Http404
+
+    env = make_env(request, instance=instance, org=instance.org)
+    env["select_facility"] = facility
+
     return render(request, "devicectl/index.html", env)
 
 

@@ -1,11 +1,7 @@
-import datetime
-import json
-
-import django_countries
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import IntegrityError, connection
+from django.db import IntegrityError
 from django.http import Http404
-from rest_framework import renderers, status
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
@@ -43,20 +39,3 @@ def exception_handler(exc, context):
         response = drf_exception_handler(exc, context)
 
     return response
-
-
-"""
-class ScopedUserRateThrottle(UserRateThrottle):
-    scope = None
-    def allow_request(self, request, view):
-        scopes = getattr(view, "throttle_scopes", {})
-        scope = scopes.get(request.method.lower())
-
-        if isinstance(scope, list) and self.scope in scope:
-            return super(ScopedUserRateThrottle, self).allow_request(request, view)
-        return True
-
-class EmailThrottle(ScopedUserRateThrottle):
-    #API throttling for api endpoints that send emails
-    scope = "email"
-"""

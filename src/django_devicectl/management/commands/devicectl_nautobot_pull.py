@@ -1,7 +1,8 @@
 from fullctl.django.management.commands.base import CommandInterface
-
 from fullctl.django.models.concrete import Organization
+
 import django_devicectl.nautobot as nautobot
+
 
 class Command(CommandInterface):
 
@@ -14,8 +15,11 @@ class Command(CommandInterface):
 
     def run(self, *args, **kwargs):
         org_slug = kwargs.get("org_slug")
-
         org = Organization.objects.get(slug=org_slug)
+
+        # self.log_info(f"Pushing updates to nautobot for {org_slug}")
+
+        # nautobot.push(org)
 
         self.log_info(f"Pulling nautobot data for {org_slug}")
 
