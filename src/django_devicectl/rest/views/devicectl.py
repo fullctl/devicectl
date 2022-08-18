@@ -15,6 +15,76 @@ from django_devicectl.rest.decorators import grainy_endpoint
 from django_devicectl.rest.route.devicectl import route
 from django_devicectl.rest.serializers.devicectl import Serializers
 
+@route
+class Facility(CachedObjectMixin, viewsets.GenericViewSet):
+    serializer_class = Serializers.facility
+    queryset = models.Facility.objects.all()
+    lookup_url_kwarg = "facility_id"
+    ref_tag = "facility"
+    lookup_field = "id"
+
+    @grainy_endpoint(namespace="facility.{request.org.permission_id}")
+    def list(self, request, org, instance, *args, **kwargs):
+        # ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
+
+        queryset = instance.facilities.all()
+        # queryset = ordering_filter.filter_queryset(request, queryset, self)
+
+        serializer = Serializers.facility(
+            queryset,
+            many=True,
+        )
+        return Response(serializer.data)
+
+    @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_id}")
+    @load_object("facility", models.Facility, instance="instance", id="facility_id")
+    def retrieve(self, request, org, instance, facility, *args, **kwargs):
+        serializer = Serializers.facility(
+            instance=facility,
+            many=False,
+        )
+        return Response(serializer.data)
+
+
+    @auditlog()
+    @grainy_endpoint(namespace="facility.{request.org.permission_id}")
+    def create(self, request, org, instance, *args, **kwargs):
+        data = request.data
+        data["instance"] = instance.id
+        serializer = Serializers.facility(data=data)
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+        facility = serializer.save()
+        facility.save()
+
+        return Response(Serializers.facility(instance=facility).data)
+
+    @auditlog()
+    @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_id}")
+    @load_object("facility", models.Facility, instance="instance", id="facility_id")
+    def update(self, request, org, instance, facility, *args, **kwargs):
+        request.data["instance"] = instance.id
+        serializer = Serializers.facility(
+            facility,
+            data=request.data,
+        )
+
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+        facility = serializer.save()
+        facility.save()
+
+        return Response(Serializers.facility(instance=facility).data)
+
+    @auditlog()
+    @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_id}")
+    @load_object("facility", models.Facility, instance="instance", id="facility_id")
+    def destroy(self, request, org, instance, facility, *args, **kwargs):
+        r = Response(Serializers.facility(instance=facility).data)
+        facility.delete()
+        return r
+
+
 
 @route
 class Facility(CachedObjectMixin, viewsets.GenericViewSet):
