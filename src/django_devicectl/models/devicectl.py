@@ -105,7 +105,9 @@ class Device(ServiceBridgeReferenceModel):
         bridge_type="device", max_length=255, null=True, blank=True
     )
 
-    reference = ReferencedObjectCharField(bridge_type="device", max_length=255, null=True, blank=True)
+    reference = ReferencedObjectCharField(
+        bridge_type="device", max_length=255, null=True, blank=True
+    )
 
     class HandleRef:
         tag = "device"
