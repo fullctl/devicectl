@@ -48,10 +48,10 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
 
         map_nautobot = {
             "name": "name",
-            "custom_fields.devicectl_id": "id",
-            "address": "address1",
-            # "latitude" : "latitude",
-            # "longitude" : "longitude",
+            "custom_fields.devicectl_id": "fullctl_id",
+            "physical_address": "address1",
+            "latitude" : "latitude",
+            "longitude" : "longitude",
             "status": "nautobot_status",
         }
 
