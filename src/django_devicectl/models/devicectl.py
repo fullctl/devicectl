@@ -35,6 +35,9 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         verbose_name_plural = _("Facilities")
 
     class ServiceBridge:
+
+        # PDBCTL
+
         map_pdbctl = {
             "name": "name",
             "address1": "address1",
@@ -46,6 +49,11 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
             "latitude": "latitude",
         }
 
+        # NOTOBOT
+
+        # TODO: support versioning ?
+        # TODO: move outside of model definition ?
+
         map_nautobot = {
             "name": "name",
             "custom_fields.devicectl_id": "fullctl_id",
@@ -54,6 +62,8 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
             "longitude" : "longitude",
             "status": "nautobot_status",
         }
+
+        lookup_nautobot = "cf_devicectl_id"
 
     class Meta:
         db_table = "devicectl_facility"
@@ -99,10 +109,6 @@ class Device(ServiceBridgeReferenceModel):
     type = models.CharField(
         max_length=255,
         help_text=_("Type of device (software)"),
-    )
-
-    reference = ReferencedObjectCharField(
-        bridge_type="device", max_length=255, null=True, blank=True
     )
 
     reference = ReferencedObjectCharField(
