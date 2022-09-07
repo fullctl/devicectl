@@ -1,12 +1,12 @@
 import fullctl.service_bridge.pdbctl as pdbctl
 from fullctl.django.auditlog import auditlog
+from fullctl.django.decorators import service_bridge_sync
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import load_object
 from fullctl.django.rest.filters import CaseInsensitiveOrderingFilter
 from fullctl.django.rest.mixins import (  # ContainerQuerysetMixin,; OrgQuerysetMixin,
     CachedObjectMixin,
 )
-from fullctl.django.decorators import service_bridge_sync
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response

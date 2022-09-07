@@ -1,10 +1,13 @@
-from django.utils.translation import gettext_lazy as _
 import fullctl.service_bridge.nautobot as nautobot
+from django.utils.translation import gettext_lazy as _
 from fullctl.django.models.concrete.service_bridge import service_bridge_action
 
 import django_devicectl.models.devicectl as models
 
-@service_bridge_action("nautobot_push_device_loc", _("Nautobot: update device location"))
+
+@service_bridge_action(
+    "nautobot_push_device_loc", _("Nautobot: update device location")
+)
 def push_device_loc(action, device):
 
     """
@@ -34,9 +37,9 @@ def push_device_loc(action, device):
     if site:
 
         # assign device to site in nautobot
-        nautobot.Device().partial_update(device.reference.object, {"site": str(site.id)})
-
-
+        nautobot.Device().partial_update(
+            device.reference.object, {"site": str(site.id)}
+        )
 
 
 def sync_custom_fields():
@@ -60,6 +63,7 @@ def sync_custom_fields():
             },
         ]
     )
+
 
 def pull(org, *args, **kwargs):
 
@@ -95,7 +99,6 @@ def pull(org, *args, **kwargs):
     qset_remove.delete()
 
 
-
 def push(org, *args, **kwargs):
 
     """
@@ -125,7 +128,7 @@ def push(org, *args, **kwargs):
 
         if not exists:
             nautobot_site = nautobot.Site().create(fac.service_bridge_data("nautobot"))
-            #nautobot_site = nautobot.Site().object(data["id"])
+            # nautobot_site = nautobot.Site().object(data["id"])
         else:
             nautobot.Site().update(exists, fac.service_bridge_data("nautobot"))
 
@@ -135,7 +138,9 @@ def push(org, *args, **kwargs):
         for device in fac.devices.all():
             for nautobot_device in nautobot_devices:
                 if str(nautobot_device.id) == str(device.reference):
-                    nautobot.Device().partial_update(nautobot_device, {"site": str(nautobot_site.id)})
+                    nautobot.Device().partial_update(
+                        nautobot_device, {"site": str(nautobot_site.id)}
+                    )
 
     # delete nautobot sites if they no longer exist as facilities in devicectl
     for site in nautobot_sites:
@@ -143,6 +148,7 @@ def push(org, *args, **kwargs):
         if not site.custom_fields.devicectl_id:
             continue
 
-        if not models.Facility.objects.filter(id=site.custom_fields.devicectl_id).exists():
+        if not models.Facility.objects.filter(
+            id=site.custom_fields.devicectl_id
+        ).exists():
             nautobot.Site().destroy(site)
-

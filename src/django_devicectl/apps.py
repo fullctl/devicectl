@@ -6,9 +6,9 @@ class DjangoDevicectlConfig(AppConfig):
     name = "django_devicectl"
 
     def ready(self):
-        from django.conf import settings
+        from django.conf import settings  # noqa
 
         # TODO: better way to initialize nautobot definitions?
 
         if getattr(settings, "NAUTOBOT_URL", None):
-            import django_devicectl.nautobot
+            import django_devicectl.nautobot  # noqa

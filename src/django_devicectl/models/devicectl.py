@@ -58,8 +58,8 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
             "name": "name",
             "custom_fields.devicectl_id": "fullctl_id",
             "physical_address": "address1",
-            "latitude" : "latitude",
-            "longitude" : "longitude",
+            "latitude": "latitude",
+            "longitude": "longitude",
             "status": "nautobot_status",
         }
 
