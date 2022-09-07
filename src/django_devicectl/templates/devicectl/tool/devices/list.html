@@ -22,6 +22,12 @@
       <td data-field="controls" class="right">
         <div class="row" style="display:none;" data-sot="external">
           <div class="col-12 right">
+            <a
+            data-api-action="remove_device/{id}"
+            data-api-callback="remove"
+            data-confirm="Remove device from this facility?"
+            data-api-method="DELETE"><span class="icon fullctl icon-delete"></span><span class="fullctl label">{% trans "Remove" %}</span></a>
+
             <a data-action="link_to_reference">
               <span class="icon fullctl icon-edit"></span>
               <span class="label fullctl">{% trans "Managed in" %} <span data-field="reference_source"></span></span>

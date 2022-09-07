@@ -22,7 +22,9 @@ def push_device_loc(action, device):
 
     # device no longer assigned to a facility
     if not device.facility_id:
-        nautobot.Device().partial_update(device.reference.object, {"site": None})
+        # TODO: nautobot does not allow a device not connected to a site
+        # what to do here?
+        # nautobot.Device().partial_update(device.reference.object, {"site": ""})
         return
     facility = device.facility
 
