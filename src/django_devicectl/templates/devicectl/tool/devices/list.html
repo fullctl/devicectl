@@ -8,6 +8,7 @@
     <tr>
       <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
       <th data-sort-target="type" class="sortable-button">{% trans "Type" %}</th>
+      <th data-sort-target="type" class="sortable-button">{% trans "IP" %}</th>
       <th>{% trans "Status" %}</th>
       <th></th>
     </tr>
@@ -18,6 +19,10 @@
     <tr data-template="row">
       <td data-field="display_name" class="highlight"></td>
       <td data-field="type"></td>
+      <td>
+        <div data-field="management_ip_address_4"></div>
+        <div data-field="management_ip_address_6"></div>
+      </td>
       <td data-field="status"></td>
       <td data-field="controls" class="right">
         <div class="row" style="display:none;" data-sot="external">

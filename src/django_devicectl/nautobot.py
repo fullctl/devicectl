@@ -42,6 +42,35 @@ def push_device_loc(action, device):
         )
 
 
+@service_bridge_action(
+    "nautobot_pull_mgmt_ips", _("Nautobot: retrieve management ip-addresses")
+)
+def pull_device_mgmt_ips(action, device):
+
+    """
+    Pull handler that pulls device management pimary ip addresses
+    from nautobot
+    """
+
+    # this action only works on pull
+    if action != "pull":
+        return
+
+    if device.reference_source != "nautobot":
+        return
+
+    nautobot_device = device.reference.object
+
+    if not nautobot_device:
+        return
+
+    if nautobot_device.primary_ip4:
+        device.set_management_ip_address(nautobot_device.primary_ip4.address)
+
+    if nautobot_device.primary_ip6:
+        device.set_management_ip_address(nautobot_device.primary_ip6.address)
+
+
 def sync_custom_fields():
 
     """

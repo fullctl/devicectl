@@ -1,3 +1,5 @@
+import ipaddress
+
 import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -10,6 +12,7 @@ from fullctl.django.models.abstract import (
     ServiceBridgeReferenceModel,
 )
 from fullctl.django.models.concrete import Instance
+from netfields.fields import InetAddressField
 
 
 @reversion.register()
@@ -139,26 +142,112 @@ class Device(ServiceBridgeReferenceModel):
         return self.name
 
     @property
-    def logical_port_qs(self):
-        logical_port_ids = [p.logical_port_id for p in self.physical_port_qs.all()]
+    def logical_ports(self):
+        logical_port_ids = [p.logical_port_id for p in self.physical_ports.all()]
         return LogicalPort.objects.filter(id__in=logical_port_ids)
 
     @property
-    def virtual_port_qs(self):
-        return VirtualPort.objects.filter(logical_port__in=self.logical_port_qs)
+    def virtual_ports(self):
+        return VirtualPort.objects.filter(logical_port__in=self.logical_ports)
 
     @property
-    def port_qs(self):
+    def ports(self):
         return None
         # TODO Port?
-        # return Port.objects.filter(virtual_port__in=self.virtual_port_qs)
+        # return Port.objects.filter(virtual_port__in=self.virtual_ports)
 
     @property
     def org(self):
         return self.instance.org
 
+    @property
+    @reversion.create_revision()
+    def management_port(self):
+
+        if hasattr(self, "_management_port_info"):
+            return self._management_port_info
+
+        port_info = PortInfo.objects.filter(
+            instance=self.instance,
+            is_management=True,
+            port__virtual_port__logical_port__physical_ports__device_id=self.id,
+        ).first()
+
+        if port_info:
+            self._management_port_info = port_info
+            return port_info
+
+        self.setup()
+
+        virtual_port = VirtualPort.objects.filter(
+            logical_port__physical_ports__device=self
+        ).first()
+
+        port_info = PortInfo.objects.create(
+            instance=self.instance,
+            ip_address_4=None,
+            ip_address_6=None,
+            is_management=True,
+        )
+
+        Port.objects.create(virtual_port=virtual_port, port_info=port_info)
+
+        self._management_port_info = port_info
+
+        return port_info
+
     def __str__(self):
-        return f"{self.name} [#{self.id}]"
+        return f"Device({self.id}) {self.name}"
+
+    def set_management_ip_address(self, ip):
+
+        if not ip:
+            return
+
+        ip = ipaddress.ip_network(ip)
+
+        management_port = self.management_port
+
+        if ip.version == 4:
+            if (
+                management_port.ip_address_4
+                and ipaddress.ip_network(management_port.ip_address_4) == ip
+            ):
+                return
+            management_port.ip_address_4 = ip
+        else:
+            if (
+                management_port.ip_address_6
+                and ipaddress.ip_network(management_port.ip_address_6) == ip
+            ):
+                return
+            management_port.ip_address_6 = ip
+
+        management_port.save()
+
+    def management_ip_address_4(self):
+        return self.management_port.ip_address_4
+
+    def managmeent_ip_address_6(self):
+        return self.management_port.ip_address_6
+
+    def setup(self):
+
+        """
+        minimal device setup - will create a rudimentary port set up for the device
+        as needed
+        """
+
+        if not self.physical_ports.exists():
+            logical_port = LogicalPort.objects.create(
+                name="lp-001", instance=self.instance
+            )
+            PhysicalPort.objects.create(
+                device=self, name="pp-001", logical_port=logical_port
+            )
+
+        for physical_port in self.physical_ports.all():
+            physical_port.setup(self.instance)
 
 
 @reversion.register()
@@ -178,7 +267,7 @@ class PhysicalPort(HandleRefModel):
     logical_port = models.ForeignKey(
         "django_devicectl.LogicalPort",
         help_text=_("Logical port this physical port is a member of"),
-        related_name="physical_port_qs",
+        related_name="physical_ports",
         on_delete=models.CASCADE,
     )
 
@@ -207,7 +296,16 @@ class PhysicalPort(HandleRefModel):
         return self.logical_port.name
 
     def __str__(self):
-        return f"{self.name} [{self.org} #{self.id}]"
+        return f"PhyscalPort({self.id}) {self.name}"
+
+    def setup(self, instance):
+
+        """
+        minimal setup - will create a rudimentary port set up
+        as needed
+        """
+
+        self.logical_port.setup(instance)
 
 
 @reversion.register()
@@ -250,7 +348,21 @@ class LogicalPort(HandleRefModel):
         return self.instance.org
 
     def __str__(self):
-        return f"{self.name} [{self.org} #{self.id}]"
+        return f"LogicalPort({self.id}) {self.name}"
+
+    def setup(self, instance):
+
+        """
+        minimal setup - will create a rudimentary port set up
+        as needed
+        """
+
+        if not self.virtual_ports.exists():
+            VirtualPort.objects.create(
+                logical_port=self,
+                name="vp-001",
+                vlan_id=0,
+            )
 
 
 @reversion.register()
@@ -295,4 +407,86 @@ class VirtualPort(HandleRefModel):
         return self.logical_port.name
 
     def __str__(self):
-        return f"#{self.id} [{self.logical_port}]"
+        return f"VirtualPort({self.id}) {self.name}"
+
+
+@reversion.register()
+@grainy_model(
+    namespace="port_info",
+    namespace_instance="port_info.{instance.org.permission_id}.{instance.id}",
+)
+class PortInfo(HandleRefModel):
+    """ """
+
+    instance = models.ForeignKey(
+        Instance, related_name="port_infos", on_delete=models.CASCADE
+    )
+
+    ip_address_4 = InetAddressField(null=True, blank=True)
+    ip_address_6 = InetAddressField(null=True, blank=True)
+
+    is_management = models.BooleanField(default=False)
+    is_routeserver_peer = models.BooleanField(default=False)
+
+    speed = models.PositiveIntegerField(default=0)
+
+    class HandleRef:
+        tag = "port_info"
+
+    class Meta:
+        db_table = "devicectl_port_info"
+        verbose_name = _("Port information")
+        verbose_name_plural = _("Port information")
+        unique_together = (("instance", "ip_address_4", "ip_address_6"),)
+
+    @property
+    def org(self):
+        return self.instance.org
+
+    @property
+    def display_name(self):
+        return f"{self.ip_address_4} - {self.ip_address_6}"
+        if self.ip_address_4:
+            return f"{self.ip_address_4}"
+        elif self.ip_address_6:
+            return f"{self.ip_address_6}"
+        return "-"
+
+    def __str__(self):
+        return f"PortInfo({self.id}) {self.display_name}"
+
+
+@reversion.register()
+@grainy_model(
+    namespace="port",
+    namespace_instance="port.{instance.org.permission_id}.{instance.id}",
+)
+class Port(HandleRefModel):
+    """ """
+
+    virtual_port = models.ForeignKey(
+        VirtualPort, on_delete=models.CASCADE, related_name="ports"
+    )
+
+    port_info = models.OneToOneField(
+        PortInfo, on_delete=models.CASCADE, related_name="port"
+    )
+
+    class HandleRef:
+        tag = "port"
+
+    class Meta:
+        db_table = "devicectl_port"
+        verbose_name = _("Port")
+        verbose_name_plural = _("Ports")
+
+    @property
+    def org(self):
+        return self.port_info.instance.org
+
+    @property
+    def display_name(self):
+        return f"{self.virtual_port.display_name} port"
+
+    def __str__(self):
+        return f"Port({self.id}) {self.virtual_port.name}"

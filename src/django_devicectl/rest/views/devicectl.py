@@ -131,6 +131,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         return response
 
     @action(detail=True)
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def devices(self, request, org, instance, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["facility_id", "name", "type"])
@@ -159,6 +160,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     ref_tag = "device"
     lookup_field = "id"
 
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
@@ -173,6 +175,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         return Response(serializer.data)
 
     @action(detail=False)
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def list_unassigned(self, request, org, instance, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
@@ -184,6 +187,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_pk}")
     @load_object("device", models.Device, instance="instance", id="device_id")
     def retrieve(self, request, org, instance, device, *args, **kwargs):
