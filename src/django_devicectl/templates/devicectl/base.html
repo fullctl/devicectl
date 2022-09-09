@@ -41,6 +41,14 @@ $(document).ready(() => {
       aria-selected="false"
       id="settings-tab"
       href="#settings">{% trans "Facilities" %}</a>
+
+    <a class="nav-link"
+      data-bs-toggle="tab"
+      role="tab"
+      aria-controls="settings"
+      aria-selected="false"
+      id="ports-tab"
+      href="#ports">{% trans "Ports" %}</a>
   </nav>
 </div>
 {% endblock %}
@@ -93,13 +101,16 @@ $(document).ready(() => {
 <div class="tab-content" id="app-pages">
   <div class="tab-pane show active" id="overview" role="tabpanel" aria-labelledby="tab-overview">
 		{% include "devicectl/tool/devices/main.html" %}
-		{% include "devicectl/tool/logical_ports/main.html" %}
-		{% include "devicectl/tool/physical_ports/main.html" %}
-		{% include "devicectl/tool/virtual_ports/main.html" %}
   </div>
   <div class="tab-pane" id="settings" role="tabpanel" aria-labelledby="tab-settings">
     {% include "devicectl/tool/settings/main.html" %}
   </div>
+  <div class="tab-pane show" id="ports" role="tabpanel" aria-labelledby="tab-ports">
+		{% include "devicectl/tool/physical_ports/main.html" %}
+		{% include "devicectl/tool/logical_ports/main.html" %}
+		{% include "devicectl/tool/virtual_ports/main.html" %}
+  </div>
+
 </div>
 {% endblock %}
 
