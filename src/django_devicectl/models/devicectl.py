@@ -445,7 +445,6 @@ class PortInfo(HandleRefModel):
 
     @property
     def display_name(self):
-        return f"{self.ip_address_4} - {self.ip_address_6}"
         if self.ip_address_4:
             return f"{self.ip_address_4}"
         elif self.ip_address_6:
