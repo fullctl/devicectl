@@ -11,6 +11,18 @@
 
 - `SERVICE_BRIDGE_REF_DEVICE`: set to `fullctl.service_bridge.nautobot.Device` to tell devicectl that nautobot is the source of truth for devices.
 
+## Import service-bridge actions
+
+```
+Ctl/dev/run.sh loaddata fixtures/nautobot.actions.json
+```
+
+## Make sure a `fullctl_poll_tasks` process is running in the devicectl container
+
+```
+manage fullctl_poll_tasks --wrokers 4
+```
+
 ## Sync changes from nautobot to devicectl
 
 ### 1. Run `devicectl_nautobot_pull` job
@@ -25,11 +37,9 @@ Install the [nautobot_fullctl](https://github.com/fullctl/nautobot_fullctl) addo
 
 Aftewards device changes will be synced directly to devicectl from nautobot using the service bridge.
 
-!!! Add device to facility manually
-
-Currently nautobot device locations are not synced. If your devicectl devices list is empty after a sync, it likely means
-that you will still need to assign the device to the facility in devicectl. To do this click `Add device` in devicectl.
+Note: devices need to be added to facilities in devicectl before they show up
 
 ## Sync changes from devicectl to nautobot
 
-currently work in progress and not available at this point
+- Facilities
+- Device location

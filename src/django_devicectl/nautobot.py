@@ -1,44 +1,89 @@
 import fullctl.service_bridge.nautobot as nautobot
+from django.utils.translation import gettext_lazy as _
+from fullctl.django.models.concrete.service_bridge import service_bridge_action
 
 import django_devicectl.models.devicectl as models
 
 
-def pull(org, *args, **kwargs):
+@service_bridge_action(
+    "nautobot_push_device_loc", _("Nautobot: update device location")
+)
+def push_device_loc(action, device):
 
-    instance = models.Instance.objects.get(org=org)
+    """
+    Push handler that pushes a device location (facility/site) change to nautobot
+    """
 
-    # FIXME allow per organization set up of nautobot url / token
-    # currently uses globally configured values for both
+    # this action only works on push
+    if action != "push":
+        return
 
-    references = []
+    # device main reference source is not nautobot
+    # TODO: support as secondary source?
+    if device.reference_source != "nautobot":
+        return
 
-    for nautobot_device in nautobot.Device().objects():
-        device, created = models.Device.objects.get_or_create(
-            reference=nautobot_device.id, instance=instance
+    # device no longer assigned to a facility
+    if not device.facility_id:
+        # TODO: nautobot does not allow a device not connected to a site
+        # what to do here?
+        # nautobot.Device().partial_update(device.reference.object, {"site": ""})
+        return
+    facility = device.facility
+
+    # site exists in nautobot?
+    site = nautobot.Site().first(cf_devicectl_id=facility.id)
+
+    if site:
+
+        # assign device to site in nautobot
+        nautobot.Device().partial_update(
+            device.reference.object, {"site": str(site.id)}
         )
-        print(f"Syncing {nautobot_device.name} from nautobot")
-        references.append(device.reference)
-        changed = device.sync_from_reference(ref_obj=nautobot_device)
 
-        if changed or created:
-            device.save()
 
-    # delete devices that no longer exist in nautobot
-    qset_remove = models.Device.objects.exclude(reference__in=references).exclude(
-        reference__isnull=True
-    )
+@service_bridge_action(
+    "nautobot_pull_mgmt_ips", _("Nautobot: retrieve management ip-addresses")
+)
+def pull_device_mgmt_ips(action, device):
 
-    print(f"Removing {qset_remove.count()} devices..")
+    """
+    Pull handler that pulls device management pimary ip addresses
+    from nautobot
+    """
 
-    qset_remove.delete()
+    # this action only works on pull
+    if action != "pull":
+        return
+
+    if device.reference_source != "nautobot":
+        return
+
+    nautobot_device = device.reference.object
+
+    if not nautobot_device:
+        return
+
+    if nautobot_device.primary_ip4:
+        device.set_management_ip_address(nautobot_device.primary_ip4.address)
+
+    if nautobot_device.primary_ip6:
+        device.set_management_ip_address(nautobot_device.primary_ip6.address)
 
 
 def sync_custom_fields():
 
+    """
+    Make sure the necessary custom fields exist in nautobot
+    """
+
     nautobot.CustomField().sync(
         [
             {
+                # nautobot 1.3.6
                 "name": "devicectl_id",
+                # nautobot 1.4.1
+                "slug": "devicectl_id",
                 "label": "deviceCtl ID",
                 "content_types": ["dcim.site"],
                 "type": "integer",
@@ -49,11 +94,56 @@ def sync_custom_fields():
     )
 
 
+def pull(org, *args, **kwargs):
+
+    """
+    Pull data from nautobot
+    """
+
+    instance = models.Instance.objects.get(org=org)
+
+    # FIXME allow per organization set up of nautobot url / token
+    # currently uses globally configured values for both
+
+    references = []
+
+    # create / update devices from nautobot data
+
+    for nautobot_device in nautobot.Device().objects():
+        device, created = models.Device.objects.get_or_create(
+            reference=nautobot_device.id, instance=instance
+        )
+        references.append(device.reference)
+        changed = device.sync_from_reference(ref_obj=nautobot_device)
+
+        if changed or created:
+            device.save()
+
+    # delete devices that no longer exist in nautobot
+
+    qset_remove = models.Device.objects.exclude(reference__in=references).exclude(
+        reference__isnull=True
+    )
+
+    qset_remove.delete()
+
+
 def push(org, *args, **kwargs):
 
-    # sync_custom_fields()
+    """
+    Push data to nautobot
+    """
+
+    # make sure required custom fields exist on the nautobot side
+
+    sync_custom_fields()
+
+    # preload nautobot data
 
     nautobot_sites = [fac for fac in nautobot.Site().objects()]
+    nautobot_devices = [dev for dev in nautobot.Device().objects()]
+
+    # sync devicectl facility -> nautobot site
 
     for fac in models.Facility.objects.all():
 
@@ -62,7 +152,32 @@ def push(org, *args, **kwargs):
         for nautobot_site in nautobot_sites:
 
             if nautobot_site.custom_fields.devicectl_id == fac.id:
-                exists = True
+                exists = nautobot_site
+                break
 
         if not exists:
-            nautobot.Site().create(fac.service_bridge_data("nautobot"))
+            nautobot_site = nautobot.Site().create(fac.service_bridge_data("nautobot"))
+            # nautobot_site = nautobot.Site().object(data["id"])
+        else:
+            nautobot.Site().update(exists, fac.service_bridge_data("nautobot"))
+
+        # assign nautobot facility to site accordign to devicectl
+        # facility device allocation
+
+        for device in fac.devices.all():
+            for nautobot_device in nautobot_devices:
+                if str(nautobot_device.id) == str(device.reference):
+                    nautobot.Device().partial_update(
+                        nautobot_device, {"site": str(nautobot_site.id)}
+                    )
+
+    # delete nautobot sites if they no longer exist as facilities in devicectl
+    for site in nautobot_sites:
+
+        if not site.custom_fields.devicectl_id:
+            continue
+
+        if not models.Facility.objects.filter(
+            id=site.custom_fields.devicectl_id
+        ).exists():
+            nautobot.Site().destroy(site)

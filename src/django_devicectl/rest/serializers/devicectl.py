@@ -35,6 +35,14 @@ class Facility(ModelSerializer):
 class Device(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
 
+    management_ip_address_4 = serializers.CharField(
+        read_only=True, source="management_port.ip_address_4"
+    )
+
+    management_ip_address_6 = serializers.CharField(
+        read_only=True, source="management_port.ip_address_6"
+    )
+
     class Meta:
         model = models.Device
         fields = [
@@ -50,6 +58,8 @@ class Device(ModelSerializer):
             "reference_api_url",
             "description",
             "instance",
+            "management_ip_address_4",
+            "management_ip_address_6",
         ]
 
     def get_facility_name(self, obj):

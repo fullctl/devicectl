@@ -8,6 +8,7 @@
     <tr>
       <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
       <th data-sort-target="type" class="sortable-button">{% trans "Type" %}</th>
+      <th data-sort-target="type" class="sortable-button">{% trans "IP" %}</th>
       <th>{% trans "Status" %}</th>
       <th></th>
     </tr>
@@ -18,10 +19,20 @@
     <tr data-template="row">
       <td data-field="display_name" class="highlight"></td>
       <td data-field="type"></td>
+      <td>
+        <div data-field="management_ip_address_4"></div>
+        <div data-field="management_ip_address_6"></div>
+      </td>
       <td data-field="status"></td>
       <td data-field="controls" class="right">
         <div class="row" style="display:none;" data-sot="external">
           <div class="col-12 right">
+            <a
+            data-api-action="remove_device/{id}"
+            data-api-callback="remove"
+            data-confirm="Remove device from this facility?"
+            data-api-method="DELETE"><span class="icon fullctl icon-delete"></span><span class="fullctl label">{% trans "Remove" %}</span></a>
+
             <a data-action="link_to_reference">
               <span class="icon fullctl icon-edit"></span>
               <span class="label fullctl">{% trans "Managed in" %} <span data-field="reference_source"></span></span>

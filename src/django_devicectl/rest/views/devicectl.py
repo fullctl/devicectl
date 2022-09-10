@@ -1,5 +1,6 @@
 import fullctl.service_bridge.pdbctl as pdbctl
 from fullctl.django.auditlog import auditlog
+from fullctl.django.decorators import service_bridge_sync
 from fullctl.django.rest.core import BadRequest
 from fullctl.django.rest.decorators import load_object
 from fullctl.django.rest.filters import CaseInsensitiveOrderingFilter
@@ -27,6 +28,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     # def get_queryset(self):
     #    return super().get_queryset().filter(instance__org__slug=self.kwargs["org_tag"])
 
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="facility.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
         # ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
@@ -40,9 +42,11 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_tag}")
     @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def retrieve(self, request, org, instance, facility, *args, **kwargs):
+
         serializer = Serializers.facility(
             instance=facility,
             many=False,
@@ -50,6 +54,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         return Response(serializer.data)
 
     @auditlog()
+    @service_bridge_sync(push=True)
     @grainy_endpoint(namespace="facility.{request.org.permission_id}")
     def create(self, request, org, instance, *args, **kwargs):
         data = request.data
@@ -63,6 +68,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         return Response(Serializers.facility(instance=facility).data)
 
     @auditlog()
+    @service_bridge_sync(push=True)
     @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_tag}")
     @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def update(self, request, org, instance, facility, *args, **kwargs):
@@ -88,6 +94,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         return r
 
     @action(detail=True, methods=["POST"])
+    @service_bridge_sync(push=True)
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def add_device(self, request, org, instance, facility, *args, **kwargs):
@@ -104,6 +111,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     @action(
         detail=True, methods=["DELETE"], url_path="remove_device/(?P<device_id>[^/.]+)"
     )
+    @service_bridge_sync(push=True)
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     @load_object(
         "device",
@@ -117,11 +125,13 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         serializer = Serializers.device(device)
         response = Response(serializer.data)
 
-        device.delete()
+        device.facility = None
+        device.save()
 
         return response
 
     @action(detail=True)
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def devices(self, request, org, instance, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["facility_id", "name", "type"])
@@ -150,6 +160,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     ref_tag = "device"
     lookup_field = "id"
 
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
@@ -164,6 +175,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         return Response(serializer.data)
 
     @action(detail=False)
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def list_unassigned(self, request, org, instance, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
@@ -175,6 +187,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+    @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_pk}")
     @load_object("device", models.Device, instance="instance", id="device_id")
     def retrieve(self, request, org, instance, device, *args, **kwargs):
