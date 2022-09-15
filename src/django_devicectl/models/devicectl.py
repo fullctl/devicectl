@@ -22,15 +22,28 @@ from netfields.fields import InetAddressField
 )
 class Facility(GeoModel, ServiceBridgeReferenceModel):
     instance = models.ForeignKey(
-        Instance, related_name="facilities", on_delete=models.CASCADE, help_text=_("deviceCtl environment instance")
+        Instance,
+        related_name="facilities",
+        on_delete=models.CASCADE,
+        help_text=_("deviceCtl environment instance"),
     )
 
     name = models.CharField(max_length=255, help_text=_("Facility name"))
 
     reference = ReferencedObjectCharField(
-        bridge_type="facility", max_length=255, null=True, blank=True, help_text=_("Remove reference id")
+        bridge_type="facility",
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Remove reference id"),
     )
-    slug = models.SlugField(max_length=64, unique=False, blank=False, null=False, help_text=_("Unique url-friendly slug"))
+    slug = models.SlugField(
+        max_length=64,
+        unique=False,
+        blank=False,
+        null=False,
+        help_text=_("Unique url-friendly slug"),
+    )
 
     class HandleRef:
         tag = "facility"
@@ -96,8 +109,10 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
 )
 class Device(ServiceBridgeReferenceModel):
     instance = models.ForeignKey(
-        Instance, related_name="devices", on_delete=models.CASCADE,
-        help_text=_("deviceCtl environment instance")
+        Instance,
+        related_name="devices",
+        on_delete=models.CASCADE,
+        help_text=_("deviceCtl environment instance"),
     )
     facility = models.ForeignKey(
         Facility,
@@ -116,8 +131,11 @@ class Device(ServiceBridgeReferenceModel):
     )
 
     reference = ReferencedObjectCharField(
-        bridge_type="device", max_length=255, null=True, blank=True,
-        help_text=_("Remote reference id")
+        bridge_type="device",
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Remote reference id"),
     )
 
     class HandleRef:

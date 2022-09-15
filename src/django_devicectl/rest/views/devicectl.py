@@ -93,7 +93,9 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         facility.delete()
         return r
 
-    @action(detail=True, methods=["POST"], serializer_class=Serializers.facility_add_device)
+    @action(
+        detail=True, methods=["POST"], serializer_class=Serializers.facility_add_device
+    )
     @service_bridge_sync(push=True)
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     @load_object("facility", models.Facility, instance="instance", slug="facility_tag")

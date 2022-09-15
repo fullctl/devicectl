@@ -30,6 +30,7 @@ class Facility(ModelSerializer):
             "instance",
         ]
 
+
 @register
 class FacilityAddDevice(serializers.Serializer):
 
