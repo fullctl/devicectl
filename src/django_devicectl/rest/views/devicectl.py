@@ -132,7 +132,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
 
         return response
 
-    @action(detail=True)
+    @action(detail=True, serializer_class=Serializers.device)
     @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def devices(self, request, org, instance, *args, **kwargs):
