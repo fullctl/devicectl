@@ -4,6 +4,8 @@ from rest_framework import serializers
 
 import django_devicectl.models.devicectl as models
 
+from django.db import transaction
+
 Serializers, register = serializer_registry()
 
 
@@ -95,6 +97,7 @@ class RequestDummyPorts(serializers.Serializer):
     class Meta:
         fields = ["ports", "name_prefix", "instance", "device_type"]
 
+    @transaction.atomic
     def create(self, validated_data):
 
         ports = validated_data["ports"]
@@ -108,8 +111,9 @@ class RequestDummyPorts(serializers.Serializer):
             device, _ = models.Device.objects.get_or_create(
                 name=f"{name_prefix}:{device_id}",
                 instance=instance,
-                type=device_type
             )
+            device.type = device_type
+            device.save()
             device.setup()
 
             virtual_port = device.virtual_ports.first()
@@ -117,8 +121,9 @@ class RequestDummyPorts(serializers.Serializer):
 
             for _port in port_data:
                 port, port_created = models.Port.objects.get_or_create(virtual_port=virtual_port, name=f"{name_prefix}:{_port['id']}")
+                print(port, port_created, virtual_port, port.name)
                 if port_created or not port.port_info_id:
-                    port.port_info = models.PortInfo.objects.create(
+                    port.port_info, _ = models.PortInfo.objects.get_or_create(
                         instance=instance,
                         ip_address_4=_port.get("ip_address_4"),
                         ip_address_6=_port.get("ip_address_6"),
