@@ -503,7 +503,7 @@ class Port(HandleRefModel):
     @property
     def device(self):
         if not hasattr(self, "_device"):
-            self._device =  self.virtual_port.logical_port.physical_ports.first().device
+            self._device = self.virtual_port.logical_port.physical_ports.first().device
         return self._device
 
     @property
@@ -513,8 +513,6 @@ class Port(HandleRefModel):
     @property
     def device_name(self):
         return self.device.display_name
-
-
 
     def __str__(self):
         return f"Port({self.id}) {self.virtual_port.name}"

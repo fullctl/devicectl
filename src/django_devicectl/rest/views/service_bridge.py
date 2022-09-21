@@ -4,11 +4,11 @@ from fullctl.django.rest.views.service_bridge import (  # MethodFilter,
     HeartbeatViewSet,
     StatusViewSet,
 )
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 import django_devicectl.models.devicectl as models
 from django_devicectl.rest.serializers.service_bridge import Serializers
-from rest_framework.response import Response
-from rest_framework.decorators import action
 
 
 @route
@@ -58,11 +58,12 @@ class Port(DataViewSet):
     queryset = models.Port.objects.filter(status="ok")
     serializer_class = Serializers.port
 
-
-    @action(detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports)
+    @action(
+        detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports
+    )
     def request_dummy_ports(self, request, *args, **kwargs):
 
-        data= self.prepare_write_data(request)
+        data = self.prepare_write_data(request)
 
         slz = self.serializer_class(data=data)
         slz.is_valid(raise_exception=True)
@@ -84,5 +85,3 @@ class Portinfo(DataViewSet):
 
     queryset = models.PortInfo.objects.filter(status="ok")
     serializer_class = Serializers.port_info
-
-

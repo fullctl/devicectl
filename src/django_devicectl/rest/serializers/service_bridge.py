@@ -1,10 +1,9 @@
+from django.db import transaction
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
 
 import django_devicectl.models.devicectl as models
-
-from django.db import transaction
 
 Serializers, register = serializer_registry()
 
@@ -38,9 +37,15 @@ class Port(ModelSerializer):
 
     org_id = serializers.SerializerMethodField()
 
-    ip_address_4 = serializers.CharField(read_only=True, source="port_info.ip_address_4")
-    ip_address_6 = serializers.CharField(read_only=True, source="port_info.ip_address_6")
-    is_management= serializers.BooleanField(read_only=True, source="port_info.is_management")
+    ip_address_4 = serializers.CharField(
+        read_only=True, source="port_info.ip_address_4"
+    )
+    ip_address_6 = serializers.CharField(
+        read_only=True, source="port_info.ip_address_6"
+    )
+    is_management = serializers.BooleanField(
+        read_only=True, source="port_info.is_management"
+    )
 
     logical_port_name = serializers.SerializerMethodField()
     virtual_port_name = serializers.SerializerMethodField()
@@ -71,6 +76,7 @@ class Port(ModelSerializer):
 
     def get_virtual_port_name(self, port):
         return port.virtual_port.name
+
 
 @register
 class PortInfo(ModelSerializer):
@@ -127,7 +133,6 @@ class RequestDummyPorts(serializers.Serializer):
             device.save()
             device.setup()
 
-
             for _port in port_data:
                 virtual_port, _ = models.VirtualPort.objects.get_or_create(
                     name=f"{name_prefix}:virt:{_port['id']}",
@@ -135,7 +140,9 @@ class RequestDummyPorts(serializers.Serializer):
                     vlan_id=0,
                 )
 
-                port, port_created = models.Port.objects.get_or_create(virtual_port=virtual_port, name=f"{name_prefix}:{_port['id']}")
+                port, port_created = models.Port.objects.get_or_create(
+                    virtual_port=virtual_port, name=f"{name_prefix}:{_port['id']}"
+                )
                 print(port, port_created, virtual_port, port.name)
                 if port_created or not port.port_info_id:
                     port.port_info, _ = models.PortInfo.objects.get_or_create(
@@ -147,6 +154,3 @@ class RequestDummyPorts(serializers.Serializer):
                 created_ports.append(port)
 
         return created_ports
-
-
-
