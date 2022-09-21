@@ -42,6 +42,9 @@ class Port(ModelSerializer):
     ip_address_6 = serializers.CharField(read_only=True, source="port_info.ip_address_6")
     is_management= serializers.BooleanField(read_only=True, source="port_info.is_management")
 
+    logical_port_name = serializers.SerializerMethodField()
+    virtual_port_name = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Port
         fields = [
@@ -56,10 +59,18 @@ class Port(ModelSerializer):
             "ip_address_4",
             "ip_address_6",
             "is_management",
+            "logical_port_name",
+            "virtual_port_name",
         ]
 
     def get_org_id(self, port):
         return port.org.permission_id
+
+    def get_logical_port_name(self, port):
+        return port.virtual_port.logical_port.name
+
+    def get_virtual_port_name(self, port):
+        return port.virtual_port.name
 
 @register
 class PortInfo(ModelSerializer):
@@ -116,10 +127,14 @@ class RequestDummyPorts(serializers.Serializer):
             device.save()
             device.setup()
 
-            virtual_port = device.virtual_ports.first()
-
 
             for _port in port_data:
+                virtual_port, _ = models.VirtualPort.objects.get_or_create(
+                    name=f"{name_prefix}:virt:{_port['id']}",
+                    logical_port=device.physical_ports.first().logical_port,
+                    vlan_id=0,
+                )
+
                 port, port_created = models.Port.objects.get_or_create(virtual_port=virtual_port, name=f"{name_prefix}:{_port['id']}")
                 print(port, port_created, virtual_port, port.name)
                 if port_created or not port.port_info_id:

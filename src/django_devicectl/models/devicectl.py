@@ -416,7 +416,9 @@ class VirtualPort(HandleRefModel):
     namespace_instance="port_info.{instance.org.permission_id}.{instance.id}",
 )
 class PortInfo(HandleRefModel):
-    """ """
+    """
+    This class holds port metadata summarizing how the port should be created, and defining how to configure it.
+    """
 
     instance = models.ForeignKey(
         Instance, related_name="port_infos", on_delete=models.CASCADE
@@ -461,10 +463,12 @@ class PortInfo(HandleRefModel):
     namespace_instance="port.{instance.org.permission_id}.{instance.id}",
 )
 class Port(HandleRefModel):
-    """ """
+    """
+    This class defines the top level port, tying together both the physical topology (VirtualPort) and the configuration (PortInfo)
+    """
 
-    virtual_port = models.ForeignKey(
-        VirtualPort, on_delete=models.CASCADE, related_name="ports"
+    virtual_port = models.OneToOneField(
+        VirtualPort, on_delete=models.CASCADE, related_name="port"
     )
 
     port_info = models.OneToOneField(
@@ -483,7 +487,10 @@ class Port(HandleRefModel):
 
     @property
     def org(self):
-        return self.port_info.instance.org
+        try:
+            return self.port_info.instance.org
+        except PortInfo.DoesNotExist:
+            return None
 
     @property
     def display_name(self):

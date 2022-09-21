@@ -32,7 +32,7 @@ class Device(DataViewSet):
         ("q", "name__icontains"),
         ("name", "name__iexact"),
         ("ref", "reference"),
-        ("port", "physical_ports__logical_port__virtual_ports__ports__in"),
+        ("port", "physical_ports__logical_port__virtual_ports__port__in"),
     ]
     autocomplete = "name"
     allow_unfiltered = True
