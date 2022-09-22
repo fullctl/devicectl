@@ -220,7 +220,7 @@ $($ctl).on("init_tools", (e, app) => {
     return new $ctl.application.Devicectl.Settings();
   })
 
-  $('#settings-tab').on('show.bs.tab', () => {
+  $('#facilities-tab').on('show.bs.tab', () => {
     app.$t.settings.sync();
     app.$t.settings.create_facility();
   });

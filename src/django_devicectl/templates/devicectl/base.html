@@ -37,15 +37,15 @@ $(document).ready(() => {
     <a class="nav-link"
       data-bs-toggle="tab"
       role="tab"
-      aria-controls="settings"
+      aria-controls="facilities"
       aria-selected="false"
-      id="settings-tab"
-      href="#settings">{% trans "Facilities" %}</a>
+      id="facilities-tab"
+      href="#facilities">{% trans "Facilities" %}</a>
 
     <a class="nav-link"
       data-bs-toggle="tab"
       role="tab"
-      aria-controls="settings"
+      aria-controls="ports"
       aria-selected="false"
       id="ports-tab"
       href="#ports">{% trans "Ports" %}</a>
@@ -102,7 +102,7 @@ $(document).ready(() => {
   <div class="tab-pane show active" id="overview" role="tabpanel" aria-labelledby="tab-overview">
 		{% include "devicectl/tool/devices/main.html" %}
   </div>
-  <div class="tab-pane" id="settings" role="tabpanel" aria-labelledby="tab-settings">
+  <div class="tab-pane" id="facilities" role="tabpanel" aria-labelledby="tab-facilities">
     {% include "devicectl/tool/settings/main.html" %}
   </div>
   <div class="tab-pane show" id="ports" role="tabpanel" aria-labelledby="tab-ports">

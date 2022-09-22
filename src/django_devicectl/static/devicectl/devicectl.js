@@ -32,12 +32,12 @@ $ctl.application.Devicectl = $tc.extend(
       });
 
       $(this.$c.toolbar.$e.button_create_facility).click(() => {
-        fullctl.devicectl.page('settings');
+        fullctl.devicectl.page('facilities');
         fullctl.devicectl.$t.settings.create_facility();
       });
 
       $(this).one("no-containers", () => {
-        fullctl.devicectl.page('settings');
+        fullctl.devicectl.page('facilities');
         fullctl.devicectl.$t.settings.create_facility();
       });
 
@@ -50,6 +50,8 @@ $ctl.application.Devicectl = $tc.extend(
       this.$t.virtual_ports.activate();
 
       this.sync();
+
+      this.autoload_page();
     },
 
     permission_ui : function() {
