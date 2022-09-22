@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("django_devicectl", "0011_auto_20220909_0913"),
+        ("django_devicectl", "0014_alter_port_virtual_port"),
     ]
 
     operations = [
