@@ -1,4 +1,4 @@
-# from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
@@ -29,6 +29,17 @@ class Facility(ModelSerializer):
             "reference_api_url",
             "instance",
         ]
+
+
+@register
+class FacilityAddDevice(serializers.Serializer):
+
+    device = serializers.IntegerField(help_text=_("Device id"))
+
+    ref_tag = "facility_add_device"
+
+    class Meta:
+        fields = ["device"]
 
 
 @register
