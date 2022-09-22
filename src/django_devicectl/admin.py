@@ -35,7 +35,15 @@ class VirtualPortAdmin(VersionAdmin):
 
 @admin.register(Port)
 class PortAdmin(VersionAdmin):
-    list_display = ("id", "org", "virtual_port", "port_info", "created", "updated")
+    list_display = (
+        "id",
+        "name",
+        "org",
+        "virtual_port",
+        "port_info",
+        "created",
+        "updated",
+    )
 
 
 @admin.register(PortInfo)

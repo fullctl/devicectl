@@ -159,7 +159,7 @@ class Device(ServiceBridgeReferenceModel):
 
     @property
     def display_name(self):
-        return self.name
+        return f"{self.name} ({self.type})"
 
     @property
     def logical_ports(self):
@@ -260,10 +260,10 @@ class Device(ServiceBridgeReferenceModel):
 
         if not self.physical_ports.exists():
             logical_port = LogicalPort.objects.create(
-                name="lp-001", instance=self.instance
+                name=f"{self.name}:lp-001", instance=self.instance
             )
             PhysicalPort.objects.create(
-                device=self, name="pp-001", logical_port=logical_port
+                device=self, name=f"{self.name}:pp-001", logical_port=logical_port
             )
 
         for physical_port in self.physical_ports.all():
@@ -380,7 +380,7 @@ class LogicalPort(HandleRefModel):
         if not self.virtual_ports.exists():
             VirtualPort.objects.create(
                 logical_port=self,
-                name="vp-001",
+                name=f"{self.name}:vp-001",
                 vlan_id=0,
             )
 
@@ -436,7 +436,9 @@ class VirtualPort(HandleRefModel):
     namespace_instance="port_info.{instance.org.permission_id}.{instance.id}",
 )
 class PortInfo(HandleRefModel):
-    """ """
+    """
+    This class holds port metadata summarizing how the port should be created, and defining how to configure it.
+    """
 
     instance = models.ForeignKey(
         Instance, related_name="port_infos", on_delete=models.CASCADE
@@ -481,15 +483,19 @@ class PortInfo(HandleRefModel):
     namespace_instance="port.{instance.org.permission_id}.{instance.id}",
 )
 class Port(HandleRefModel):
-    """ """
+    """
+    This class defines the top level port, tying together both the physical topology (VirtualPort) and the configuration (PortInfo)
+    """
 
-    virtual_port = models.ForeignKey(
-        VirtualPort, on_delete=models.CASCADE, related_name="ports"
+    virtual_port = models.OneToOneField(
+        VirtualPort, on_delete=models.CASCADE, related_name="port"
     )
 
     port_info = models.OneToOneField(
-        PortInfo, on_delete=models.CASCADE, related_name="port"
+        PortInfo, on_delete=models.CASCADE, related_name="port", null=True
     )
+
+    name = models.CharField(null=True, blank=True, max_length=255)
 
     class HandleRef:
         tag = "port"
@@ -501,11 +507,32 @@ class Port(HandleRefModel):
 
     @property
     def org(self):
-        return self.port_info.instance.org
+        try:
+            return self.port_info.instance.org
+        except PortInfo.DoesNotExist:
+            return None
 
     @property
     def display_name(self):
-        return f"{self.virtual_port.display_name} port"
+        if self.port_info_id:
+            return f"{self.port_info.display_name}"
+        if self.name:
+            return f"{self.name}"
+        return f"Port({self.id})"
+
+    @property
+    def device(self):
+        if not hasattr(self, "_device"):
+            self._device = self.virtual_port.logical_port.physical_ports.first().device
+        return self._device
+
+    @property
+    def device_id(self):
+        return self.device.id
+
+    @property
+    def device_name(self):
+        return self.device.display_name
 
     def __str__(self):
         return f"Port({self.id}) {self.virtual_port.name}"
