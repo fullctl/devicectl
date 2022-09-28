@@ -102,6 +102,26 @@ class PortInfo(ModelSerializer):
 
 
 @register
+class IPAddress(ModelSerializer):
+    class Meta:
+        model = models.IPAddress
+        fields = [
+            "id",
+            "address",
+            "instance",
+            "reference",
+            "reference_is_sot",
+        ]
+
+
+@register
+class VirtualPort(ModelSerializer):
+    class Meta:
+        model = models.VirtualPort
+        fields = ["id", "port", "reference", "reference_is_sot", "name", "display_name"]
+
+
+@register
 class RequestDummyPorts(serializers.Serializer):
 
     ref_tag = "request_dummy_ports"
