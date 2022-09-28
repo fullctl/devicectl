@@ -30,7 +30,7 @@ class PhysicalPortAdmin(VersionAdmin):
 
 @admin.register(VirtualPort)
 class VirtualPortAdmin(VersionAdmin):
-    list_display = ("id", "org", "logical_port", "vlan_id", "created", "updated")
+    list_display = ("id", "org", "display_name", "logical_port", "vlan_id", "created", "updated")
 
 
 @admin.register(Port)

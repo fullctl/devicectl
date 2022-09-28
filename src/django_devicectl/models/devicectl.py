@@ -224,21 +224,21 @@ class Device(ServiceBridgeReferenceModel):
         if not ip:
             return
 
-        ip = ipaddress.ip_network(ip)
+        ip = ipaddress.ip_interface(ip)
 
         management_port = self.management_port
 
         if ip.version == 4:
             if (
                 management_port.ip_address_4
-                and ipaddress.ip_network(management_port.ip_address_4) == ip
+                and ipaddress.ip_interface(management_port.ip_address_4) == ip
             ):
                 return
             management_port.ip_address_4 = ip
         else:
             if (
                 management_port.ip_address_6
-                and ipaddress.ip_network(management_port.ip_address_6) == ip
+                and ipaddress.ip_interface(management_port.ip_address_6) == ip
             ):
                 return
             management_port.ip_address_6 = ip
@@ -420,7 +420,7 @@ class VirtualPort(HandleRefModel):
 
     @property
     def display_name(self):
-        return self.name
+        return f"{self.name} {self.port.port_info.display_name}"
 
     @property
     def logical_port_name(self):
