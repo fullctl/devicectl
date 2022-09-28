@@ -121,12 +121,14 @@ def pull_ip_addresses(virtual_port):
             ip6 = nautobot_ip
 
     if ip4:
-        print("syncing ip", ip4.address, virtual_port)
         virtual_port.port.port_info.ip_address_4 = (ip4.address, ip4.id)
     else:
         virtual_port.port.port_info.ip_address_4 = None
 
-    # virtual_port.port.port_info.ip_address_6 = (ip6.address, ip6.reference)
+    if ip6:
+        virtual_port.port.port_info.ip_address_6 = (ip6.address, ip6.id)
+    else:
+        virtual_port.port.port_info.ip_address_6 = None
 
 
 def pull_interfaces(device):

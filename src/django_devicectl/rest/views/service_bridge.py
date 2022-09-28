@@ -93,6 +93,7 @@ class VirtualPort(DataViewSet):
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
+        ("ref", "reference"),
         ("org", "port__port_info__instance__org__remote_id"),
     ]
     allow_unfiltered = True
@@ -107,6 +108,7 @@ class IPAddress(DataViewSet):
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
+        ("ref", "reference"),
         ("org", "instance__org__remote_id"),
     ]
     allow_unfiltered = True

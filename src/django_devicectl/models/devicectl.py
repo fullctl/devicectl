@@ -531,9 +531,15 @@ class PortInfo(HandleRefModel):
         except TypeError:
             reference = None
 
-        family = ipaddress.ip_interface(address).version
+        ip = None
+        ip_other = None
 
-        ip = self.ips.filter(address__family=family).first()
+        if address:
+            family = ipaddress.ip_interface(address).version
+            ip = self.ips.filter(address__family=family).first()
+
+            if ip and str(ip.address) == str(address):
+                return
 
         if address:
             ip_other = (
@@ -542,7 +548,7 @@ class PortInfo(HandleRefModel):
                 .first()
             )
 
-        if not ip:
+        if not ip and address:
             if not ip_other and reference:
                 ip_other = self.instance.ips.filter(reference=reference).first()
 
@@ -559,11 +565,11 @@ class PortInfo(HandleRefModel):
                 ip_other.reference = reference
                 ip_other.save()
         else:
-            if address:
+            if address and ip:
                 ip.address = address
                 ip.reference = reference
                 ip.save()
-            else:
+            elif ip:
                 ip.delete()
 
     def __str__(self):
