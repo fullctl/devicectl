@@ -163,14 +163,39 @@ class RequestDummyPorts(serializers.Serializer):
                 port, port_created = models.Port.objects.get_or_create(
                     virtual_port=virtual_port, name=f"{name_prefix}:{_port['id']}"
                 )
-                print(port, port_created, virtual_port, port.name)
+
+                ip4_incoming = _port.get("ip_address_4")
+                ip6_incoming = _port.get("ip_address_6")
+                ip4 = None
+                ip6 = None
+
+                if ip4_incoming:
+                    ip4 = models.IPAddress.objects.filter(
+                        instance=instance, address=ip4_incoming
+                    ).first()
+                if ip6_incoming:
+                    ip6 = models.IPAddress.objects.filter(
+                        instance=instance, address=ip6_incoming
+                    ).first()
+
+                if ip4:
+                    created_ports.append(ip4.port_info.port)
+                if ip6:
+                    created_ports.append(ip6.port_info.port)
+
                 if port_created or not port.port_info_id:
-                    port.port_info, _ = models.PortInfo.objects.get_or_create(
+
+                    port.port_info = models.PortInfo.objects.create(
                         instance=instance,
-                        ip_address_4=_port.get("ip_address_4"),
-                        ip_address_6=_port.get("ip_address_6"),
                     )
                     port.save()
+
+                    if not ip4:
+                        port.port_info.ip_address_4 = ip4_incoming
+
+                    if not ip6:
+                        port.port_info.ip_address_6 = ip6_incoming
+
                 created_ports.append(port)
 
         return created_ports

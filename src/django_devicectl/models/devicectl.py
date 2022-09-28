@@ -214,7 +214,10 @@ class Device(ServiceBridgeReferenceModel):
             is_management=True,
         )
 
-        Port.objects.create(virtual_port=virtual_port, port_info=port_info)
+        port, _ = Port.objects.get_or_create(virtual_port=virtual_port)
+
+        port.port_info = port_info
+        port.save()
 
         self._management_port_info = port_info
 
@@ -528,7 +531,7 @@ class PortInfo(HandleRefModel):
 
         try:
             address, reference = address
-        except TypeError:
+        except (TypeError, ValueError):
             reference = None
 
         ip = None
