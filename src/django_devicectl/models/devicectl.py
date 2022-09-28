@@ -177,6 +177,14 @@ class Device(ServiceBridgeReferenceModel):
         # return Port.objects.filter(virtual_port__in=self.virtual_ports)
 
     @property
+    def port_infos(self):
+        return PortInfo.objects.filter(
+            instance=self.instance,
+            is_management=True,
+            port__virtual_port__logical_port__physical_ports__device_id=self.id,
+        )
+
+    @property
     def org(self):
         return self.instance.org
 
@@ -187,11 +195,7 @@ class Device(ServiceBridgeReferenceModel):
         if hasattr(self, "_management_port_info"):
             return self._management_port_info
 
-        port_info = PortInfo.objects.filter(
-            instance=self.instance,
-            is_management=True,
-            port__virtual_port__logical_port__physical_ports__device_id=self.id,
-        ).first()
+        port_info = self.port_infos.first()
 
         if port_info:
             self._management_port_info = port_info
@@ -210,7 +214,10 @@ class Device(ServiceBridgeReferenceModel):
             is_management=True,
         )
 
-        Port.objects.create(virtual_port=virtual_port, port_info=port_info)
+        port, _ = Port.objects.get_or_create(virtual_port=virtual_port)
+
+        port.port_info = port_info
+        port.save()
 
         self._management_port_info = port_info
 
@@ -225,6 +232,20 @@ class Device(ServiceBridgeReferenceModel):
             return
 
         ip = ipaddress.ip_interface(ip)
+
+        try:
+            ip_obj = IPAddress.objects.get(address=ip, instance=self.instance)
+            if (
+                ip_obj.port_info.port.virtual_port.logical_port.physical_ports.first().device_id
+                == self.id
+            ):
+                self.port_infos.update(is_management=False)
+                ip_obj.port_info.is_management = True
+                ip_obj.port_info.save()
+                return
+
+        except IPAddress.DoesNotExist:
+            pass
 
         management_port = self.management_port
 
@@ -390,7 +411,7 @@ class LogicalPort(HandleRefModel):
     namespace="virtual_port",
     namespace_instance="virtual_port.{instance.org.permission_id}.{instance.id}",
 )
-class VirtualPort(HandleRefModel):
+class VirtualPort(ServiceBridgeReferenceModel):
     """
     Port a peering session is build on, ties a virtual port back to a logical port
     """
@@ -406,8 +427,21 @@ class VirtualPort(HandleRefModel):
 
     vlan_id = models.IntegerField()
 
+    reference = ReferencedObjectCharField(
+        bridge_type="virtual_port",
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Remote reference id"),
+    )
+
     class HandleRef:
         tag = "virtual_port"
+
+    class ServiceBridge:
+        map_nautobot = {
+            "display": "name",
+        }
 
     class Meta:
         db_table = "devicectl_virtual_port"
@@ -420,7 +454,11 @@ class VirtualPort(HandleRefModel):
 
     @property
     def display_name(self):
-        return f"{self.name} {self.port.port_info.display_name}"
+
+        try:
+            return f"{self.name} {self.port.port_info.display_name}"
+        except AttributeError:
+            return self.name
 
     @property
     def logical_port_name(self):
@@ -444,9 +482,6 @@ class PortInfo(HandleRefModel):
         Instance, related_name="port_infos", on_delete=models.CASCADE
     )
 
-    ip_address_4 = InetAddressField(null=True, blank=True)
-    ip_address_6 = InetAddressField(null=True, blank=True)
-
     is_management = models.BooleanField(default=False)
     is_routeserver_peer = models.BooleanField(default=False)
 
@@ -459,11 +494,30 @@ class PortInfo(HandleRefModel):
         db_table = "devicectl_port_info"
         verbose_name = _("Port information")
         verbose_name_plural = _("Port information")
-        unique_together = (("instance", "ip_address_4", "ip_address_6"),)
 
     @property
     def org(self):
         return self.instance.org
+
+    @property
+    def ip_address_4(self):
+        ip = self.ips.filter(address__family=4).first()
+        if ip:
+            return ip.address
+
+    @ip_address_4.setter
+    def ip_address_4(self, value):
+        self._assign_ip(value)
+
+    @property
+    def ip_address_6(self):
+        ip = self.ips.filter(address__family=6).first()
+        if ip:
+            return ip.address
+
+    @ip_address_6.setter
+    def ip_address_6(self, value):
+        self._assign_ip(value)
 
     @property
     def display_name(self):
@@ -473,8 +527,95 @@ class PortInfo(HandleRefModel):
             return f"{self.ip_address_6}"
         return "-"
 
+    def _assign_ip(self, address):
+
+        try:
+            address, reference = address
+        except (TypeError, ValueError):
+            reference = None
+
+        ip = None
+        ip_other = None
+
+        if address:
+            family = ipaddress.ip_interface(address).version
+            ip = self.ips.filter(address__family=family).first()
+
+            if ip and str(ip.address) == str(address):
+                return
+
+        if address:
+            ip_other = (
+                self.instance.ips.filter(address=address)
+                .exclude(port_info=self)
+                .first()
+            )
+
+        if not ip and address:
+            if not ip_other and reference:
+                ip_other = self.instance.ips.filter(reference=reference).first()
+
+            if not ip_other:
+                IPAddress.objects.create(
+                    address=address,
+                    port_info=self,
+                    instance=self.instance,
+                    reference=reference,
+                )
+            else:
+                ip_other.port_info = self
+                ip_other.address = address
+                ip_other.reference = reference
+                ip_other.save()
+        else:
+            if address and ip:
+                ip.address = address
+                ip.reference = reference
+                ip.save()
+            elif ip:
+                ip.delete()
+
     def __str__(self):
         return f"PortInfo({self.id}) {self.display_name}"
+
+
+@reversion.register()
+@grainy_model(
+    namespace="port_info",
+    namespace_instance="port_info.{instance.org.permission_id}.{instance.id}",
+)
+class IPAddress(ServiceBridgeReferenceModel):
+    address = InetAddressField()
+
+    instance = models.ForeignKey(Instance, related_name="ips", on_delete=models.CASCADE)
+
+    port_info = models.ForeignKey(
+        PortInfo,
+        on_delete=models.CASCADE,
+        related_name="ips",
+    )
+
+    reference = ReferencedObjectCharField(
+        bridge_type="ip",
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Remove reference id"),
+    )
+
+    class Meta:
+        db_table = "devicectl_ip"
+        unique_together = (("instance", "address"),)
+
+    class HandleRef:
+        tag = "ip"
+
+    class ServiceBridge:
+        map_nautobot = {"address": "address"}
+
+    @property
+    def org(self):
+        return self.instance.org
 
 
 @reversion.register()
@@ -509,7 +650,7 @@ class Port(HandleRefModel):
     def org(self):
         try:
             return self.port_info.instance.org
-        except PortInfo.DoesNotExist:
+        except (PortInfo.DoesNotExist, AttributeError):
             return None
 
     @property

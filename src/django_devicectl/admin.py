@@ -5,6 +5,7 @@ from django_handleref.admin import VersionAdmin
 
 from django_devicectl.models import (
     Device,
+    IPAddress,
     LogicalPort,
     PhysicalPort,
     Port,
@@ -30,7 +31,20 @@ class PhysicalPortAdmin(VersionAdmin):
 
 @admin.register(VirtualPort)
 class VirtualPortAdmin(VersionAdmin):
-    list_display = ("id", "org", "display_name", "logical_port", "vlan_id", "created", "updated")
+    list_display = (
+        "id",
+        "org",
+        "display_name",
+        "logical_port",
+        "vlan_id",
+        "created",
+        "updated",
+    )
+
+
+@admin.register(IPAddress)
+class IPAddressAdmin(VersionAdmin):
+    list_display = ("id", "org", "address", "created", "updated")
 
 
 @admin.register(Port)

@@ -52,6 +52,8 @@ def pull_device_mgmt_ips(action, device):
     from nautobot
     """
 
+    # TODO: allow marking heavy pull operations as async tasks
+
     # this action only works on pull
     if action != "pull":
         return
@@ -69,6 +71,8 @@ def pull_device_mgmt_ips(action, device):
 
     if nautobot_device.primary_ip6:
         device.set_management_ip_address(nautobot_device.primary_ip6.address)
+
+    pull_interfaces(device)
 
 
 def sync_custom_fields():
@@ -92,6 +96,105 @@ def sync_custom_fields():
             },
         ]
     )
+
+
+def pull_ip_addresses(virtual_port):
+
+    """
+    Pull ip addresses into port infos from nautobot for the specified virtualport
+    """
+
+    ip4 = None
+    ip6 = None
+
+    for nautobot_ip in nautobot.IPAddress().objects():
+
+        if ip4 and ip6:
+            break
+
+        if nautobot_ip.assigned_object_id != str(virtual_port.reference):
+            continue
+
+        if nautobot_ip.family.value == 4:
+            ip4 = nautobot_ip
+        elif nautobot_ip.family.value == 6:
+            ip6 = nautobot_ip
+
+    if ip4:
+        virtual_port.port.port_info.ip_address_4 = (ip4.address, ip4.id)
+    else:
+        virtual_port.port.port_info.ip_address_4 = None
+
+    if ip6:
+        virtual_port.port.port_info.ip_address_6 = (ip6.address, ip6.id)
+    else:
+        virtual_port.port.port_info.ip_address_6 = None
+
+
+def pull_interfaces(device):
+
+    """
+    Pulls interfaces into virtual ports from nautobot for the specified devices
+    """
+
+    for nautobot_if in nautobot.Interface().objects(device_id=str(device.reference)):
+
+        # for now only pull virtual interfaces
+        if nautobot_if.type.value != "virtual":
+            continue
+
+        try:
+            virtual_port = models.VirtualPort.objects.get(
+                reference=nautobot_if.id, logical_port__physical_ports__device=device
+            )
+        except models.VirtualPort.DoesNotExist:
+            logical_port = device.physical_ports.first().logical_port
+            virtual_port = models.VirtualPort.objects.create(
+                reference=nautobot_if.id,
+                vlan_id=0,
+                logical_port=logical_port,
+                name=nautobot_if.display,
+            )
+
+        changed = virtual_port.sync_from_reference(ref_obj=nautobot_if)
+
+        if changed:
+            virtual_port.save()
+
+        try:
+            virtual_port.port
+        except AttributeError:
+            virtual_port.port = models.Port.objects.create(virtual_port=virtual_port)
+            virtual_port.save()
+
+        if not virtual_port.port.port_info:
+            virtual_port.port.port_info = models.PortInfo.objects.create(
+                instance=device.instance
+            )
+            virtual_port.port.save()
+
+        pull_ip_addresses(virtual_port)
+
+
+def delete_interfaces():
+
+    """
+    Deletes all nautobot referenced virtual ports that not longer
+    exist as interfaces in nautobot
+    """
+
+    virtual_port_qset = models.VirtualPort.objects.exclude(
+        reference__isnull=True
+    ).exclude(reference="")
+
+    references = [virtual_port.reference for virtual_port in virtual_port_qset]
+
+    # delete interfaces that no longer exist in nautobot
+
+    qset_remove = models.VirtualPort.objects.exclude(reference__in=references).exclude(
+        reference__isnull=True
+    )
+    qset_remove.delete()
 
 
 def pull(org, *args, **kwargs):
@@ -119,6 +222,16 @@ def pull(org, *args, **kwargs):
         if changed or created:
             device.save()
 
+        # pull interfaces
+
+        pull_interfaces(device)
+
+        if nautobot_device.primary_ip4:
+            device.set_management_ip_address(nautobot_device.primary_ip4.address)
+
+        if nautobot_device.primary_ip6:
+            device.set_management_ip_address(nautobot_device.primary_ip6.address)
+
     # delete devices that no longer exist in nautobot
 
     qset_remove = models.Device.objects.exclude(reference__in=references).exclude(
@@ -126,6 +239,8 @@ def pull(org, *args, **kwargs):
     )
 
     qset_remove.delete()
+
+    delete_interfaces()
 
 
 def push(org, *args, **kwargs):

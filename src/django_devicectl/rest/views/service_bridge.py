@@ -85,3 +85,33 @@ class Portinfo(DataViewSet):
 
     queryset = models.PortInfo.objects.filter(status="ok")
     serializer_class = Serializers.port_info
+
+
+@route
+class VirtualPort(DataViewSet):
+
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("ref", "reference"),
+        ("org", "port__port_info__instance__org__remote_id"),
+    ]
+    allow_unfiltered = True
+
+    queryset = models.VirtualPort.objects.filter(status="ok")
+    serializer_class = Serializers.virtual_port
+
+
+@route
+class IPAddress(DataViewSet):
+
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("ref", "reference"),
+        ("org", "instance__org__remote_id"),
+    ]
+    allow_unfiltered = True
+
+    queryset = models.IPAddress.objects.filter(status="ok")
+    serializer_class = Serializers.ip
