@@ -27,7 +27,7 @@ class Device(DataViewSet):
     path_prefix = "/data"
     allowed_http_methods = ["GET", "POST", "PUT", "DELETE"]
     valid_filters = [
-        ("org", "org__remote_id"),
+        ("org", "instance__org__remote_id"),
         ("org_slug", "instance__org__slug"),
         ("q", "name__icontains"),
         ("name", "name__iexact"),
@@ -57,6 +57,11 @@ class Port(DataViewSet):
 
     queryset = models.Port.objects.filter(status="ok")
     serializer_class = Serializers.port
+
+    join_xl = {
+        "device": ("virtual_port", "virtual_port__logical_port"),
+    }
+
 
     @action(
         detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports
