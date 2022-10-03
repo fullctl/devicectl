@@ -32,22 +32,5 @@
     "function": "nautobot_push_device_loc",
     "data_map": {}
   }
-},
-{
-  "model": "django_fullctl.servicebridgeaction",
-  "pk": 5,
-  "fields": {
-    "created": "2022-09-09T09:34:59.718Z",
-    "updated": "2022-09-09T09:34:59.718Z",
-    "version": 0,
-    "status": "ok",
-    "name": "nautobot.pull.management_ips",
-    "reference": "nautobot.Device",
-    "target": "django_devicectl.device",
-    "description": null,
-    "action": "pull",
-    "function": "nautobot_pull_mgmt_ips",
-    "data_map": {}
-  }
 }
 ]

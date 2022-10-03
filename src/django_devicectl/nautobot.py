@@ -50,9 +50,10 @@ def pull_device_mgmt_ips(action, device):
     """
     Pull handler that pulls device management pimary ip addresses
     from nautobot
-    """
 
-    # TODO: allow marking heavy pull operations as async tasks
+    Note: this expensive and will significantly slow down API reads for /device
+    This is not needed if nautobot is set up to automatically push to devicectl
+    """
 
     # this action only works on pull
     if action != "pull":

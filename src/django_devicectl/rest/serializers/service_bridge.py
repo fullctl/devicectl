@@ -49,6 +49,7 @@ class Port(ModelSerializer):
 
     logical_port_name = serializers.SerializerMethodField()
     virtual_port_name = serializers.SerializerMethodField()
+    device = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Port
@@ -60,6 +61,7 @@ class Port(ModelSerializer):
             "display_name",
             "device_id",
             "device_name",
+            "device",
             "name",
             "ip_address_4",
             "ip_address_6",
@@ -76,6 +78,11 @@ class Port(ModelSerializer):
 
     def get_virtual_port_name(self, port):
         return port.virtual_port.name
+
+    def get_device(self, port):
+        if "device" in self.context.get("joins"):
+            return Device(instance=port.device).data
+        return None
 
 
 @register
@@ -111,14 +118,17 @@ class IPAddress(ModelSerializer):
             "instance",
             "reference",
             "reference_is_sot",
+            "port_info",
         ]
 
 
 @register
 class VirtualPort(ModelSerializer):
+
     class Meta:
         model = models.VirtualPort
-        fields = ["id", "port", "reference", "reference_is_sot", "name", "display_name"]
+        fields = ["id", "logical_port", "vlan_id", "port", "reference", "reference_is_sot", "name", "display_name"]
+        read_only_fields = ["port"]
 
 
 @register
