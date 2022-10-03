@@ -468,6 +468,24 @@ class VirtualPort(ServiceBridgeReferenceModel):
         return f"VirtualPort({self.id}) {self.name}"
 
 
+    def setup(self):
+
+        device = self.logical_port.physical_ports.first().device
+
+        try:
+            self.port
+        except AttributeError:
+            self.port = Port.objects.create(virtual_port=self)
+            self.save()
+
+        if not self.port.port_info:
+            self.port.port_info = PortInfo.objects.create(
+                instance=device.instance
+            )
+            self.port.save()
+
+
+
 @reversion.register()
 @grainy_model(
     namespace="port_info",
@@ -526,6 +544,10 @@ class PortInfo(HandleRefModel):
         elif self.ip_address_6:
             return f"{self.ip_address_6}"
         return "-"
+
+    @property
+    def device(self):
+        return self.port.device
 
     def _assign_ip(self, address):
 
@@ -616,6 +638,10 @@ class IPAddress(ServiceBridgeReferenceModel):
     @property
     def org(self):
         return self.instance.org
+
+    @property
+    def device(self):
+        return self.port_info.device
 
 
 @reversion.register()

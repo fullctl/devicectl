@@ -102,6 +102,20 @@ class VirtualPort(DataViewSet):
     serializer_class = Serializers.virtual_port
 
 
+    def prepare_write_data(self, request):
+        data = super().prepare_write_data(request)
+
+        if request.method.lower() == "post" and "logical_port" not in data:
+            device = models.Device.objects.get(id=data.get("device"))
+            data["logical_port"] = device.logical_ports.first().id
+
+            data["port"] = models.Port.objects.create
+            if "vlan_id" not in data:
+                data["vlan_id"] = 0
+
+        return data
+
+
 @route
 class IPAddress(DataViewSet):
 
@@ -115,3 +129,27 @@ class IPAddress(DataViewSet):
 
     queryset = models.IPAddress.objects.filter(status="ok")
     serializer_class = Serializers.ip
+
+    def after_create(self, obj, data):
+        if data.get("is_management"):
+            obj.device.set_management_ip_address(obj.address)
+
+
+    def after_update(self, obj, data):
+        if data.get("is_management"):
+            obj.device.set_management_ip_address(obj.address)
+
+
+    def prepare_write_data(self, request):
+        data = super().prepare_write_data(request)
+
+        if request.method.lower() == "post" and "port_info" not in data:
+            virtual_port = models.VirtualPort.objects.get(id=data.get("virtual_port"))
+            virtual_port.setup()
+            port_info = virtual_port.port.port_info
+            data["port_info"] = port_info.id
+
+        return data
+
+
+

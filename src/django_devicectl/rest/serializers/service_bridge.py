@@ -111,14 +111,17 @@ class IPAddress(ModelSerializer):
             "instance",
             "reference",
             "reference_is_sot",
+            "port_info",
         ]
 
 
 @register
 class VirtualPort(ModelSerializer):
+
     class Meta:
         model = models.VirtualPort
-        fields = ["id", "port", "reference", "reference_is_sot", "name", "display_name"]
+        fields = ["id", "logical_port", "vlan_id", "port", "reference", "reference_is_sot", "name", "display_name"]
+        read_only_fields = ["port"]
 
 
 @register
