@@ -212,7 +212,7 @@ python-versions = "*"
 
 [[package]]
 name = "django"
-version = "3.2.15"
+version = "3.2.16"
 description = "A high-level Python Web framework that encourages rapid development and clean, pragmatic design."
 category = "main"
 optional = false
@@ -406,7 +406,7 @@ pyflakes = ">=2.3.0,<2.4.0"
 
 [[package]]
 name = "fullctl"
-version = "1.0.0-rc8"
+version = "1.0.0-rc9"
 description = "Core classes and functions for service applications"
 category = "main"
 optional = false
@@ -439,7 +439,7 @@ whitenoise = "^6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "5c6497b7742531a7c5a5423be69fd300a1e23fd7"
+resolved_reference = "66e2b4bff907b7fb3c37da2f37e3ed5a5f616916"
 
 [[package]]
 name = "git-url-parse"
@@ -863,14 +863,14 @@ python-versions = "*"
 
 [[package]]
 name = "pyupgrade"
-version = "2.38.2"
+version = "2.38.4"
 description = "A tool to automatically upgrade syntax for newer versions."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-tokenize-rt = ">=3.2.0"
+tokenize-rt = "<5"
 
 [[package]]
 name = "pyuwsgi"
