@@ -468,7 +468,6 @@ class VirtualPort(ServiceBridgeReferenceModel):
     def __str__(self):
         return f"VirtualPort({self.id}) {self.name}"
 
-
     def setup(self):
 
         device = self.logical_port.physical_ports.first().device
@@ -480,11 +479,8 @@ class VirtualPort(ServiceBridgeReferenceModel):
             self.save()
 
         if not self.port.port_info:
-            self.port.port_info = PortInfo.objects.create(
-                instance=device.instance
-            )
+            self.port.port_info = PortInfo.objects.create(instance=device.instance)
             self.port.save()
-
 
 
 @reversion.register()

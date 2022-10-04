@@ -62,7 +62,6 @@ class Port(DataViewSet):
         "device": ("virtual_port", "virtual_port__logical_port"),
     }
 
-
     @action(
         detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports
     )
@@ -106,7 +105,6 @@ class VirtualPort(DataViewSet):
     queryset = models.VirtualPort.objects.filter(status="ok")
     serializer_class = Serializers.virtual_port
 
-
     def prepare_write_data(self, request):
         data = super().prepare_write_data(request)
 
@@ -140,11 +138,9 @@ class IPAddress(DataViewSet):
         if data.get("is_management"):
             obj.device.set_management_ip_address(obj.address)
 
-
     def after_update(self, obj, data):
         if data.get("is_management"):
             obj.device.set_management_ip_address(obj.address)
-
 
     def prepare_write_data(self, request):
         data = super().prepare_write_data(request)
@@ -156,6 +152,3 @@ class IPAddress(DataViewSet):
             data["port_info"] = port_info.id
 
         return data
-
-
-
