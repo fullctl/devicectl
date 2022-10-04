@@ -72,6 +72,7 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
 
         map_nautobot = {
             "name": "name",
+            "slug": "slug",
             "custom_fields.devicectl_id": "fullctl_id",
             "physical_address": "address1",
             "latitude": "latitude",
