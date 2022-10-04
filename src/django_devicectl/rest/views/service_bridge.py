@@ -128,6 +128,7 @@ class IPAddress(DataViewSet):
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("ref", "reference"),
+        ("address", "address"),
         ("org", "instance__org__remote_id"),
     ]
     allow_unfiltered = True
@@ -148,7 +149,7 @@ class IPAddress(DataViewSet):
     def prepare_write_data(self, request):
         data = super().prepare_write_data(request)
 
-        if request.method.lower() == "post" and "port_info" not in data:
+        if "port_info" not in data:
             virtual_port = models.VirtualPort.objects.get(id=data.get("virtual_port"))
             virtual_port.setup()
             port_info = virtual_port.port.port_info
