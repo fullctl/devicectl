@@ -17,6 +17,13 @@
 Ctl/dev/run.sh loaddata fixtures/nautobot.actions.json
 ```
 
+or by calling `manage` in side the container
+
+```
+manage loaddata ../fixtures/nautobot.actions.json
+```
+
+
 ## Make sure a `fullctl_poll_tasks` process is running in the devicectl container
 
 ```
