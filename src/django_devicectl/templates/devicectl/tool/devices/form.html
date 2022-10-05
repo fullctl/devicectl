@@ -1,9 +1,12 @@
 {% load static i18n %}
 <form data-template="form_device"
-  data-api-base="{% url "devicectl_api:facility-devices" org_tag=request.org.slug facility_tag="facility_tag" %}"
+  data-api-base="{% url "devicectl_api:device-list" org_tag=request.org.slug %}"
   data-api-action=""
   data-api-method="POST"
   >
+  <div data-api-submit="yes">
+    <input type="hidden" name="facility" id="device-facility" />
+  </div>
   <div class="row mb-3">
     <div class="col-12" data-api-submit="yes">
       <label for="device-name" class="form-label">{% trans "Name" %}</label>
@@ -13,12 +16,9 @@
   <div class="row mb-3">
     <div class="col-12" data-api-submit="yes">
       <label for="device-type" class="form-label">{% trans "Type" %}</label>
-      <span class="modal-control">
-      <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-      <select class="form-control" id="device-type" name="type">
-      <select>
-      </span>
+      <input type="text" class="form-control" id="device-type" name="type" />
     </div>
+
   </div>
   <div class="row mb-3">
     <div class="col-12" data-api-submit="yes">

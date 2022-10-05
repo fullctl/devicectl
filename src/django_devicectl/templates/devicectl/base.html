@@ -13,6 +13,7 @@ $(fullctl.application).on("initialized", function(e, devicectl, id) {
 });
 {% endif %}
 $(document).ready(() => {
+  fullctl.devicectl.$t.devices.sot = {% if not sot.device %}true{% else %}false{% endif %};
 });
 </script>
 {% endblock %}

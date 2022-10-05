@@ -10,6 +10,11 @@ from django_devicectl.models.devicectl import Facility
 
 def make_env(request, **kwargs):
     r = {"env": settings.RELEASE_ENV, "version": settings.PACKAGE_VERSION}
+
+    r["sot"] = {
+        "device": settings.SERVICE_BRIDGE_REF_DEVICE,
+    }
+
     r.update(**kwargs)
     return r
 
