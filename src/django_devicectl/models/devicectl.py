@@ -71,8 +71,9 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         # TODO: move outside of model definition ?
 
         map_nautobot = {
-            "name": "name",
+            "name": "slug",
             "slug": "slug",
+            "facility": "name",
             "custom_fields.devicectl_id": "fullctl_id",
             "physical_address": "address1",
             "latitude": "latitude",
