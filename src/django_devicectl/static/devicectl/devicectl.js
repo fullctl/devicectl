@@ -97,7 +97,7 @@ $ctl.application.Devicectl.Devices = $tc.extend(
 
       this.$w.list.formatters.row = (row, data) => {
 
-        if(data.reference_is_sot && data.reference) {
+        if(data.reference_is_sot && data.reference && data.reference_source) {
           row.find('[data-sot=external]').show();
           row.find("[data-action=link_to_reference]").attr("href", data.reference_ux_url);
         } else {
@@ -144,6 +144,9 @@ $ctl.application.Devicectl.Devices = $tc.extend(
     },
 
     sync : function() {
+      if(!$ctl.devicectl) {
+        return;
+      }
       let namespace = `device.${$ctl.org.id}`
       if(grainy.check(namespace, "r")) {
         this.show();
