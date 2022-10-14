@@ -97,7 +97,7 @@ $ctl.application.Devicectl.Devices = $tc.extend(
 
       this.$w.list.formatters.row = (row, data) => {
 
-        if(data.reference_is_sot) {
+        if(data.reference_is_sot && data.reference && data.reference_source) {
           row.find('[data-sot=external]').show();
           row.find("[data-action=link_to_reference]").attr("href", data.reference_ux_url);
         } else {
@@ -144,6 +144,9 @@ $ctl.application.Devicectl.Devices = $tc.extend(
     },
 
     sync : function() {
+      if(!$ctl.devicectl) {
+        return;
+      }
       let namespace = `device.${$ctl.org.id}`
       if(grainy.check(namespace, "r")) {
         this.show();
@@ -215,7 +218,9 @@ $ctl.application.Devicectl.ModalDevice = $tc.extend(
         }
       ).done((data) => {
 
-        var type_select = form.element.find('[name="type"]').empty();
+        var type_select = form.element.find('[name="type"]');
+        /*
+         * used to load device types (currently free form)
         var options = data.data[0].actions.POST.type.choices;
 
         $(options).each(function() {
@@ -223,14 +228,16 @@ $ctl.application.Devicectl.ModalDevice = $tc.extend(
             $('<option>').val(this.value).text(this.display_name)
           )
         });
+        */
 
         if(device)
           type_select.val(device.type);
 
-
       });
 
       this.device = device;
+
+      form.fill({facility:fullctl.devicectl.facility()})
 
       if(device) {
         title = "Edit "+device.display_name;
@@ -255,6 +262,7 @@ $ctl.application.Devicectl.ModalDevice = $tc.extend(
         $ctl.devicectl.$t.devices.$w.list.load();
         modal.hide();
       });
+
 
       this.Modal("save", title, form.element);
       form.wire_submit(this.$e.button_submit);

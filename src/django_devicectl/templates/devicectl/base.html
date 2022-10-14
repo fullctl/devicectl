@@ -13,6 +13,7 @@ $(fullctl.application).on("initialized", function(e, devicectl, id) {
 });
 {% endif %}
 $(document).ready(() => {
+  fullctl.devicectl.$t.devices.sot = {% if not sot.device %}true{% else %}false{% endif %};
 });
 </script>
 {% endblock %}
@@ -71,6 +72,7 @@ $(document).ready(() => {
         <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
       <select
         data-api-load="yes"
+        data-name-field="slug"
         data-api-base="{% url "devicectl_api:facility-list" org_tag=request.org.slug %}"
         data-element="select_facility"></select>
       </span>
