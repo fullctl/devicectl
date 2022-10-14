@@ -406,7 +406,7 @@ pyflakes = ">=2.3.0,<2.4.0"
 
 [[package]]
 name = "fullctl"
-version = "1.0.0-rc9"
+version = "1.0.0-rc10"
 description = "Core classes and functions for service applications"
 category = "main"
 optional = false
@@ -439,7 +439,7 @@ whitenoise = "^6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "ae18afad218031c02f170468e49ad2c47fa05098"
+resolved_reference = "614a092c73d57da75baf740019c31881ef7cc8f1"
 
 [[package]]
 name = "git-url-parse"
@@ -983,7 +983,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "stevedore"
-version = "3.5.0"
+version = "3.5.1"
 description = "Manage dynamic plugins for Python applications"
 category = "dev"
 optional = false
@@ -1377,10 +1377,7 @@ social-auth-app-django = [
 ]
 social-auth-core = []
 sqlparse = []
-stevedore = [
-    {file = "stevedore-3.5.0-py3-none-any.whl", hash = "sha256:a547de73308fd7e90075bb4d301405bebf705292fa90a90fc3bcf9133f58616c"},
-    {file = "stevedore-3.5.0.tar.gz", hash = "sha256:f40253887d8712eaa2bb0ea3830374416736dc8ec0e22f5a65092c1174c44335"},
-]
+stevedore = []
 structlog = []
 tmpl = [
     {file = "tmpl-1.0.0-py3-none-any.whl", hash = "sha256:9932ac5fb2d3177948858f425b794904a5b86c786e8afa8e4a4471976fd283f7"},
