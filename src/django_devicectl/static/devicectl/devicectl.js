@@ -55,10 +55,9 @@ $ctl.application.Devicectl = $tc.extend(
     },
 
     permission_ui : function() {
-      let $e = this.$c.toolbar.$e;
-      let facility = this.facilities[this.facility()];
-      let org = $ctl.org.id;
-
+      //let $e = this.$c.toolbar.$e;
+      //let facility = this.facilities[this.facility()];
+      //let org = $ctl.org.id;
       //$e.button_create_facility.grainy_toggle(`facility.${org}`, "c");
       //$e.button_import_facility.grainy_toggle(`facility.${org}`, "c");
     }
