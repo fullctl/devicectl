@@ -80,7 +80,7 @@ class Port(ModelSerializer):
         return port.virtual_port.name
 
     def get_device(self, port):
-        if "device" in self.context.get("joins"):
+        if "device" in self.context.get("joins", []):
             return Device(instance=port.device).data
         return None
 
