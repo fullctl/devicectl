@@ -1,3 +1,5 @@
+from django.conf import settings
+
 import fullctl.service_bridge.pdbctl as pdbctl
 from fullctl.django.auditlog import auditlog
 from fullctl.django.decorators import service_bridge_sync
@@ -131,8 +133,13 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         serializer = Serializers.device(device)
         response = Response(serializer.data)
 
-        device.facility = None
-        device.save()
+
+        if settings.SERVICE_BRIDGE_REF_DEVICE and device.reference:
+            device.facility = None
+            device.save()
+        else:
+            device.delete()
+
 
         return response
 
@@ -210,7 +217,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         device = serializer.save()
-        device.save()
 
         if request.data.get("facility"):
             device.facility_id = request.data.get("facility")
@@ -231,7 +237,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         device = serializer.save()
-        device.save()
 
         return Response(Serializers.device(instance=device).data)
 
@@ -312,7 +317,6 @@ class PhysicalPort(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         physical_port = serializer.save()
-        physical_port.save()
 
         return Response(Serializers.physical_port(instance=physical_port).data)
 
