@@ -5,14 +5,15 @@ from django_handleref.admin import VersionAdmin
 
 from django_devicectl.models import (
     Device,
+    Facility,
     IPAddress,
     LogicalPort,
     PhysicalPort,
     Port,
     PortInfo,
     VirtualPort,
-    Facility,
 )
+
 
 @admin.register(Facility)
 class FacilityAdmin(VersionAdmin):
