@@ -1,6 +1,5 @@
-from django.conf import settings
-
 import fullctl.service_bridge.pdbctl as pdbctl
+from django.conf import settings
 from fullctl.django.auditlog import auditlog
 from fullctl.django.decorators import service_bridge_sync
 from fullctl.django.rest.core import BadRequest
@@ -133,13 +132,11 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         serializer = Serializers.device(device)
         response = Response(serializer.data)
 
-
         if settings.SERVICE_BRIDGE_REF_DEVICE and device.reference:
             device.facility = None
             device.save()
         else:
             device.delete()
-
 
         return response
 
