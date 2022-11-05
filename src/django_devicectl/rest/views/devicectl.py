@@ -25,6 +25,11 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     ref_tag = "facility"
     lookup_field = "slug"
 
+
+    def get_queryset(self):
+        qset = super().get_queryset()
+        return qset.filter(instance__org__slug=self.kwargs["org_tag"])
+
     # def get_queryset(self):
     #    return super().get_queryset().filter(instance__org__slug=self.kwargs["org_tag"])
 
