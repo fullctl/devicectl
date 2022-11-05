@@ -219,6 +219,10 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
             device.facility_id = request.data.get("facility")
             device.save()
 
+        if request.data.get("facility"):
+            device.facility_id = request.data.get("facility")
+            device.save()
+
         return Response(Serializers.device(instance=device).data)
 
     @auditlog()
