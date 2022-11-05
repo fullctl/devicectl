@@ -1,4 +1,5 @@
 import fullctl.service_bridge.pdbctl as pdbctl
+from django.conf import settings
 from fullctl.django.auditlog import auditlog
 from fullctl.django.decorators import service_bridge_sync
 from fullctl.django.rest.core import BadRequest
@@ -24,6 +25,10 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     lookup_url_kwarg = "facility_tag"
     ref_tag = "facility"
     lookup_field = "slug"
+
+    def get_queryset(self):
+        qset = super().get_queryset()
+        return qset.filter(instance__org__slug=self.kwargs["org_tag"])
 
     # def get_queryset(self):
     #    return super().get_queryset().filter(instance__org__slug=self.kwargs["org_tag"])
@@ -127,8 +132,11 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         serializer = Serializers.device(device)
         response = Response(serializer.data)
 
-        device.facility = None
-        device.save()
+        if settings.SERVICE_BRIDGE_REF_DEVICE and device.reference:
+            device.facility = None
+            device.save()
+        else:
+            device.delete()
 
         return response
 
@@ -206,7 +214,10 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         device = serializer.save()
-        device.save()
+
+        if request.data.get("facility"):
+            device.facility_id = request.data.get("facility")
+            device.save()
 
         if request.data.get("facility"):
             device.facility_id = request.data.get("facility")
@@ -227,7 +238,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         device = serializer.save()
-        device.save()
 
         return Response(Serializers.device(instance=device).data)
 
@@ -308,7 +318,6 @@ class PhysicalPort(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         physical_port = serializer.save()
-        physical_port.save()
 
         return Response(Serializers.physical_port(instance=physical_port).data)
 
