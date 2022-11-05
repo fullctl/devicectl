@@ -1,11 +1,15 @@
 from django.contrib import admin
-from django.utils.translation import gettext as _
+
+# from django.utils.translation import gettext as _
 from django_handleref.admin import VersionAdmin
 
 from django_devicectl.models import (
     Device,
-    PhysicalPort,
+    IPAddress,
     LogicalPort,
+    PhysicalPort,
+    Port,
+    PortInfo,
     VirtualPort,
 )
 
@@ -27,4 +31,46 @@ class PhysicalPortAdmin(VersionAdmin):
 
 @admin.register(VirtualPort)
 class VirtualPortAdmin(VersionAdmin):
-    list_display = ("id", "org", "logical_port", "vlan_id", "created", "updated")
+    list_display = (
+        "id",
+        "org",
+        "display_name",
+        "logical_port",
+        "vlan_id",
+        "created",
+        "updated",
+    )
+
+
+@admin.register(IPAddress)
+class IPAddressAdmin(VersionAdmin):
+    list_display = ("id", "org", "address", "created", "updated")
+
+
+@admin.register(Port)
+class PortAdmin(VersionAdmin):
+    list_display = (
+        "id",
+        "name",
+        "org",
+        "virtual_port",
+        "port_info",
+        "created",
+        "updated",
+    )
+
+
+@admin.register(PortInfo)
+class PortInfoAdmin(VersionAdmin):
+    list_display = (
+        "id",
+        "org",
+        "port",
+        "ip_address_4",
+        "ip_address_6",
+        "is_management",
+        "is_routeserver_peer",
+        "speed",
+        "created",
+        "updated",
+    )

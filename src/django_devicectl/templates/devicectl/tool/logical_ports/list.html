@@ -1,6 +1,6 @@
 {% load static i18n %}
 <table
-  class="table"
+  class="table table-borderless"
   data-api-base="{% url "devicectl_api:logical_port-list" org_tag=request.org.slug %}"
   data-api-action=""
   data-template="list">
@@ -24,14 +24,14 @@
       <td data-field="controls" class="right">
         <div class="row">
           <div class="col-xs-12 col-lg-6">
-            <a data-action="edit_logical_port"><span class="icon devicectl icon-edit"></span><span class="label devicectl">{% trans "Edit" %}</span></a>
+            <a data-action="edit_logical_port"><span class="icon fullctl icon-edit"></span><span class="label fullctl">{% trans "Edit" %}</span></a>
           </div>
           <div class="col-xs-12 col-lg-6">
         <a
           data-api-action="{id}"
           data-api-callback="remove"
           data-confirm="Remove logical_port?"
-          data-api-method="DELETE"><span class="icon devicectl icon-delete"></span><span class="devicectl label">{% trans "Delete" %}</span></a>
+          data-api-method="DELETE"><span class="icon fullctl icon-delete"></span><span class="fullctl label">{% trans "Delete" %}</span></a>
           </div>
         </div>
       </td>
