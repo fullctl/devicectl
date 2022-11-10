@@ -370,6 +370,7 @@ $ctl.application.Devicectl.ModalLogicalPort = $tc.extend(
 
       $(this.form).on("api-write:success", (ev, e, payload, response) => {
         $ctl.devicectl.$t.logical_ports.$w.list.load();
+        $ctl.devicectl.$t.physical_ports.$w.list.load();
         modal.hide();
       });
 
@@ -492,6 +493,7 @@ $ctl.application.Devicectl.ModalPhysicalPort = $tc.extend(
 
       $(this.form).on("api-write:success", (ev, e, payload, response) => {
         $ctl.devicectl.$t.physical_ports.$w.list.load();
+        $ctl.devicectl.$t.logical_ports.$w.list.load();
         modal.hide();
       });
 

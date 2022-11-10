@@ -25,7 +25,7 @@
       <label for="physical_port-logical_port" class="form-label">{% trans "Logical Port" %}</label>
       <span class="modal-control">
       <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-      <select data-api-base="{% url "devicectl_api:logical_port-list" org_tag=request.org.slug %}" data-api-action="" class="form-control" id="physical_port-logical_port" name="logical_port">
+      <select data-null-option=";Create matching logical port" data-api-base="{% url "devicectl_api:logical_port-list" org_tag=request.org.slug %}" data-api-action="" class="form-control" id="physical_port-logical_port" name="logical_port">
       <select>
       </span>
     </div>

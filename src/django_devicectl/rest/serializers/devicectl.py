@@ -93,7 +93,6 @@ class PhysicalPort(ModelSerializer):
             "description",
         ]
 
-
 @register
 class LogicalPort(ModelSerializer):
     class Meta:
