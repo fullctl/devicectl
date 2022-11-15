@@ -43,6 +43,10 @@ class Device(DataViewSet):
     def after_create(self, obj, data):
         obj.setup()
 
+        if data.get("facility"):
+            obj.facility_id = data.get("facility")
+            obj.save()
+
 
 @route
 class Port(DataViewSet):

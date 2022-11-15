@@ -12,6 +12,7 @@ from fullctl.django.models.abstract import (
     ServiceBridgeReferenceModel,
 )
 from fullctl.django.models.concrete import Instance
+from fullctl.service_bridge import nautobot
 from netfields.fields import InetAddressField
 
 
@@ -76,9 +77,8 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
             "facility": "name",
             "custom_fields.devicectl_id": "fullctl_id",
             "physical_address": "address1",
-            "latitude": "latitude",
-            "longitude": "longitude",
-            "status": "nautobot_status",
+            "latitude": "latitude_float",
+            "longitude": "longitude_float",
         }
 
         lookup_nautobot = "cf_devicectl_id"
@@ -100,8 +100,41 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         if self.status == "ok":
             return "active"
 
+    @property
+    def latitude_float(self):
+        try:
+            return float(self.latitude)
+        except TypeError:
+            return None
+
+    @property
+    def longitude_float(self):
+        try:
+            return float(self.longitude)
+        except TypeError:
+            return None
+
     def __str__(self):
         return f"{self.name} [#{self.id}]"
+
+    def finalize_service_bridge_data(self, service_name, data):
+
+        if service_name == "nautobot":
+
+            site = nautobot.Site().first(cf_devicectl_id=self.id)
+
+            # nautobot requires status to be sent, but we want nautobot to
+            # be the SoT for the status, fetch the current status for existing
+            # sites
+            #
+            # for new sites interpret devicectl status
+
+            if site:
+                data["status"] = site.status.value
+            else:
+                data["status"] = self.nautobot_status
+
+        print("finalize", service_name, data)
 
 
 @reversion.register()

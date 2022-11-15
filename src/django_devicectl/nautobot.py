@@ -222,10 +222,21 @@ def pull(org, *args, **kwargs):
 
         if changed or created:
             device.save()
+            if created:
+                device.setup()
 
         # pull interfaces
 
         pull_interfaces(device)
+
+        # assign to facility
+
+        site = nautobot.Site().first(id=nautobot_device.site.id)
+
+        if site.custom_fields.devicectl_id:
+            facility = models.Facility.objects.get(id=site.custom_fields.devicectl_id)
+            device.facility = facility
+            device.save()
 
         if nautobot_device.primary_ip4:
             device.set_management_ip_address(nautobot_device.primary_ip4.address)
