@@ -86,7 +86,6 @@ class Device(ModelSerializer):
         return f"{port.ip_address_6}"
 
 
-
 @register
 class PhysicalPort(ModelSerializer):
     class Meta:

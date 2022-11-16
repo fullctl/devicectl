@@ -235,7 +235,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
-
     @auditlog()
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def create(self, request, org, instance, *args, **kwargs):

@@ -326,7 +326,6 @@ class Device(ServiceBridgeReferenceModel):
         for physical_port in self.physical_ports.all():
             physical_port.setup(self.instance)
 
-
     @transaction.atomic
     def delete(self):
 
