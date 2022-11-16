@@ -46,13 +46,8 @@ class FacilityAddDevice(serializers.Serializer):
 class Device(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
 
-    management_ip_address_4 = serializers.CharField(
-        read_only=True, source="management_port.ip_address_4"
-    )
-
-    management_ip_address_6 = serializers.CharField(
-        read_only=True, source="management_port.ip_address_6"
-    )
+    management_ip_address_4 = serializers.SerializerMethodField()
+    management_ip_address_6 = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Device
@@ -77,6 +72,19 @@ class Device(ModelSerializer):
         if obj.facility is None:
             return None
         return obj.facility.name
+
+    def get_management_ip_address_4(self, obj):
+        port = obj.management_port
+        if not port or not port.ip_address_4:
+            return None
+        return f"{port.ip_address_4}"
+
+    def get_management_ip_address_6(self, obj):
+        port = obj.management_port
+        if not port or not port.ip_address_6:
+            return None
+        return f"{port.ip_address_6}"
+
 
 
 @register

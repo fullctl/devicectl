@@ -1,7 +1,7 @@
 import ipaddress
 
 import reversion
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
 from fullctl.django.fields.service_bridge import ReferencedObjectCharField
@@ -236,11 +236,12 @@ class Device(ServiceBridgeReferenceModel):
             self._management_port_info = port_info
             return port_info
 
-        self.setup()
-
         virtual_port = VirtualPort.objects.filter(
             logical_port__physical_ports__device=self
         ).first()
+
+        if not virtual_port:
+            return None
 
         port_info = PortInfo.objects.create(
             instance=self.instance,
@@ -324,6 +325,15 @@ class Device(ServiceBridgeReferenceModel):
 
         for physical_port in self.physical_ports.all():
             physical_port.setup(self.instance)
+
+
+    @transaction.atomic
+    def delete(self):
+
+        self.logical_ports.all().delete()
+        self.physical_ports.all().delete()
+
+        super().delete()
 
 
 @reversion.register()
