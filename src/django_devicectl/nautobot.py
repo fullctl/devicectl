@@ -222,8 +222,9 @@ def pull(org, *args, **kwargs):
 
         if changed or created:
             device.save()
-            if created:
-                device.setup()
+
+        if not device.physical_ports.exists():
+            device.setup()
 
         # pull interfaces
 
