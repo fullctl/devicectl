@@ -508,6 +508,20 @@ class VirtualPort(ServiceBridgeReferenceModel):
     def logical_port_name(self):
         return self.logical_port.name
 
+    @property
+    def device_name(self):
+        return self.device.name
+
+    @property
+    def device(self):
+        if not hasattr(self, "_device"):
+            self._device = self.logical_port.physical_ports.first().device
+        return self._device
+
+    @property
+    def physical_ports(self):
+        return self.logical_port.physical_ports
+
     def __str__(self):
         return f"VirtualPort({self.id}) {self.name}"
 

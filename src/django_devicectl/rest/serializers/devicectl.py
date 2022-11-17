@@ -108,8 +108,19 @@ class LogicalPort(ModelSerializer):
         fields = ["name", "display_name", "trunk", "channel", "description", "instance"]
 
 
+class InlinePhysicalPort(ModelSerializer):
+
+    class Meta:
+        model = models.PhysicalPort
+        fields = ["id", "name"]
+
+
 @register
 class VirtualPort(ModelSerializer):
+
+    physical_ports = serializers.SerializerMethodField()
+    device = serializers.SerializerMethodField()
+
     class Meta:
         model = models.VirtualPort
         fields = [
@@ -117,8 +128,17 @@ class VirtualPort(ModelSerializer):
             "display_name",
             "logical_port",
             "logical_port_name",
+            "device",
+            "device_name",
+            "physical_ports",
             "vlan_id",
         ]
+
+    def get_physical_ports(self, obj):
+        return InlinePhysicalPort(obj.physical_ports.all(), many=True).data
+
+    def get_device(self, obj):
+        return obj.device.id
 
 
 @register

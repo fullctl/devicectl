@@ -20,6 +20,23 @@ class Status(StatusViewSet):
 class Heartbeat(HeartbeatViewSet):
     pass
 
+@route
+class Facility(DataViewSet):
+
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("org", "instance__org__remote_id"),
+        ("org_slug", "instance__org__slug"),
+        ("q", "name__icontains"),
+        ("name", "name__iexact"),
+        ("ref", "reference"),
+    ]
+    autocomplete = "name"
+    allow_unfiltered = True
+
+    queryset = models.Facility.objects.filter(status="ok")
+    serializer_class = Serializers.facility
 
 @route
 class Device(DataViewSet):
@@ -33,6 +50,8 @@ class Device(DataViewSet):
         ("name", "name__iexact"),
         ("ref", "reference"),
         ("port", "physical_ports__logical_port__virtual_ports__port__in"),
+        ("facility", "facility_id"),
+        ("facility_slug", "facility__slug"),
     ]
     autocomplete = "name"
     allow_unfiltered = True
