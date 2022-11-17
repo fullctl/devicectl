@@ -20,6 +20,7 @@ class Status(StatusViewSet):
 class Heartbeat(HeartbeatViewSet):
     pass
 
+
 @route
 class Facility(DataViewSet):
 
@@ -37,6 +38,7 @@ class Facility(DataViewSet):
 
     queryset = models.Facility.objects.filter(status="ok")
     serializer_class = Serializers.facility
+
 
 @route
 class Device(DataViewSet):

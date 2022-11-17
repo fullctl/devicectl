@@ -109,7 +109,6 @@ class LogicalPort(ModelSerializer):
 
 
 class InlinePhysicalPort(ModelSerializer):
-
     class Meta:
         model = models.PhysicalPort
         fields = ["id", "name"]

@@ -7,6 +7,7 @@ import django_devicectl.models.devicectl as models
 
 Serializers, register = serializer_registry()
 
+
 @register
 class Facility(ModelSerializer):
 
@@ -26,6 +27,7 @@ class Facility(ModelSerializer):
 
     def get_org_id(self, device):
         return device.instance.org.permission_id
+
 
 @register
 class Device(ModelSerializer):
@@ -191,10 +193,14 @@ class RequestDummyPorts(serializers.Serializer):
             device.setup()
 
             if not device.facility:
-                facility = models.Facility.objects.filter(name=name_prefix, instance=instance).first()
+                facility = models.Facility.objects.filter(
+                    name=name_prefix, instance=instance
+                ).first()
                 if not facility:
-                    facility = models.Facility.objects.create(name=name_prefix, instance=instance, slug=name_prefix.lower())
-                device.facility = facility;
+                    facility = models.Facility.objects.create(
+                        name=name_prefix, instance=instance, slug=name_prefix.lower()
+                    )
+                device.facility = facility
                 device.save()
 
             for _port in port_data:
