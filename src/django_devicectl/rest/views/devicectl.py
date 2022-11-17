@@ -205,6 +205,36 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+    @action(detail=True, serializer_class=Serializers.virtual_port)
+    @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def virtual_ports(self, request, org, instance, device, *args, **kwargs):
+        serializer = Serializers.virtual_port(
+            device.virtual_ports,
+            many=True,
+        )
+        return Response(serializer.data)
+
+    @action(detail=True, serializer_class=Serializers.logical_port)
+    @grainy_endpoint(namespace="logical_port.{request.org.permission_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def logical_ports(self, request, org, instance, device, *args, **kwargs):
+        serializer = Serializers.logical_port(
+            device.logical_ports,
+            many=True,
+        )
+        return Response(serializer.data)
+
+    @action(detail=True, serializer_class=Serializers.physical_port)
+    @grainy_endpoint(namespace="physical_port.{request.org.permission_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def physical_ports(self, request, org, instance, device, *args, **kwargs):
+        serializer = Serializers.physical_port(
+            device.physical_ports,
+            many=True,
+        )
+        return Response(serializer.data)
+
     @auditlog()
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def create(self, request, org, instance, *args, **kwargs):
@@ -214,10 +244,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         device = serializer.save()
-
-        if request.data.get("facility"):
-            device.facility_id = request.data.get("facility")
-            device.save()
 
         if request.data.get("facility"):
             device.facility_id = request.data.get("facility")
@@ -291,7 +317,18 @@ class PhysicalPort(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="physical_port.{request.org.permission_id}")
     def create(self, request, org, instance, *args, **kwargs):
         models.Device.objects.get(instance=instance, id=request.data.get("device"))
+
+        data = request.data
+
+        if not data["logical_port"]:
+            logical_port = models.LogicalPort.objects.create(
+                instance=instance,
+                name=f"{data['name']}:lp",
+            )
+            data["logical_port"] = logical_port.id
+
         serializer = Serializers.physical_port(data=request.data)
+
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         physical_port = serializer.save()

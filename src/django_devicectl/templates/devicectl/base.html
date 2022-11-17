@@ -77,6 +77,18 @@ $(document).ready(() => {
         data-element="select_facility"></select>
       </span>
 
+      <span style="display:none" data-element="select_device_toggle">
+      <span class="inline-label">{% trans "Device:" %}</span>
+      <span class="toolbar-control">
+        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+      <select
+        data-name-field="name"
+        data-api-base="{% url "devicectl_api:facility-devices" org_tag=request.org.slug facility_tag="facility_tag" %}"
+        data-element="select_device"></select>
+      </span>
+      </span>
+
+
     </div>
 
   </div>
@@ -108,9 +120,9 @@ $(document).ready(() => {
     {% include "devicectl/tool/settings/main.html" %}
   </div>
   <div class="tab-pane show" id="ports" role="tabpanel" aria-labelledby="tab-ports">
-		{% include "devicectl/tool/physical_ports/main.html" %}
-		{% include "devicectl/tool/logical_ports/main.html" %}
 		{% include "devicectl/tool/virtual_ports/main.html" %}
+		{% include "devicectl/tool/logical_ports/main.html" %}
+		{% include "devicectl/tool/physical_ports/main.html" %}
   </div>
 
 </div>

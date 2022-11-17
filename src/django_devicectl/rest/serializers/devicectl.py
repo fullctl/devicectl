@@ -46,13 +46,8 @@ class FacilityAddDevice(serializers.Serializer):
 class Device(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
 
-    management_ip_address_4 = serializers.CharField(
-        read_only=True, source="management_port.ip_address_4"
-    )
-
-    management_ip_address_6 = serializers.CharField(
-        read_only=True, source="management_port.ip_address_6"
-    )
+    management_ip_address_4 = serializers.SerializerMethodField()
+    management_ip_address_6 = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Device
@@ -78,6 +73,18 @@ class Device(ModelSerializer):
             return None
         return obj.facility.name
 
+    def get_management_ip_address_4(self, obj):
+        port = obj.management_port
+        if not port or not port.ip_address_4:
+            return None
+        return f"{port.ip_address_4}"
+
+    def get_management_ip_address_6(self, obj):
+        port = obj.management_port
+        if not port or not port.ip_address_6:
+            return None
+        return f"{port.ip_address_6}"
+
 
 @register
 class PhysicalPort(ModelSerializer):
@@ -101,8 +108,19 @@ class LogicalPort(ModelSerializer):
         fields = ["name", "display_name", "trunk", "channel", "description", "instance"]
 
 
+class InlinePhysicalPort(ModelSerializer):
+
+    class Meta:
+        model = models.PhysicalPort
+        fields = ["id", "name"]
+
+
 @register
 class VirtualPort(ModelSerializer):
+
+    physical_ports = serializers.SerializerMethodField()
+    device = serializers.SerializerMethodField()
+
     class Meta:
         model = models.VirtualPort
         fields = [
@@ -110,8 +128,17 @@ class VirtualPort(ModelSerializer):
             "display_name",
             "logical_port",
             "logical_port_name",
+            "device",
+            "device_name",
+            "physical_ports",
             "vlan_id",
         ]
+
+    def get_physical_ports(self, obj):
+        return InlinePhysicalPort(obj.physical_ports.all(), many=True).data
+
+    def get_device(self, obj):
+        return obj.device.id
 
 
 @register

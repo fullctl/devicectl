@@ -1,7 +1,7 @@
 import ipaddress
 
 import reversion
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
 from fullctl.django.fields.service_bridge import ReferencedObjectCharField
@@ -12,6 +12,7 @@ from fullctl.django.models.abstract import (
     ServiceBridgeReferenceModel,
 )
 from fullctl.django.models.concrete import Instance
+from fullctl.service_bridge import nautobot
 from netfields.fields import InetAddressField
 
 
@@ -76,9 +77,8 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
             "facility": "name",
             "custom_fields.devicectl_id": "fullctl_id",
             "physical_address": "address1",
-            "latitude": "latitude",
-            "longitude": "longitude",
-            "status": "nautobot_status",
+            "latitude": "latitude_float",
+            "longitude": "longitude_float",
         }
 
         lookup_nautobot = "cf_devicectl_id"
@@ -100,8 +100,41 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         if self.status == "ok":
             return "active"
 
+    @property
+    def latitude_float(self):
+        try:
+            return float(self.latitude)
+        except TypeError:
+            return None
+
+    @property
+    def longitude_float(self):
+        try:
+            return float(self.longitude)
+        except TypeError:
+            return None
+
     def __str__(self):
         return f"{self.name} [#{self.id}]"
+
+    def finalize_service_bridge_data(self, service_name, data):
+
+        if service_name == "nautobot":
+
+            site = nautobot.Site().first(cf_devicectl_id=self.id)
+
+            # nautobot requires status to be sent, but we want nautobot to
+            # be the SoT for the status, fetch the current status for existing
+            # sites
+            #
+            # for new sites interpret devicectl status
+
+            if site:
+                data["status"] = site.status.value
+            else:
+                data["status"] = self.nautobot_status
+
+        print("finalize", service_name, data)
 
 
 @reversion.register()
@@ -203,11 +236,12 @@ class Device(ServiceBridgeReferenceModel):
             self._management_port_info = port_info
             return port_info
 
-        self.setup()
-
         virtual_port = VirtualPort.objects.filter(
             logical_port__physical_ports__device=self
         ).first()
+
+        if not virtual_port:
+            return None
 
         port_info = PortInfo.objects.create(
             instance=self.instance,
@@ -291,6 +325,14 @@ class Device(ServiceBridgeReferenceModel):
 
         for physical_port in self.physical_ports.all():
             physical_port.setup(self.instance)
+
+    @transaction.atomic
+    def delete(self):
+
+        self.logical_ports.all().delete()
+        self.physical_ports.all().delete()
+
+        super().delete()
 
 
 @reversion.register()
@@ -465,6 +507,20 @@ class VirtualPort(ServiceBridgeReferenceModel):
     @property
     def logical_port_name(self):
         return self.logical_port.name
+
+    @property
+    def device_name(self):
+        return self.device.name
+
+    @property
+    def device(self):
+        if not hasattr(self, "_device"):
+            self._device = self.logical_port.physical_ports.first().device
+        return self._device
+
+    @property
+    def physical_ports(self):
+        return self.logical_port.physical_ports
 
     def __str__(self):
         return f"VirtualPort({self.id}) {self.name}"

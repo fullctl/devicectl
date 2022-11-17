@@ -1,7 +1,7 @@
 {% load static i18n %}
 <table
   class="table table-borderless"
-  data-api-base="{% url "devicectl_api:virtual_port-list" org_tag=request.org.slug %}"
+  data-api-base="{% url "devicectl_api:device-virtual-ports" org_tag=request.org.slug device_id=0 %}"
   data-api-action=""
   data-template="list">
   <thead>
@@ -25,11 +25,8 @@
             <a data-action="edit_virtual_port"><span class="icon fullctl icon-edit"></span><span class="label fullctl">{% trans "Edit" %}</span></a>
           </div>
           <div class="col-xs-12 col-lg-6">
-        <a
-          data-api-action="{id}"
-          data-api-callback="remove"
-          data-confirm="Remove virtual_port?"
-          data-api-method="DELETE"><span class="icon fullctl icon-delete"></span><span class="fullctl label">{% trans "Delete" %}</span></a>
+
+        <a data-element="delete_virtual_port" data-api-method="DELETE" data-confirm="Delete virtual port?" data-api-base="{% url "devicectl_api:virtual_port-detail" org_tag=request.org.slug virtual_port_id=0 %}"><span class="icon fullctl icon-delete"></span><span class="fullctl label">{% trans "Delete" %}</span></a>
           </div>
         </div>
       </td>
