@@ -4,6 +4,11 @@ from fullctl.django.models.concrete.service_bridge import service_bridge_action
 
 import django_devicectl.models.devicectl as models
 
+# TODO: work around to deal with pagination for now
+# Needs to be fixed in fullctl service bridge client to naturally
+# support pagination arguments
+NAUTOBOT_PAGE_LIMIT = 999999
+
 
 @service_bridge_action(
     "nautobot_push_device_loc", _("Nautobot: update device location")
@@ -108,7 +113,7 @@ def pull_ip_addresses(virtual_port):
     ip4 = None
     ip6 = None
 
-    for nautobot_ip in nautobot.IPAddress().objects():
+    for nautobot_ip in nautobot.IPAddress().objects(limit=NAUTOBOT_PAGE_LIMIT):
 
         if ip4 and ip6:
             break
@@ -213,10 +218,11 @@ def pull(org, *args, **kwargs):
 
     # create / update devices from nautobot data
 
-    for nautobot_device in nautobot.Device().objects():
+    for nautobot_device in nautobot.Device().objects(limit=NAUTOBOT_PAGE_LIMIT):
         device, created = models.Device.objects.get_or_create(
             reference=nautobot_device.id, instance=instance
         )
+        print(f"[PULL] Nautobot device {nautobot_device.name} {device.reference} ...")
         references.append(device.reference)
         changed = device.sync_from_reference(ref_obj=nautobot_device)
 
@@ -268,8 +274,10 @@ def push(org, *args, **kwargs):
 
     # preload nautobot data
 
-    nautobot_sites = [fac for fac in nautobot.Site().objects()]
-    nautobot_devices = [dev for dev in nautobot.Device().objects()]
+    nautobot_sites = [fac for fac in nautobot.Site().objects(limit=NAUTOBOT_PAGE_LIMIT)]
+    nautobot_devices = [
+        dev for dev in nautobot.Device().objects(limit=NAUTOBOT_PAGE_LIMIT)
+    ]
 
     # sync devicectl facility -> nautobot site
 
@@ -292,12 +300,14 @@ def push(org, *args, **kwargs):
         # assign nautobot facility to site accordign to devicectl
         # facility device allocation
 
-        for device in fac.devices.all():
-            for nautobot_device in nautobot_devices:
-                if str(nautobot_device.id) == str(device.reference):
-                    nautobot.Device().partial_update(
-                        nautobot_device, {"site": str(nautobot_site.id)}
-                    )
+        # device location managed in nautobot for now. this needs to support stuff like
+        # rack location otherwise. TODO: revisit if needed
+        # for device in fac.devices.all():
+        #    for nautobot_device in nautobot_devices:
+        #        if str(nautobot_device.id) == str(device.reference):
+        #            nautobot.Device().partial_update(
+        #                nautobot_device, {"site": str(nautobot_site.id)}
+        #            )
 
     # delete nautobot sites if they no longer exist as facilities in devicectl
     for site in nautobot_sites:
