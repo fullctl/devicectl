@@ -241,7 +241,7 @@ def pull(org, *args, **kwargs):
 
     for nautobot_device in nautobot.Device().objects(limit=NAUTOBOT_PAGE_LIMIT):
 
-        if "router" not in nautobot_device.device_role.name.lower():
+        if not nautobot_device.device_role.name.lower().startswith("router"):
             continue
 
         device, created = models.Device.objects.get_or_create(
