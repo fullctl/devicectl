@@ -307,7 +307,7 @@ def push(org, *args, **kwargs):
 
     # sync devicectl facility -> nautobot site
 
-    for fac in models.Facility.objects.all():
+    for fac in models.Facility.objects.exclude(slug="pdb"):
 
         exists = False
 
