@@ -515,7 +515,10 @@ class VirtualPort(ServiceBridgeReferenceModel):
     @property
     def device(self):
         if not hasattr(self, "_device"):
-            self._device = self.logical_port.physical_ports.first().device
+            try:
+                self._device = self.logical_port.physical_ports.first().device
+            except AttributeError:
+                self._device = None
         return self._device
 
     @property
@@ -744,7 +747,12 @@ class Port(HandleRefModel):
     @property
     def device(self):
         if not hasattr(self, "_device"):
-            self._device = self.virtual_port.logical_port.physical_ports.first().device
+            try:
+                self._device = (
+                    self.virtual_port.logical_port.physical_ports.first().device
+                )
+            except AttributeError:
+                self._device = None
         return self._device
 
     @property
