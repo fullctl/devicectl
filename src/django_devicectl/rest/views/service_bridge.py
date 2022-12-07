@@ -84,8 +84,20 @@ class Port(DataViewSet):
     serializer_class = Serializers.port
 
     join_xl = {
-        "device": ("virtual_port", "virtual_port__logical_port"),
+        "device": [],
     }
+
+    def filter(self, qset, request):
+
+        qset = super().filter(qset, request)
+        qset = qset.select_related(
+            "virtual_port", "virtual_port__logical_port", "port_info"
+        )
+        qset = qset.prefetch_related(
+            "port_info__ips", "virtual_port__logical_port__physical_ports"
+        )
+
+        return qset
 
     @action(
         detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports
