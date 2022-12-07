@@ -765,9 +765,9 @@ class Port(HandleRefModel):
     def device(self):
         if not hasattr(self, "_device"):
             try:
-                self._device = (
-                    self.virtual_port.logical_port.physical_ports.all()[0].device
-                )
+                self._device = self.virtual_port.logical_port.physical_ports.all()[
+                    0
+                ].device
             except (AttributeError, IndexError):
                 self._device = None
         return self._device
