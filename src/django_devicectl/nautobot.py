@@ -1,4 +1,5 @@
 import fullctl.service_bridge.nautobot as nautobot
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from fullctl.django.models.concrete.service_bridge import service_bridge_action
 
@@ -241,7 +242,7 @@ def pull(org, *args, **kwargs):
 
     for nautobot_device in nautobot.Device().objects(limit=NAUTOBOT_PAGE_LIMIT):
 
-        if not nautobot_device.device_role.name.lower().startswith("router"):
+        if nautobot_device.device_role.name not in settings.NAUTOBOT_DEVICE_ROLE:
             continue
 
         device, created = models.Device.objects.get_or_create(
