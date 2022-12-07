@@ -576,9 +576,17 @@ class PortInfo(HandleRefModel):
 
     @property
     def ip_address_4(self):
-        ip = self.ips.filter(address__family=4).first()
-        if ip:
-            return ip.address
+        if not hasattr(self, "_ip_address_4"):
+            ip = None
+            for _ip in self.ips.all():
+                if _ip.address.version == 4:
+                    ip = _ip
+                    break
+            if ip:
+                self._ip_address_4 = ip.address
+            else:
+                self._ip_address_4 = None
+        return self._ip_address_4
 
     @ip_address_4.setter
     def ip_address_4(self, value):
@@ -586,9 +594,18 @@ class PortInfo(HandleRefModel):
 
     @property
     def ip_address_6(self):
-        ip = self.ips.filter(address__family=6).first()
-        if ip:
-            return ip.address
+        if not hasattr(self, "_ip_address_6"):
+            ip = None
+            for _ip in self.ips.all():
+                if _ip.address.version == 6:
+                    ip = _ip
+                    break
+
+            if ip:
+                self._ip_address_6 = ip.address
+            else:
+                self._ip_address_6 = None
+        return self._ip_address_6
 
     @ip_address_6.setter
     def ip_address_6(self, value):
@@ -749,9 +766,9 @@ class Port(HandleRefModel):
         if not hasattr(self, "_device"):
             try:
                 self._device = (
-                    self.virtual_port.logical_port.physical_ports.first().device
+                    self.virtual_port.logical_port.physical_ports.all()[0].device
                 )
-            except AttributeError:
+            except (AttributeError, IndexError):
                 self._device = None
         return self._device
 
