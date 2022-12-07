@@ -238,11 +238,13 @@ def pull(org, *args, **kwargs):
 
     references = []
 
+    roles = [r.lower() for r in settings.NAUTOBOT_DEVICE_ROLE]
+
     # create / update devices from nautobot data
 
     for nautobot_device in nautobot.Device().objects(limit=NAUTOBOT_PAGE_LIMIT):
 
-        if nautobot_device.device_role.name not in settings.NAUTOBOT_DEVICE_ROLE:
+        if nautobot_device.device_role.name.lower() not in roles:
             continue
 
         device, created = models.Device.objects.get_or_create(
