@@ -47,6 +47,7 @@ class Device(ModelSerializer):
             "type",
             "instance",
             "org_id",
+            "facility_id",
         ]
 
     def get_org_id(self, device):
