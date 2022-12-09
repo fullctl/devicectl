@@ -58,7 +58,11 @@ class Device(ModelSerializer):
         return device.instance.org.permission_id
 
     def get_facility_slug(self, device):
-        return device.facility.slug
+        try:
+            return device.facility.slug
+        except AttributeError:
+            # not assigned to facility
+            return None
 
 
 @register
