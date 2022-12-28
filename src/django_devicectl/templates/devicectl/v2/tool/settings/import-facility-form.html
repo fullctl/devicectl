@@ -18,9 +18,13 @@
   </div>
 
   <p class="center marg-top-lg wiz-step wiz-step-1">
-    <button data-element="button_start_fresh" data-wizard-step="2">
-      <span class="icon icon-edit fullctl"></span>
-      <span class="label">{% trans "No thanks, i want to start fresh" %}</span>
+    <button class="primary btn" data-element="button_start_fresh" data-wizard-step="2">
+      <div class="row align-items-center">
+        <div class="col label pe-0">{% trans "No thanks, I want to start fresh" %}</div>
+        <div class="col-auto">
+          <span class="icon icon-edit"></span>
+        </div>
+      </div>
     </button>
   </p>
 
@@ -55,10 +59,14 @@
       <td data-field="name"></td>
       <td data-field="country"></td>
       <td data-field="city"></td>
-      <td class="right">
-        <button class="button">
-          <span class="icon fullctl icon-edit"></span>
-          <span class="label">{% trans "Continue" %}</span>
+      <td class="right no-wrap" data-field="controls">
+        <button class="button primary btn | small">
+          <div class="row align-items-center">
+            <div class="col label pe-0">{% trans "Continue" %}</div>
+            <div class="col-auto center">
+              <span class="icon icon-edit"></span>
+            </div>
+          </div>
         </button>
       </td>
     </tr>
