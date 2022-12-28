@@ -142,7 +142,7 @@ $ctl.application.Devicectl.Settings = $tc.extend(
       form.reset();
       form.fill(form_defaults);
 
-      button_delete.find('span.label').text('Back');
+      button_delete.find('div.label').text('Back');
       button_delete.click(() => { rs_wiz.set_step(1); form.reset(); form.fill(form_defaults) });
 
 
