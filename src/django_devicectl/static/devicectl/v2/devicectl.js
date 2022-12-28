@@ -134,12 +134,27 @@ $ctl.application.Devicectl.Devices = $tc.extend(
       this.sot = false;
       this.Tool("devices");
     },
+
     init : function() {
+      let elem = document.createElement('div');
+      elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
+            <div class="row align-items-center">
+              <div class="col label pe-0">Delete Selected</div>
+              <div class="col-auto">
+                  <span class="icon icon-delete"></span>
+              </div>
+            </div>
+          </button>`.trim();
+      this.delete_selected_button = elem.firstElementChild;
       this.widget("list", ($e) => {
-        return new twentyc.rest.List(
-          this.template("list", this.$e.body)
+        return new $ctl.widget.SelectionList(
+          this.template("list", this.$e.body),
+          $(this.delete_selected_button)
         );
       })
+      this.$w.list.delete_api_obj = (apiobj, endpoint) => {
+        return this.$w.list.delete("remove_device/" + apiobj[endpoint], apiobj);
+      }
 
 
       this.$w.list.format_request_url = (url) => {
@@ -199,6 +214,14 @@ $ctl.application.Devicectl.Devices = $tc.extend(
         }
       });
 
+      $(this.delete_selected_button).insertBefore(menu.find('[data-element="button_add_device"]'));
+
+      $(this.delete_selected_button).click(() => {
+        if (confirm("Remove selected Devices?")) {
+          this.$w.list.delete_selected_list();
+        }
+      });
+
       return menu;
     },
 
@@ -214,7 +237,7 @@ $ctl.application.Devicectl.Devices = $tc.extend(
 
         var facility_tag = ($ctl.devicectl ? $ctl.devicectl.facility_slug() : '')
 
-        this.$e.menu.find('[data-element="button_api_view"]').attr(
+        this.$e.bottom_menu.find('[data-element="button_api_view"]').attr(
           "href", this.$w.list.base_url.replace(/facility_tag/g,facility_tag) + "/" + this.$w.list.action +"?pretty"
         )
 
@@ -324,7 +347,7 @@ $ctl.application.Devicectl.ModalDevice = $tc.extend(
       });
 
 
-      this.Modal("save", title, form.element);
+      this.Modal("save_right", title, form.element);
       form.wire_submit(this.$e.button_submit);
     }
   },
