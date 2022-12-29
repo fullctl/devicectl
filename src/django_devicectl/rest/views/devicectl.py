@@ -38,7 +38,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     def list(self, request, org, instance, *args, **kwargs):
         # ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
 
-        queryset = instance.facilities.all()
+        queryset = instance.facilities.all().order_by("slug")
         # queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.facility(
@@ -175,6 +175,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
 
         queryset = instance.devices.all()
+        queryset = queryset.select_related("facility")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.device(
