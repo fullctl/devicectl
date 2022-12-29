@@ -365,11 +365,26 @@
         this.Tool("logical_ports");
       },
       init: function () {
+        let elem = document.createElement('div');
+        elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
+            <div class="row align-items-center">
+              <div class="col label pe-0">Delete Selected</div>
+              <div class="col-auto">
+                  <span class="icon icon-delete"></span>
+              </div>
+            </div>
+          </button>`.trim();
+        this.delete_selected_button = elem.firstElementChild;
         this.widget("list", ($e) => {
-          return new twentyc.rest.List(
-            this.template("list", this.$e.body)
+          return new $ctl.widget.SelectionList(
+            this.template("list", this.$e.body),
+            $(this.delete_selected_button)
           );
         })
+        this.$w.list.delete_api_obj = (apiobj, endpoint) => {
+          return this.$w.list.write_url(`/api/logical_port/${$ctl.org.slug}/${apiobj[endpoint]}`, apiobj, "delete");
+        }
+
         this.$w.list.format_request_url = (url) => {
           return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/");
         };
@@ -414,6 +429,15 @@
         menu.find('[data-element="button_add_logical_port"]').click(() => {
           return new $ctl.application.Devicectl.ModalLogicalPort();
         });
+
+        $(this.delete_selected_button).insertBefore(menu.find('[data-element="button_add_logical_port"]'));
+
+        $(this.delete_selected_button).click(() => {
+          if (confirm("Remove selected Logical Ports?")) {
+            this.$w.list.delete_selected_list();
+          }
+        });
+
         return menu;
       },
 
@@ -429,7 +453,7 @@
           this.apply_ordering();
           this.$w.list.load();
 
-          this.$e.menu.find('[data-element="button_api_view"]').attr(
+          this.$e.bottom_menu.find('[data-element="button_api_view"]').attr(
             "href", this.$w.list.base_url.replace('/0/', "/" + fullctl.devicectl.device_id() + "/") + "/" + this.$w.list.action + "?pretty"
           )
 
@@ -480,7 +504,7 @@
           modal.hide();
         });
 
-        this.Modal("save", title, form.element);
+        this.Modal("save_right", title, form.element);
         form.wire_submit(this.$e.button_submit);
       }
     },
@@ -496,11 +520,26 @@
         this.Tool("physical_ports");
       },
       init: function () {
+        let elem = document.createElement('div');
+        elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
+            <div class="row align-items-center">
+              <div class="col label pe-0">Delete Selected</div>
+              <div class="col-auto">
+                  <span class="icon icon-delete"></span>
+              </div>
+            </div>
+          </button>`.trim();
+        this.delete_selected_button = elem.firstElementChild;
         this.widget("list", ($e) => {
-          return new twentyc.rest.List(
-            this.template("list", this.$e.body)
+          return new $ctl.widget.SelectionList(
+            this.template("list", this.$e.body),
+            $(this.delete_selected_button)
           );
         })
+        this.$w.list.delete_api_obj = (apiobj, endpoint) => {
+          return this.$w.list.write_url(`/api/physical_port/${$ctl.org.slug}/${apiobj[endpoint]}`, apiobj, "delete");
+        }
+
         this.$w.list.formatters.row = (row, data) => {
           row.find('a[data-action="edit_physical_port"]').click(() => {
             var physical_port = row.data("apiobject");
@@ -538,6 +577,14 @@
         menu.find('[data-element="button_add_physical_port"]').click(() => {
           return new $ctl.application.Devicectl.ModalPhysicalPort();
         });
+
+        $(this.delete_selected_button).insertBefore(menu.find('[data-element="button_add_physical_port"]'));
+        $(this.delete_selected_button).click(() => {
+          if (confirm("Remove selected Physical Ports?")) {
+            this.$w.list.delete_selected_list();
+          }
+        });
+
         return menu;
       },
 
@@ -553,7 +600,7 @@
           this.apply_ordering();
           this.$w.list.load();
 
-          this.$e.menu.find('[data-element="button_api_view"]').attr(
+          this.$e.bottom_menu.find('[data-element="button_api_view"]').attr(
             "href", this.$w.list.base_url.replace('/0/', "/" + fullctl.devicectl.device_id() + "/") + "/" + this.$w.list.action + "?pretty"
           )
 
@@ -620,7 +667,7 @@
           modal.hide();
         });
 
-        this.Modal("save", title, form.element);
+        this.Modal("save_right", title, form.element);
         form.wire_submit(this.$e.button_submit);
       }
     },
@@ -654,7 +701,7 @@
           );
         })
         this.$w.list.delete_api_obj = (apiobj, endpoint) => {
-          return this.$w.list.write_url("/api/virtual_port/demo/" + apiobj[endpoint], apiobj, "delete");
+          return this.$w.list.write_url(`/api/virtual_port/${$ctl.org.slug}/${apiobj[endpoint]}`, apiobj, "delete");
         }
 
         this.$w.list.formatters.row = (row, data) => {
@@ -697,7 +744,7 @@
 
         $(this.delete_selected_button).insertBefore(menu.find('[data-element="button_add_virtual_port"]'));
         $(this.delete_selected_button).click(() => {
-          if (confirm("Remove selected Devices?")) {
+          if (confirm("Remove selected Virtual Ports?")) {
             this.$w.list.delete_selected_list();
           }
         });
