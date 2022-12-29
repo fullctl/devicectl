@@ -93,9 +93,13 @@ $(document).ready(() => {
   </div>
 
   <div class="col-6 col-md-4 right">
-      <button type="button" class="button" data-element="button_create_facility">
-        <span class="icon fullctl icon-add"></span>
-        <span class="label">{% trans "Create" %}</span>
+      <button type="button" class="btn primary small" data-element="button_create_facility">
+        <div class="row align-items-center">
+          <div class="label col pe-0">{% trans "Create" %}</div>
+          <div class="col-auto ps-1">
+            <span class="icon fullctl icon-add"></span>
+          </div>
+        </div>
       </button>
   </div>
 </div>
