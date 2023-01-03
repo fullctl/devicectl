@@ -136,6 +136,7 @@
       },
 
       init: function () {
+        // v2 - create delete selected button
         let elem = document.createElement('div');
         elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
             <div class="row align-items-center">
@@ -146,6 +147,7 @@
             </div>
           </button>`.trim();
         this.delete_selected_button = elem.firstElementChild;
+        // v2 - create SelectionList
         this.widget("list", ($e) => {
           return new $ctl.widget.SelectionList(
             this.template("list", this.$e.body),
@@ -237,6 +239,7 @@
 
           var facility_tag = ($ctl.devicectl ? $ctl.devicectl.facility_slug() : '')
 
+          // v2 - set up view API button
           this.$e.bottom_menu.find('[data-element="button_api_view"]').attr(
             "href", this.$w.list.base_url.replace(/facility_tag/g, facility_tag) + "/" + this.$w.list.action + "?pretty"
           )
@@ -365,6 +368,7 @@
         this.Tool("logical_ports");
       },
       init: function () {
+        // v2 - create delete selected button
         let elem = document.createElement('div');
         elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
             <div class="row align-items-center">
@@ -375,6 +379,7 @@
             </div>
           </button>`.trim();
         this.delete_selected_button = elem.firstElementChild;
+        // v2 - create SelectionList
         this.widget("list", ($e) => {
           return new $ctl.widget.SelectionList(
             this.template("list", this.$e.body),
@@ -430,6 +435,7 @@
           return new $ctl.application.Devicectl.ModalLogicalPort();
         });
 
+        // v2 - add/set-up delete selected button
         $(this.delete_selected_button).insertBefore(menu.find('[data-element="button_add_logical_port"]'));
 
         $(this.delete_selected_button).click(() => {
@@ -453,6 +459,7 @@
           this.apply_ordering();
           this.$w.list.load();
 
+          // v2 - set up view API button
           this.$e.bottom_menu.find('[data-element="button_api_view"]').attr(
             "href", this.$w.list.base_url.replace('/0/', "/" + fullctl.devicectl.device_id() + "/") + "/" + this.$w.list.action + "?pretty"
           )
@@ -520,6 +527,7 @@
         this.Tool("physical_ports");
       },
       init: function () {
+        // v2 - create delete selected button
         let elem = document.createElement('div');
         elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
             <div class="row align-items-center">
@@ -530,6 +538,7 @@
             </div>
           </button>`.trim();
         this.delete_selected_button = elem.firstElementChild;
+        // v2 - create SelectionList
         this.widget("list", ($e) => {
           return new $ctl.widget.SelectionList(
             this.template("list", this.$e.body),
@@ -600,6 +609,7 @@
           this.apply_ordering();
           this.$w.list.load();
 
+          // v2 - set up view API button
           this.$e.bottom_menu.find('[data-element="button_api_view"]').attr(
             "href", this.$w.list.base_url.replace('/0/', "/" + fullctl.devicectl.device_id() + "/") + "/" + this.$w.list.action + "?pretty"
           )
@@ -684,6 +694,7 @@
         this.Tool("virtual_ports");
       },
       init: function () {
+        // v2 - create delete selected button
         let elem = document.createElement('div');
         elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
             <div class="row align-items-center">
@@ -694,6 +705,7 @@
             </div>
           </button>`.trim();
         this.delete_selected_button = elem.firstElementChild;
+        // v2 - create SelectionList
         this.widget("list", ($e) => {
           return new $ctl.widget.SelectionList(
             this.template("list", this.$e.body),
@@ -742,6 +754,7 @@
           return new $ctl.application.Devicectl.ModalVirtualPort();
         });
 
+        // v2 - add/setup delete selected button
         $(this.delete_selected_button).insertBefore(menu.find('[data-element="button_add_virtual_port"]'));
         $(this.delete_selected_button).click(() => {
           if (confirm("Remove selected Virtual Ports?")) {
@@ -764,6 +777,7 @@
           this.apply_ordering();
           this.$w.list.load();
 
+          // v2 - set up view API button
           this.$e.bottom_menu.find('[data-element="button_api_view"]').attr(
             "href", this.$w.list.base_url.replace('/0/', "/" + fullctl.devicectl.device_id() + "/") + "/" + this.$w.list.action + "?pretty"
           )
