@@ -51,6 +51,16 @@ $ctl.application.Devicectl = $tc.extend(
           return url.replace(/facility_tag/g, this.facility_slug());
         };
 
+        $(w).one("load:after", (event, element, data) => {
+          if($ctl.devicectl.autoload_args[0] == "ports") {
+            if($ctl.devicectl.autoload_args[1]) {
+              w.element.val($ctl.devicectl.autoload_args[1]);
+              window.history.pushState({}, '', '#ports;'+w.element.val());
+            }
+            $ctl.devicectl.autoload_args = [];
+          }
+        });
+
         $(w).on("load:after", (event, element, data) => {
           this.$t.virtual_ports.sync();
           this.$t.logical_ports.sync();
@@ -60,6 +70,7 @@ $ctl.application.Devicectl = $tc.extend(
           this.$t.virtual_ports.sync();
           this.$t.logical_ports.sync();
           this.$t.physical_ports.sync();
+          window.history.pushState({}, '', '#ports;'+w.element.val());
         });
 
 
@@ -78,7 +89,10 @@ $ctl.application.Devicectl = $tc.extend(
 
       $('#ports-tab').on('show.bs.tab', ()=> {
         this.$c.toolbar.$e.select_device_toggle.show();
-        this.$c.toolbar.$w.select_device.load();
+        this.$c.toolbar.$w.select_device.load(this.$c.toolbar.$w.select_device.element.val());
+
+        if(this.device_id())
+          window.history.pushState({}, '', '#ports;'+this.device_id());
       });
       $('#ports-tab').on('hide.bs.tab', ()=> { this.$c.toolbar.$e.select_device_toggle.hide(); });
 
@@ -176,6 +190,11 @@ $ctl.application.Devicectl.Devices = $tc.extend(
         if(!grainy.check(data.grainy, "d")) {
           row.find('a[data-api-method="DELETE"]').hide();
         }
+
+        row.find('a[data-element=load_device_ports]').click(function() {
+          $ctl.devicectl.$c.toolbar.$w.select_device.element.val(data.id);
+          $ctl.devicectl.page("ports");
+        });
       };
 
       this.initialize_sortable_headers("name");
