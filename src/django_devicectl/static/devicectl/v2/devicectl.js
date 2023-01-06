@@ -154,10 +154,6 @@
             $(this.delete_selected_button)
           );
         })
-        this.$w.list.delete_api_obj = (apiobj, endpoint) => {
-          return this.$w.list.delete("remove_device/" + apiobj[endpoint], apiobj);
-        }
-
 
         this.$w.list.format_request_url = (url) => {
           if (!$ctl.devicectl)
@@ -386,9 +382,6 @@
             $(this.delete_selected_button)
           );
         })
-        this.$w.list.delete_api_obj = (apiobj, endpoint) => {
-          return this.$w.list.write_url(`/api/logical_port/${$ctl.org.slug}/${apiobj[endpoint]}`, apiobj, "delete");
-        }
 
         this.$w.list.format_request_url = (url) => {
           return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/");
@@ -545,9 +538,6 @@
             $(this.delete_selected_button)
           );
         })
-        this.$w.list.delete_api_obj = (apiobj, endpoint) => {
-          return this.$w.list.write_url(`/api/physical_port/${$ctl.org.slug}/${apiobj[endpoint]}`, apiobj, "delete");
-        }
 
         this.$w.list.formatters.row = (row, data) => {
           row.find('a[data-action="edit_physical_port"]').click(() => {
@@ -712,9 +702,6 @@
             $(this.delete_selected_button)
           );
         })
-        this.$w.list.delete_api_obj = (apiobj, endpoint) => {
-          return this.$w.list.write_url(`/api/virtual_port/${$ctl.org.slug}/${apiobj[endpoint]}`, apiobj, "delete");
-        }
 
         this.$w.list.formatters.row = (row, data) => {
           row.find('a[data-action="edit_virtual_port"]').click(() => {

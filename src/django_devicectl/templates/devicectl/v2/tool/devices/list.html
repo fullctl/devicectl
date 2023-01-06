@@ -3,6 +3,8 @@
   class="table list-table"
   data-api-base="{% url "devicectl_api:facility-detail" org_tag=request.org.slug facility_tag="facility_tag" %}"
   data-api-action="devices"
+  data-api-delete-url="{% url "devicectl_api:facility-remove-device" org_tag=request.org.slug facility_tag="facility_tag" device_id=0 %}"
+  data-api-delete="/0/"
   data-template="list">
   <thead>
     <tr>

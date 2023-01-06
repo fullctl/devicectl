@@ -3,6 +3,7 @@
   class="table table-borderless list-table"
   data-api-base="{% url "devicectl_api:device-virtual-ports" org_tag=request.org.slug device_id=0 %}"
   data-api-action=""
+  data-api-delete-url="{% url "devicectl_api:virtual_port-detail" org_tag=request.org.slug virtual_port_id=0 %}"
   data-template="list">
   <thead>
     <tr>
