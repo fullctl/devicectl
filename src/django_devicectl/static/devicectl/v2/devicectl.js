@@ -137,21 +137,12 @@
 
       init: function () {
         // v2 - create delete selected button
-        let elem = document.createElement('div');
-        elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
-            <div class="row align-items-center">
-              <div class="col label pe-0">Delete Selected</div>
-              <div class="col-auto">
-                  <span class="icon icon-delete"></span>
-              </div>
-            </div>
-          </button>`.trim();
-        this.delete_selected_button = elem.firstElementChild;
+        this.delete_selected_button = this.$t.button_delete_selected;
         // v2 - create SelectionList
         this.widget("list", ($e) => {
           return new $ctl.widget.SelectionList(
             this.template("list", this.$e.body),
-            $(this.delete_selected_button)
+            this.delete_selected_button
           );
         })
 
@@ -365,16 +356,7 @@
       },
       init: function () {
         // v2 - create delete selected button
-        let elem = document.createElement('div');
-        elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
-            <div class="row align-items-center">
-              <div class="col label pe-0">Delete Selected</div>
-              <div class="col-auto">
-                  <span class="icon icon-delete"></span>
-              </div>
-            </div>
-          </button>`.trim();
-        this.delete_selected_button = elem.firstElementChild;
+        this.delete_selected_button = this.$t.button_delete_selected;
         // v2 - create SelectionList
         this.widget("list", ($e) => {
           return new $ctl.widget.SelectionList(
@@ -521,16 +503,7 @@
       },
       init: function () {
         // v2 - create delete selected button
-        let elem = document.createElement('div');
-        elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
-            <div class="row align-items-center">
-              <div class="col label pe-0">Delete Selected</div>
-              <div class="col-auto">
-                  <span class="icon icon-delete"></span>
-              </div>
-            </div>
-          </button>`.trim();
-        this.delete_selected_button = elem.firstElementChild;
+        this.delete_selected_button = this.$t.button_delete_selected;
         // v2 - create SelectionList
         this.widget("list", ($e) => {
           return new $ctl.widget.SelectionList(
@@ -567,6 +540,10 @@
         this.$w.list.format_request_url = (url) => {
           return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/");
         };
+
+        $(this.$w.list).on("api-delete:after", () => {
+          $ctl.devicectl.sync();
+        });
 
         this.initialize_sortable_headers("name");
       },
@@ -685,16 +662,7 @@
       },
       init: function () {
         // v2 - create delete selected button
-        let elem = document.createElement('div');
-        elem.innerHTML = `<button class="col-md-auto btn me-2 js-hide" data-btn-type="delete" data-element="button_delete_selected" type="button">
-            <div class="row align-items-center">
-              <div class="col label pe-0">Delete Selected</div>
-              <div class="col-auto">
-                  <span class="icon icon-delete"></span>
-              </div>
-            </div>
-          </button>`.trim();
-        this.delete_selected_button = elem.firstElementChild;
+        this.delete_selected_button = this.$t.button_delete_selected;
         // v2 - create SelectionList
         this.widget("list", ($e) => {
           return new $ctl.widget.SelectionList(
