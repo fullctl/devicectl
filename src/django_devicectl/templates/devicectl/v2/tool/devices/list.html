@@ -30,15 +30,29 @@
         <div class="row" style="display:none;" data-sot="external">
           <div class="col-12 right">
             <a
-            data-api-action="remove_device/{id}"
-            data-api-callback="remove"
-            data-confirm="Remove device from this facility?"
-            data-api-method="DELETE"><span class="icon fullctl icon-delete"></span><span class="fullctl label">{% trans "Remove" %}</span></a>
-
-            <a data-action="link_to_reference">
-              <span class="icon fullctl icon-edit"></span>
-              <span class="label fullctl">{% trans "Managed in" %} <span data-field="reference_source"></span></span>
+              class="button btn delete"
+              data-hover="show"
+              data-api-action="remove_device/{id}"
+              data-api-callback="remove"
+              data-confirm="Remove device from this facility?"
+              data-api-method="DELETE"
+            >
+              <span class="icon icon-delete"></span>
             </a>
+
+            <a class="button col btn" data-hover="show" data-btn-type="secondary" data-action="link_to_reference">
+              <div class="row align-items-center">
+                <div class="col-auto pe-0">
+                  <span class="icon fullctl icon-edit"></span>
+                </div>
+                <div class="col label">
+                  <span class="label fullctl">{% trans "Managed in" %} <span data-field="reference_source"></span></span>
+                </div>
+              </div>
+            </a>
+            <button class="btn">
+              <span class="icon icon-options"></span>
+            </button>
           </div>
         </div>
 
@@ -52,9 +66,9 @@
             data-api-action="remove_device/{id}"
             data-api-callback="remove"
             data-confirm="Remove device?"
-            data-api-method="DELETE"><span class="icon fullctl icon-delete"
+            data-api-method="DELETE"
           >
-            <span class="icon ixctl icon-delete"></span>
+            <span class="icon icon-delete"></span>
           </a>
           <button class="btn">
             <span class="icon icon-options"></span>
