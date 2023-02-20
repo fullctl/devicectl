@@ -578,7 +578,7 @@ $ctl.application.Devicectl.ModalPhysicalPort = $tc.extend(
       )
 
       logical_port_select.format_request_url = (url) => {
-        return url.replace("/0/", "/"+fullctl.devicectl.device_id()+"/");
+        return url.replace("/0/", "/"+fullctl.devicectl.device_id()+"/")+"?ordering=name";
       };
 
       logical_port_select.load().then(() => {
@@ -720,7 +720,7 @@ $ctl.application.Devicectl.ModalVirtualPort = $tc.extend(
       )
 
       logical_port_select.format_request_url = (url) => {
-        return url.replace("/0/", "/"+fullctl.devicectl.device_id()+"/");
+        return url.replace("/0/", "/"+fullctl.devicectl.device_id()+"/")+"?ordering=name";
       };
 
       logical_port_select.load().then(() => {
