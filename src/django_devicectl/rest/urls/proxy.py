@@ -14,5 +14,4 @@ ENDPOINTS = getattr(
 )
 
 if PROXY_HOST:
-
     setup("devicectl", proxy_api("devicectl", PROXY_HOST, ENDPOINTS))

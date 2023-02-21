@@ -6,7 +6,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("django_fullctl", "0019_default_org"),
         ("django_devicectl", "0002_virtualport_name"),

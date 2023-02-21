@@ -26,7 +26,6 @@ class NautobotPull(Task):
         return self.org_id
 
     def run(self, *args, **kwargs):
-
         instance = models.Instance.objects.get(org_id=self.org_id)
 
         # TODO allow per organization set up of nautobot url / token

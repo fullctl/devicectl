@@ -9,7 +9,6 @@ from django.db import migrations, models
 
 
 def migrate_ips(apps, schema_editor):
-
     PortInfo = apps.get_model("django_devicectl", "PortInfo")
     IPAddress = apps.get_model("django_devicectl", "IPAddress")
 
@@ -29,7 +28,6 @@ def migrate_ips(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("django_devicectl", "0016_auto_20220928_0925"),
     ]
