@@ -389,7 +389,7 @@ $ctl.application.Devicectl.LogicalPorts = $tc.extend(
           return url.replace("/0/", "/" + data.id + "/");
         };
 
-        $(button_delete).on("api-write:success", () => { this.sync(); });
+        $(button_delete).on("api-write:success", () => $ctl.devicectl.sync());
 
         if (!grainy.check(data.grainy, "d")) {
           button_delete.element.hide();
@@ -531,7 +531,7 @@ $ctl.application.Devicectl.PhysicalPorts = $tc.extend(
           return url.replace("/0/", "/" + data.id + "/");
         };
 
-        $(button_delete).on("api-write:success", () => { this.sync(); });
+        $(button_delete).on("api-write:success", () => $ctl.devicectl.sync());
 
         if (!grainy.check(data.grainy, "d")) {
           button_delete.element.hide();
@@ -690,7 +690,7 @@ $ctl.application.Devicectl.VirtualPorts = $tc.extend(
           return url.replace("/0/", "/" + data.id + "/");
         };
 
-        $(button_delete).on("api-write:success", () => { this.sync(); });
+        $(button_delete).on("api-write:success", () => $ctl.devicectl.sync());
 
         if (!grainy.check(data.grainy, "d")) {
           button_delete.element.hide();
