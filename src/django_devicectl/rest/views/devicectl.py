@@ -197,7 +197,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         return Response(serializer.data)
 
     @service_bridge_sync(pull="sot")
-    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_pk}")
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
     @load_object("device", models.Device, instance="instance", id="device_id")
     def retrieve(self, request, org, instance, device, *args, **kwargs):
         serializer = Serializers.device(
