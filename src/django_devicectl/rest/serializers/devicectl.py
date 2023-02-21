@@ -33,7 +33,6 @@ class Facility(ModelSerializer):
 
 @register
 class FacilityAddDevice(serializers.Serializer):
-
     device = serializers.IntegerField(help_text=_("Device id"))
 
     ref_tag = "facility_add_device"
@@ -116,7 +115,6 @@ class InlinePhysicalPort(ModelSerializer):
 
 @register
 class VirtualPort(ModelSerializer):
-
     physical_ports = serializers.SerializerMethodField()
     device = serializers.SerializerMethodField()
 

@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("django_fullctl", "0019_default_org"),
         ("django_devicectl", "0004_device_ref_2"),

@@ -52,7 +52,6 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         verbose_name_plural = _("Facilities")
 
     class ServiceBridge:
-
         # PDBCTL
 
         map_pdbctl = {
@@ -118,9 +117,7 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         return f"{self.name} [#{self.id}]"
 
     def finalize_service_bridge_data(self, service_name, data):
-
         if service_name == "nautobot":
-
             site = nautobot.Site().first(cf_devicectl_id=self.id)
 
             # nautobot requires status to be sent, but we want nautobot to
@@ -226,7 +223,6 @@ class Device(ServiceBridgeReferenceModel):
     @property
     @reversion.create_revision()
     def management_port(self):
-
         if hasattr(self, "_management_port_info"):
             return self._management_port_info
 
@@ -263,7 +259,6 @@ class Device(ServiceBridgeReferenceModel):
         return f"Device({self.id}) {self.name}"
 
     def set_management_ip_address(self, ip):
-
         if not ip:
             return
 
@@ -309,7 +304,6 @@ class Device(ServiceBridgeReferenceModel):
         return self.management_port.ip_address_6
 
     def setup(self):
-
         """
         minimal device setup - will create a rudimentary port set up for the device
         as needed
@@ -328,7 +322,6 @@ class Device(ServiceBridgeReferenceModel):
 
     @transaction.atomic
     def delete(self):
-
         self.logical_ports.all().delete()
         self.physical_ports.all().delete()
 
@@ -384,7 +377,6 @@ class PhysicalPort(HandleRefModel):
         return f"PhyscalPort({self.id}) {self.name}"
 
     def setup(self, instance):
-
         """
         minimal setup - will create a rudimentary port set up
         as needed
@@ -436,7 +428,6 @@ class LogicalPort(HandleRefModel):
         return f"LogicalPort({self.id}) {self.name}"
 
     def setup(self, instance):
-
         """
         minimal setup - will create a rudimentary port set up
         as needed
@@ -498,7 +489,6 @@ class VirtualPort(ServiceBridgeReferenceModel):
 
     @property
     def display_name(self):
-
         try:
             return f"{self.name} {self.port.port_info.display_name}"
         except AttributeError:
@@ -529,7 +519,6 @@ class VirtualPort(ServiceBridgeReferenceModel):
         return f"VirtualPort({self.id}) {self.name}"
 
     def setup(self):
-
         device = self.logical_port.physical_ports.first().device
 
         try:
@@ -624,7 +613,6 @@ class PortInfo(HandleRefModel):
         return self.port.device
 
     def _assign_ip(self, address):
-
         try:
             address, reference = address
         except (TypeError, ValueError):
