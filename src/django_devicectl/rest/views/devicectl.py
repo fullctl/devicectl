@@ -51,7 +51,6 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_tag}")
     @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def retrieve(self, request, org, instance, facility, *args, **kwargs):
-
         serializer = Serializers.facility(
             instance=facility,
             many=False,
@@ -210,7 +209,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
     @load_object("device", models.Device, instance="instance", id="device_id")
     def virtual_ports(self, request, org, instance, device, *args, **kwargs):
-
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "vlan_id"])
         queryset = device.virtual_ports
         queryset = ordering_filter.filter_queryset(request, queryset, self)
@@ -225,7 +223,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="logical_port.{request.org.permission_id}")
     @load_object("device", models.Device, instance="instance", id="device_id")
     def logical_ports(self, request, org, instance, device, *args, **kwargs):
-
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "channel", "trunk"])
         queryset = device.logical_ports
         queryset = ordering_filter.filter_queryset(request, queryset, self)
@@ -240,7 +237,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="physical_port.{request.org.permission_id}")
     @load_object("device", models.Device, instance="instance", id="device_id")
     def physical_ports(self, request, org, instance, device, *args, **kwargs):
-
         ordering_filter = CaseInsensitiveOrderingFilter(["name"])
         queryset = device.physical_ports
         queryset = ordering_filter.filter_queryset(request, queryset, self)
@@ -480,7 +476,6 @@ class VirtualPort(CachedObjectMixin, viewsets.GenericViewSet):
 
     @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
-
         ordering_filter = CaseInsensitiveOrderingFilter(
             ["name", "vlan_id", "logical_port"]
         )

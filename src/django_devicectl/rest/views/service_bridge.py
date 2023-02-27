@@ -23,7 +23,6 @@ class Heartbeat(HeartbeatViewSet):
 
 @route
 class Facility(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
@@ -42,7 +41,6 @@ class Facility(DataViewSet):
 
 @route
 class Device(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET", "POST", "PUT", "DELETE"]
     valid_filters = [
@@ -71,7 +69,6 @@ class Device(DataViewSet):
 
 @route
 class Port(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
@@ -88,7 +85,6 @@ class Port(DataViewSet):
     }
 
     def filter(self, qset, request):
-
         qset = super().filter(qset, request)
         qset = qset.select_related(
             "virtual_port", "virtual_port__logical_port", "port_info"
@@ -103,7 +99,6 @@ class Port(DataViewSet):
         detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports
     )
     def request_dummy_ports(self, request, *args, **kwargs):
-
         data = self.prepare_write_data(request)
 
         slz = self.serializer_class(data=data)
@@ -116,7 +111,6 @@ class Port(DataViewSet):
 
 @route
 class Portinfo(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
@@ -130,7 +124,6 @@ class Portinfo(DataViewSet):
 
 @route
 class VirtualPort(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
@@ -158,7 +151,6 @@ class VirtualPort(DataViewSet):
 
 @route
 class IPAddress(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [

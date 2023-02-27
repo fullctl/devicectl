@@ -12,7 +12,6 @@ Serializers, register = serializer_registry()
 
 @register
 class Facility(ModelSerializer):
-
     org_id = serializers.SerializerMethodField()
 
     class Meta:
@@ -33,7 +32,6 @@ class Facility(ModelSerializer):
 
 @register
 class Device(ModelSerializer):
-
     org_id = serializers.SerializerMethodField()
     facility_slug = serializers.SerializerMethodField()
 
@@ -67,7 +65,6 @@ class Device(ModelSerializer):
 
 @register
 class Port(ModelSerializer):
-
     org_id = serializers.SerializerMethodField()
 
     ip_address_4 = serializers.CharField(
@@ -114,7 +111,6 @@ class Port(ModelSerializer):
 
     def get_device(self, port):
         if "device" in self.context.get("joins", []):
-
             # device from preloaded cache
             device = self.devices.get(port.device_id)
 
@@ -130,7 +126,6 @@ class Port(ModelSerializer):
         Preloads and caches all devices needed to render device relationships
         """
         if not hasattr(self, "_devices"):
-
             ports = self.instance
             if not isinstance(ports, Iterable):
                 ports = [ports]
@@ -149,7 +144,6 @@ class Port(ModelSerializer):
         Preloads and caches all facilities needed to render device relationships
         """
         if not hasattr(self, "_facilities"):
-
             ports = self.instance
             if not isinstance(ports, Iterable):
                 ports = [ports]
@@ -167,7 +161,6 @@ class Port(ModelSerializer):
 
 @register
 class PortInfo(ModelSerializer):
-
     org_id = serializers.SerializerMethodField()
 
     class Meta:
@@ -221,7 +214,6 @@ class VirtualPort(ModelSerializer):
 
 @register
 class RequestDummyPorts(serializers.Serializer):
-
     ref_tag = "request_dummy_ports"
 
     instance = serializers.IntegerField()
@@ -234,7 +226,6 @@ class RequestDummyPorts(serializers.Serializer):
 
     @transaction.atomic
     def create(self, validated_data):
-
         ports = validated_data["ports"]
         instance = models.Instance.objects.get(id=validated_data["instance"])
         name_prefix = validated_data["name_prefix"]
@@ -293,7 +284,6 @@ class RequestDummyPorts(serializers.Serializer):
                     created_ports.append(ip6.port_info.port)
 
                 if port_created or not port.port_info_id:
-
                     port.port_info = models.PortInfo.objects.create(
                         instance=instance,
                     )

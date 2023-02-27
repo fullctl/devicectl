@@ -15,7 +15,6 @@ NAUTOBOT_PAGE_LIMIT = 999999
     "nautobot_push_device_loc", _("Nautobot: update device location")
 )
 def push_device_loc(action, device):
-
     """
     Push handler that pushes a device location (facility/site) change to nautobot
     """
@@ -41,7 +40,6 @@ def push_device_loc(action, device):
     site = nautobot.Site().first(cf_devicectl_id=facility.id)
 
     if site:
-
         # assign device to site in nautobot
         nautobot.Device().partial_update(
             device.reference.object, {"site": str(site.id)}
@@ -52,7 +50,6 @@ def push_device_loc(action, device):
     "nautobot_pull_mgmt_ips", _("Nautobot: retrieve management ip-addresses")
 )
 def pull_device_mgmt_ips(action, device):
-
     """
     Pull handler that pulls device management pimary ip addresses
     from nautobot
@@ -83,7 +80,6 @@ def pull_device_mgmt_ips(action, device):
 
 
 def sync_custom_fields():
-
     """
     Make sure the necessary custom fields exist in nautobot
     """
@@ -106,7 +102,6 @@ def sync_custom_fields():
 
 
 def pull_ip_addresses(virtual_port):
-
     """
     Pull ip addresses into port infos from nautobot for the specified virtualport
     """
@@ -115,7 +110,6 @@ def pull_ip_addresses(virtual_port):
     ip6 = None
 
     for nautobot_ip in nautobot.IPAddress().objects(limit=NAUTOBOT_PAGE_LIMIT):
-
         if ip4 and ip6:
             break
 
@@ -139,13 +133,11 @@ def pull_ip_addresses(virtual_port):
 
 
 def pull_interfaces(device):
-
     """
     Pulls interfaces into virtual ports from nautobot for the specified devices
     """
 
     for nautobot_if in nautobot.Interface().objects(device_id=str(device.reference)):
-
         # for now only pull virtual and lag  interfaces
 
         if nautobot_if.type.value in ["virtual", "lag"]:
@@ -153,7 +145,6 @@ def pull_interfaces(device):
 
 
 def pull_interface(nautobot_if, device):
-
     """
     Pull virtual or LAG interface from nautobot
 
@@ -165,7 +156,6 @@ def pull_interface(nautobot_if, device):
             reference=nautobot_if.id, logical_port__physical_ports__device=device
         )
     except models.VirtualPort.DoesNotExist:
-
         if nautobot_if.type.value == "virtual":
             logical_port = device.physical_ports.first().logical_port
         elif nautobot_if.type.value == "lag":
@@ -205,7 +195,6 @@ def pull_interface(nautobot_if, device):
 
 
 def delete_interfaces():
-
     """
     Deletes all nautobot referenced virtual ports that not longer
     exist as interfaces in nautobot
@@ -226,7 +215,6 @@ def delete_interfaces():
 
 
 def pull(org, *args, **kwargs):
-
     """
     Pull data from nautobot
     """
@@ -243,7 +231,6 @@ def pull(org, *args, **kwargs):
     # create / update devices from nautobot data
 
     for nautobot_device in nautobot.Device().objects(limit=NAUTOBOT_PAGE_LIMIT):
-
         if nautobot_device.device_role.name.lower() not in roles:
             continue
 
@@ -291,7 +278,6 @@ def pull(org, *args, **kwargs):
 
 
 def push(org, *args, **kwargs):
-
     """
     Push data to nautobot
     """
@@ -311,11 +297,9 @@ def push(org, *args, **kwargs):
     # sync devicectl facility -> nautobot site
 
     for fac in models.Facility.objects.exclude(slug="pdb"):
-
         exists = False
 
         for nautobot_site in nautobot_sites:
-
             if nautobot_site.custom_fields.devicectl_id == fac.id:
                 exists = nautobot_site
                 break
@@ -340,7 +324,6 @@ def push(org, *args, **kwargs):
 
     # delete nautobot sites if they no longer exist as facilities in devicectl
     for site in nautobot_sites:
-
         if not site.custom_fields.devicectl_id:
             continue
 
