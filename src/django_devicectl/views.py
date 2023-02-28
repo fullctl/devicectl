@@ -23,7 +23,7 @@ def make_env(request, **kwargs):
 @load_instance()
 def view_instance(request, instance, **kwargs):
     env = make_env(request, instance=instance, org=instance.org)
-    return render(request, "devicectl/index.html", env)
+    return render(request, "theme-select.html", env)
 
 
 @require_auth()
@@ -37,7 +37,7 @@ def view_instance_load_facility(request, instance, facility_tag, **kwargs):
     env = make_env(request, instance=instance, org=instance.org)
     env["select_facility"] = facility
 
-    return render(request, "devicectl/index.html", env)
+    return render(request, "theme-select.html", env)
 
 
 @require_auth()

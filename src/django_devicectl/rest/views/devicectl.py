@@ -1,4 +1,5 @@
 import fullctl.service_bridge.pdbctl as pdbctl
+from django.conf import settings
 from fullctl.django.auditlog import auditlog
 from fullctl.django.decorators import service_bridge_sync
 from fullctl.django.rest.core import BadRequest
@@ -25,6 +26,10 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     ref_tag = "facility"
     lookup_field = "slug"
 
+    def get_queryset(self):
+        qset = super().get_queryset()
+        return qset.filter(instance__org__slug=self.kwargs["org_tag"])
+
     # def get_queryset(self):
     #    return super().get_queryset().filter(instance__org__slug=self.kwargs["org_tag"])
 
@@ -33,7 +38,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     def list(self, request, org, instance, *args, **kwargs):
         # ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
 
-        queryset = instance.facilities.all()
+        queryset = instance.facilities.all().order_by("slug")
         # queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.facility(
@@ -46,7 +51,6 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="facility.{request.org.permission_id}.{facility_tag}")
     @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
     def retrieve(self, request, org, instance, facility, *args, **kwargs):
-
         serializer = Serializers.facility(
             instance=facility,
             many=False,
@@ -127,8 +131,11 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         serializer = Serializers.device(device)
         response = Response(serializer.data)
 
-        device.facility = None
-        device.save()
+        if settings.SERVICE_BRIDGE_REF_DEVICE and device.reference:
+            device.facility = None
+            device.save()
+        else:
+            device.delete()
 
         return response
 
@@ -167,6 +174,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
 
         queryset = instance.devices.all()
+        queryset = queryset.select_related("facility")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.device(
@@ -188,12 +196,54 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         return Response(serializer.data)
 
     @service_bridge_sync(pull="sot")
-    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_pk}")
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
     @load_object("device", models.Device, instance="instance", id="device_id")
     def retrieve(self, request, org, instance, device, *args, **kwargs):
         serializer = Serializers.device(
             instance=device,
             many=False,
+        )
+        return Response(serializer.data)
+
+    @action(detail=True, serializer_class=Serializers.virtual_port)
+    @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def virtual_ports(self, request, org, instance, device, *args, **kwargs):
+        ordering_filter = CaseInsensitiveOrderingFilter(["name", "vlan_id"])
+        queryset = device.virtual_ports
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+
+        serializer = Serializers.virtual_port(
+            queryset,
+            many=True,
+        )
+        return Response(serializer.data)
+
+    @action(detail=True, serializer_class=Serializers.logical_port)
+    @grainy_endpoint(namespace="logical_port.{request.org.permission_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def logical_ports(self, request, org, instance, device, *args, **kwargs):
+        ordering_filter = CaseInsensitiveOrderingFilter(["name", "channel", "trunk"])
+        queryset = device.logical_ports
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+
+        serializer = Serializers.logical_port(
+            queryset,
+            many=True,
+        )
+        return Response(serializer.data)
+
+    @action(detail=True, serializer_class=Serializers.physical_port)
+    @grainy_endpoint(namespace="physical_port.{request.org.permission_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def physical_ports(self, request, org, instance, device, *args, **kwargs):
+        ordering_filter = CaseInsensitiveOrderingFilter(["name"])
+        queryset = device.physical_ports
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+
+        serializer = Serializers.physical_port(
+            queryset,
+            many=True,
         )
         return Response(serializer.data)
 
@@ -206,7 +256,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         device = serializer.save()
-        device.save()
 
         if request.data.get("facility"):
             device.facility_id = request.data.get("facility")
@@ -227,7 +276,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         device = serializer.save()
-        device.save()
 
         return Response(Serializers.device(instance=device).data)
 
@@ -281,7 +329,18 @@ class PhysicalPort(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="physical_port.{request.org.permission_id}")
     def create(self, request, org, instance, *args, **kwargs):
         models.Device.objects.get(instance=instance, id=request.data.get("device"))
+
+        data = request.data
+
+        if not data["logical_port"]:
+            logical_port = models.LogicalPort.objects.create(
+                instance=instance,
+                name=f"{data['name']}:lp",
+            )
+            data["logical_port"] = logical_port.id
+
         serializer = Serializers.physical_port(data=request.data)
+
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         physical_port = serializer.save()
@@ -308,7 +367,6 @@ class PhysicalPort(CachedObjectMixin, viewsets.GenericViewSet):
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
         physical_port = serializer.save()
-        physical_port.save()
 
         return Response(Serializers.physical_port(instance=physical_port).data)
 
@@ -418,7 +476,6 @@ class VirtualPort(CachedObjectMixin, viewsets.GenericViewSet):
 
     @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
-
         ordering_filter = CaseInsensitiveOrderingFilter(
             ["name", "vlan_id", "logical_port"]
         )

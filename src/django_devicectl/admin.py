@@ -5,6 +5,7 @@ from django_handleref.admin import VersionAdmin
 
 from django_devicectl.models import (
     Device,
+    Facility,
     IPAddress,
     LogicalPort,
     PhysicalPort,
@@ -12,6 +13,11 @@ from django_devicectl.models import (
     PortInfo,
     VirtualPort,
 )
+
+
+@admin.register(Facility)
+class FacilityAdmin(VersionAdmin):
+    list_display = ("id", "org", "name", "slug", "created", "updated")
 
 
 @admin.register(Device)

@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from django.db import transaction
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
@@ -9,9 +11,29 @@ Serializers, register = serializer_registry()
 
 
 @register
-class Device(ModelSerializer):
-
+class Facility(ModelSerializer):
     org_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Facility
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "reference",
+            "reference_is_sot",
+            "instance",
+            "org_id",
+        ]
+
+    def get_org_id(self, device):
+        return device.instance.org.permission_id
+
+
+@register
+class Device(ModelSerializer):
+    org_id = serializers.SerializerMethodField()
+    facility_slug = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Device
@@ -26,15 +48,23 @@ class Device(ModelSerializer):
             "type",
             "instance",
             "org_id",
+            "facility_id",
+            "facility_slug",
         ]
 
     def get_org_id(self, device):
         return device.instance.org.permission_id
 
+    def get_facility_slug(self, device):
+        try:
+            return device.facility.slug
+        except AttributeError:
+            # not assigned to facility
+            return None
+
 
 @register
 class Port(ModelSerializer):
-
     org_id = serializers.SerializerMethodField()
 
     ip_address_4 = serializers.CharField(
@@ -81,13 +111,56 @@ class Port(ModelSerializer):
 
     def get_device(self, port):
         if "device" in self.context.get("joins", []):
-            return Device(instance=port.device).data
+            # device from preloaded cache
+            device = self.devices.get(port.device_id)
+
+            # device.facility from preloaded cache
+            device.facility = self.facilities.get(device.facility_id)
+
+            return Device(instance=device).data
         return None
+
+    @property
+    def devices(self):
+        """
+        Preloads and caches all devices needed to render device relationships
+        """
+        if not hasattr(self, "_devices"):
+            ports = self.instance
+            if not isinstance(ports, Iterable):
+                ports = [ports]
+
+            self._devices = {
+                device.id: device
+                for device in models.Device.objects.filter(
+                    id__in=[port.device_id for port in ports]
+                )
+            }
+        return self._devices
+
+    @property
+    def facilities(self):
+        """
+        Preloads and caches all facilities needed to render device relationships
+        """
+        if not hasattr(self, "_facilities"):
+            ports = self.instance
+            if not isinstance(ports, Iterable):
+                ports = [ports]
+
+            self._facilities = {
+                facility.id: facility
+                for facility in models.Facility.objects.filter(
+                    id__in=[
+                        self.devices.get(port.device_id).facility_id for port in ports
+                    ]
+                )
+            }
+        return self._facilities
 
 
 @register
 class PortInfo(ModelSerializer):
-
     org_id = serializers.SerializerMethodField()
 
     class Meta:
@@ -141,7 +214,6 @@ class VirtualPort(ModelSerializer):
 
 @register
 class RequestDummyPorts(serializers.Serializer):
-
     ref_tag = "request_dummy_ports"
 
     instance = serializers.IntegerField()
@@ -154,7 +226,6 @@ class RequestDummyPorts(serializers.Serializer):
 
     @transaction.atomic
     def create(self, validated_data):
-
         ports = validated_data["ports"]
         instance = models.Instance.objects.get(id=validated_data["instance"])
         name_prefix = validated_data["name_prefix"]
@@ -170,6 +241,17 @@ class RequestDummyPorts(serializers.Serializer):
             device.type = device_type
             device.save()
             device.setup()
+
+            if not device.facility:
+                facility = models.Facility.objects.filter(
+                    name=name_prefix, instance=instance
+                ).first()
+                if not facility:
+                    facility = models.Facility.objects.create(
+                        name=name_prefix, instance=instance, slug=name_prefix.lower()
+                    )
+                device.facility = facility
+                device.save()
 
             for _port in port_data:
                 virtual_port, _ = models.VirtualPort.objects.get_or_create(
@@ -202,7 +284,6 @@ class RequestDummyPorts(serializers.Serializer):
                     created_ports.append(ip6.port_info.port)
 
                 if port_created or not port.port_info_id:
-
                     port.port_info = models.PortInfo.objects.create(
                         instance=instance,
                     )

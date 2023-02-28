@@ -104,6 +104,7 @@ settings_manager.set_option("GOOGLE_ANALYTICS_ID", "")
 
 settings_manager.set_option("NAUTOBOT_URL", "")
 settings_manager.set_option("NAUTOBOT_TOKEN", "")
+settings_manager.set_option("NAUTOBOT_DEVICE_ROLE", ["Edge Router"])
 
 # FINALIZE
 

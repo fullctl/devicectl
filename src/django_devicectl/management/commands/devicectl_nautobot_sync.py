@@ -5,7 +5,6 @@ import django_devicectl.nautobot as nautobot
 
 
 class Command(CommandInterface):
-
     help = "Pull nautobot data for specified organization"
 
     def add_arguments(self, parser):

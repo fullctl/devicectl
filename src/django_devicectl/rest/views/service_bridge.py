@@ -22,8 +22,25 @@ class Heartbeat(HeartbeatViewSet):
 
 
 @route
-class Device(DataViewSet):
+class Facility(DataViewSet):
+    path_prefix = "/data"
+    allowed_http_methods = ["GET"]
+    valid_filters = [
+        ("org", "instance__org__remote_id"),
+        ("org_slug", "instance__org__slug"),
+        ("q", "name__icontains"),
+        ("name", "name__iexact"),
+        ("ref", "reference"),
+    ]
+    autocomplete = "name"
+    allow_unfiltered = True
 
+    queryset = models.Facility.objects.filter(status="ok")
+    serializer_class = Serializers.facility
+
+
+@route
+class Device(DataViewSet):
     path_prefix = "/data"
     allowed_http_methods = ["GET", "POST", "PUT", "DELETE"]
     valid_filters = [
@@ -33,6 +50,8 @@ class Device(DataViewSet):
         ("name", "name__iexact"),
         ("ref", "reference"),
         ("port", "physical_ports__logical_port__virtual_ports__port__in"),
+        ("facility", "facility_id"),
+        ("facility_slug", "facility__slug"),
     ]
     autocomplete = "name"
     allow_unfiltered = True
@@ -43,10 +62,13 @@ class Device(DataViewSet):
     def after_create(self, obj, data):
         obj.setup()
 
+        if data.get("facility"):
+            obj.facility_id = data.get("facility")
+            obj.save()
+
 
 @route
 class Port(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
@@ -59,14 +81,24 @@ class Port(DataViewSet):
     serializer_class = Serializers.port
 
     join_xl = {
-        "device": ("virtual_port", "virtual_port__logical_port"),
+        "device": [],
     }
+
+    def filter(self, qset, request):
+        qset = super().filter(qset, request)
+        qset = qset.select_related(
+            "virtual_port", "virtual_port__logical_port", "port_info"
+        )
+        qset = qset.prefetch_related(
+            "port_info__ips", "virtual_port__logical_port__physical_ports"
+        )
+
+        return qset
 
     @action(
         detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports
     )
     def request_dummy_ports(self, request, *args, **kwargs):
-
         data = self.prepare_write_data(request)
 
         slz = self.serializer_class(data=data)
@@ -79,7 +111,6 @@ class Port(DataViewSet):
 
 @route
 class Portinfo(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
@@ -93,7 +124,6 @@ class Portinfo(DataViewSet):
 
 @route
 class VirtualPort(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
@@ -121,7 +151,6 @@ class VirtualPort(DataViewSet):
 
 @route
 class IPAddress(DataViewSet):
-
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
