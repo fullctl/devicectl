@@ -73,7 +73,7 @@ class Device(ModelSerializer):
         if obj.facility is None:
             return None
         return obj.facility.name
-    
+
     def get_facility_slug(self, obj):
         if obj.facility is None:
             return None
