@@ -57,11 +57,12 @@
         </div>
 
         <div style="display:none;" data-sot="devicectl">
-          <a class="button btn" data-action="edit_device" data-hover="show">
+          <a class="button btn" data-action="edit_device" data-hover="show" title="Edit Device">
             <span class="icon icon-edit"></span>
           </a>
           <a
             class="button btn delete"
+            title="Delete Device"
             data-hover="show"
             data-api-action="remove_device/{id}"
             data-api-callback="remove"
@@ -69,6 +70,13 @@
             data-api-method="DELETE"
           >
             <span class="icon icon-delete"></span>
+          </a>
+          <a
+            class="button btn"
+            title="View API"
+            data-hover="show"
+          >
+            <span class="icon icon-api"></span>
           </a>
           <button class="btn">
             <span class="icon icon-options"></span>
