@@ -75,6 +75,8 @@
             class="button btn"
             title="View API"
             data-hover="show"
+            data-action="view_api"
+            data-api-url="{% url "devicectl_api:device-detail" org_tag=org.slug device_id=0 %}"
           >
             <span class="icon icon-api"></span>
           </a>
