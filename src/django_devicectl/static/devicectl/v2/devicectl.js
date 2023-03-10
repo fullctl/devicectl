@@ -180,7 +180,7 @@ $ctl.application.Devicectl.Devices = $tc.extend(
         let view_api_btn = row.find('a[data-action="view_api"]');
         view_api_btn.click(() => {
           let device = row.data("apiobject");
-          window.open($(view_api_btn).attr("data-api-url").replace("0", device.id));
+          window.open($(view_api_btn).attr("data-api-url").replace("0", device.id) + "?pretty");
         })
 
         if (!grainy.check(data.grainy, "d")) {
