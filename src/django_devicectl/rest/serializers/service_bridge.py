@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q
 from fullctl.django.rest.decorators import serializer_registry
@@ -156,9 +157,11 @@ class Port(ModelSerializer):
                 facility.id: facility
                 for facility in models.Facility.objects.filter(
                     id__in=[
-                        self.devices.get(port.device_id).facility_id for port in ports if port.device_id
+                        self.devices.get(port.device_id).facility_id
+                        for port in ports
+                        if port.device_id
                     ]
-                ) 
+                )
             }
         return self._facilities
 
@@ -274,24 +277,39 @@ class RequestDummyPorts(serializers.Serializer):
                 ip6 = None
 
                 name_query = (
-                    Q(port_info__port__name__startswith=f"{name_prefix}:") |
-                    Q(port_info__port__name__startswith=f"pdb:") |
-                    Q(port_info__port__name__startswith=f"ixctl:") 
+                    Q(port_info__port__name__startswith=f"{name_prefix}:")
+                    | Q(port_info__port__name__startswith="pdb:")
+                    | Q(port_info__port__name__startswith="ixctl:")
                 )
 
                 if ip4_incoming:
-                    ip4 = models.IPAddress.objects.filter(
-                        instance=instance, address=ip4_incoming
-                    ).exclude(name_query).first()
+                    ip4 = (
+                        models.IPAddress.objects.filter(
+                            instance=instance, address=ip4_incoming
+                        )
+                        .exclude(name_query)
+                        .first()
+                    )
                 if ip6_incoming:
-                    ip6 = models.IPAddress.objects.filter(
-                        instance=instance, address=ip6_incoming
-                    ).exclude(name_query).first()
+                    ip6 = (
+                        models.IPAddress.objects.filter(
+                            instance=instance, address=ip6_incoming
+                        )
+                        .exclude(name_query)
+                        .first()
+                    )
 
-                if ip4:
-                    created_ports.append(ip4.port_info.port)
-                if ip6:
-                    created_ports.append(ip6.port_info.port)
+                try:
+                    if ip4:
+                        created_ports.append(ip4.port_info.port)
+                except ObjectDoesNotExist:
+                    pass
+
+                try:
+                    if ip6:
+                        created_ports.append(ip6.port_info.port)
+                except ObjectDoesNotExist:
+                    pass
 
                 if port_created or not port.port_info_id:
                     port.port_info = models.PortInfo.objects.create(

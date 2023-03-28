@@ -2,8 +2,8 @@
 
 from django.db import migrations
 
-def forwards(apps, schema_editor):
 
+def forwards(apps, schema_editor):
     """
     Rename all devicectl models that implement a `name` field
     where the value begins with `pdb:` to `peerctl:`
@@ -13,16 +13,13 @@ def forwards(apps, schema_editor):
     VirtualPort = apps.get_model("django_devicectl", "VirtualPort")
     LogicalPort = apps.get_model("django_devicectl", "LogicalPort")
 
-
     for facility in Facility.handleref.all():
         if facility.slug == "pdb":
             facility.slug = "peerctl"
             facility.name = "peerctl"
             facility.save()
 
-    
         for device in facility.devices.all():
-
             logical_port_ids = [p.logical_port_id for p in device.physical_ports.all()]
             logical_ports = LogicalPort.handleref.filter(id__in=logical_port_ids)
             virtual_ports = VirtualPort.handleref.filter(logical_port__in=logical_ports)
@@ -30,9 +27,9 @@ def forwards(apps, schema_editor):
             is_ixctl_device = virtual_ports.filter(name__icontains=":ixctl:").exists()
 
             if is_ixctl_device:
-                name_prefix = f"peerctl:ixctl:"
+                name_prefix = "peerctl:ixctl:"
             else:
-                name_prefix = f"peerctl:pdbctl:"
+                name_prefix = "peerctl:pdbctl:"
 
             if device.name.startswith("pdb:"):
                 device.name = name_prefix + device.name[4:]
@@ -42,7 +39,7 @@ def forwards(apps, schema_editor):
                 if virtual_port.name.startswith("pdb:"):
                     virtual_port.name = name_prefix + virtual_port.name[4:]
                     virtual_port.save()
-            
+
             for logical_port in logical_ports:
                 if logical_port.name.startswith("pdb:"):
                     logical_port.name = name_prefix + logical_port.name[4:]
@@ -54,11 +51,9 @@ def forwards(apps, schema_editor):
                     physical_port.save()
 
 
-
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_devicectl', '0017_auto_20220928_1051'),
+        ("django_devicectl", "0017_auto_20220928_1051"),
     ]
 
     operations = [
