@@ -63,6 +63,7 @@ class PortAdmin(VersionAdmin):
         "port_info",
         "created",
         "updated",
+        "device",
     )
 
 

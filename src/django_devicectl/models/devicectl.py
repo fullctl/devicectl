@@ -762,7 +762,10 @@ class Port(HandleRefModel):
 
     @property
     def device_id(self):
-        return self.device.id
+        try:
+            return self.device.id
+        except AttributeError:
+            return None
 
     @property
     def device_name(self):

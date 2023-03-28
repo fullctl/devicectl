@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 
 from django.db import transaction
+from django.db.models import Q
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
@@ -114,6 +115,9 @@ class Port(ModelSerializer):
             # device from preloaded cache
             device = self.devices.get(port.device_id)
 
+            if not device:
+                return None
+
             # device.facility from preloaded cache
             device.facility = self.facilities.get(device.facility_id)
 
@@ -152,9 +156,9 @@ class Port(ModelSerializer):
                 facility.id: facility
                 for facility in models.Facility.objects.filter(
                     id__in=[
-                        self.devices.get(port.device_id).facility_id for port in ports
+                        self.devices.get(port.device_id).facility_id for port in ports if port.device_id
                     ]
-                )
+                ) 
             }
         return self._facilities
 
@@ -255,7 +259,7 @@ class RequestDummyPorts(serializers.Serializer):
 
             for _port in port_data:
                 virtual_port, _ = models.VirtualPort.objects.get_or_create(
-                    name=f"{name_prefix}:virt:{_port['id']}",
+                    name=f"{name_prefix}:{device_id}:virt:{_port['id']}",
                     logical_port=device.physical_ports.first().logical_port,
                     vlan_id=0,
                 )
@@ -269,14 +273,20 @@ class RequestDummyPorts(serializers.Serializer):
                 ip4 = None
                 ip6 = None
 
+                name_query = (
+                    Q(port_info__port__name__startswith=f"{name_prefix}:") |
+                    Q(port_info__port__name__startswith=f"pdb:") |
+                    Q(port_info__port__name__startswith=f"ixctl:") 
+                )
+
                 if ip4_incoming:
                     ip4 = models.IPAddress.objects.filter(
                         instance=instance, address=ip4_incoming
-                    ).first()
+                    ).exclude(name_query).first()
                 if ip6_incoming:
                     ip6 = models.IPAddress.objects.filter(
                         instance=instance, address=ip6_incoming
-                    ).first()
+                    ).exclude(name_query).first()
 
                 if ip4:
                     created_ports.append(ip4.port_info.port)
@@ -289,11 +299,11 @@ class RequestDummyPorts(serializers.Serializer):
                     )
                     port.save()
 
-                    if not ip4:
-                        port.port_info.ip_address_4 = ip4_incoming
+                if not ip4 and ip4_incoming:
+                    port.port_info.ip_address_4 = ip4_incoming
 
-                    if not ip6:
-                        port.port_info.ip_address_6 = ip6_incoming
+                if not ip6 and ip6_incoming:
+                    port.port_info.ip_address_6 = ip6_incoming
 
                 created_ports.append(port)
 
