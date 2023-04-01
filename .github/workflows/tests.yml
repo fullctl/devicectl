@@ -7,7 +7,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install virtualenv from poetry
         uses: 20c/workflows/poetry@v1
       # poetry run pre-commit run --all-files
