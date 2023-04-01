@@ -791,7 +791,7 @@ pyflakes = ">=2.5.0,<2.6.0"
 
 [[package]]
 name = "fullctl"
-version = "1.0.1-rc8"
+version = "1.1.1-rc.0"
 description = "Core classes and functions for service applications"
 category = "main"
 optional = false
@@ -825,7 +825,7 @@ whitenoise = "^6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "e5593ab7b4e6cbfa330e27b73edfa7f3195561f2"
+resolved_reference = "38764e783a0ac93d159e5d08c8c2a077c6ad5b3a"
 
 [[package]]
 name = "git-url-parse"
@@ -1740,7 +1740,7 @@ version = "5.0.0"
 description = "Python Social Authentication, Django integration."
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.6"
 files = []
 develop = false
 
