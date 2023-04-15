@@ -300,7 +300,7 @@ class Device(ServiceBridgeReferenceModel):
     def management_ip_address_4(self):
         return self.management_port.ip_address_4
 
-    def managmeent_ip_address_6(self):
+    def management_ip_address_6(self):
         return self.management_port.ip_address_6
 
     def setup(self):
