@@ -78,7 +78,6 @@ class Port(ModelSerializer):
     is_management = serializers.BooleanField(
         read_only=True, source="port_info.is_management"
     )
-
     logical_port_name = serializers.SerializerMethodField()
     virtual_port_name = serializers.SerializerMethodField()
     device = serializers.SerializerMethodField()
