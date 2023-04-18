@@ -12,3 +12,5 @@ class DjangoDevicectlConfig(AppConfig):
 
         if getattr(settings, "NAUTOBOT_URL", None):
             import django_devicectl.nautobot  # noqa
+
+        import django_devicectl.signals  # noqa

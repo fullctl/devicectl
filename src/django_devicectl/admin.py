@@ -52,7 +52,6 @@ class VirtualPortAdmin(VersionAdmin):
 class IPAddressAdmin(VersionAdmin):
     list_display = ("id", "org", "address", "created", "updated")
 
-
 @admin.register(Port)
 class PortAdmin(VersionAdmin):
     list_display = (
