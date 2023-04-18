@@ -1,11 +1,12 @@
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+
 from django_devicectl.models.devicectl import IPAddress
 from django_devicectl.models.tasks import RequestPeerctlSync
-from django.db.models.signals import pre_save, post_save
-from django.dispatch import receiver
+
 
 @receiver(pre_save, sender=IPAddress)
 def ip_address_assignment(sender, instance, **kwargs):
-
     """
     When a new ip address is assigned to a port or
     an existing ip address is moved to a different port

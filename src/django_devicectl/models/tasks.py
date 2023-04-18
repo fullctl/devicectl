@@ -6,7 +6,6 @@ from fullctl.django.tasks import register
 import django_devicectl.models.devicectl as models
 
 
-
 @register
 class NautobotPull(Task):
 
@@ -38,6 +37,7 @@ class NautobotPull(Task):
             )
             device.name = n_device.display
             device.save()
+
 
 @register
 class RequestPeerctlSync(Task):
