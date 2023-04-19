@@ -64,9 +64,9 @@ class Device(ModelSerializer):
             # not assigned to facility
             return None
 
+
 @register
 class DeviceOperationalStatus(ModelSerializer):
-
     status = serializers.ChoiceField(choices=("ok", "error"))
 
     class Meta:
@@ -80,14 +80,13 @@ class DeviceOperationalStatus(ModelSerializer):
         ]
 
     def _save(self):
-
         """
         When saving a device operational status, we need to either create
         or update the device's operational status relation.
         """
 
         validated_data = self.validated_data
-        
+
         print(validated_data)
 
         device = validated_data["device"]

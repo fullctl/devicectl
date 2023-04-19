@@ -4,7 +4,10 @@ import reversion
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
-from fullctl.django.fields.service_bridge import ReferencedObjectCharField, ReferencedObjectField
+from fullctl.django.fields.service_bridge import (
+    ReferencedObjectCharField,
+    ReferencedObjectField,
+)
 from fullctl.django.inet.fields import DeviceDescriptionField
 from fullctl.django.models.abstract import (
     GeoModel,
@@ -254,7 +257,7 @@ class Device(ServiceBridgeReferenceModel):
         self._management_port_info = port_info
 
         return port_info
-    
+
     def __str__(self):
         return f"Device({self.id}) {self.name}"
 
@@ -327,6 +330,7 @@ class Device(ServiceBridgeReferenceModel):
 
         super().delete()
 
+
 @grainy_model(
     namespace="device",
     namespace_instance="device.{instance.org.permission_id}.{instance.id}",
@@ -346,19 +350,26 @@ class DeviceOperationalStatus(HandleRefModel):
         on_delete=models.CASCADE,
     )
 
-    status = models.CharField(max_length=255, choices=(
-        ("ok", "ok"),
-        ("error", "Error"),
-    ), default="ok", help_text=_("Configuration status"))
+    status = models.CharField(
+        max_length=255,
+        choices=(
+            ("ok", "ok"),
+            ("error", "Error"),
+        ),
+        default="ok",
+        help_text=_("Configuration status"),
+    )
 
-    error_message = models.TextField(max_length=255, null=True, blank=True, help_text=_("Configuration error"))
+    error_message = models.TextField(
+        max_length=255, null=True, blank=True, help_text=_("Configuration error")
+    )
     event = ReferencedObjectCharField(
         max_length=255,
         bridge_type="event",
         null=True,
         blank=True,
         help_text=_("auditCtl event reference"),
-    ) # type: ignore
+    )  # type: ignore
 
     class HandleRef:
         tag = "device_operational_status"
@@ -378,7 +389,6 @@ class DeviceOperationalStatus(HandleRefModel):
 
     def __str__(self):
         return f"DeviceOperationalStatus({self.id}) {self.device.name} {self.status}"
-
 
 
 @reversion.register()

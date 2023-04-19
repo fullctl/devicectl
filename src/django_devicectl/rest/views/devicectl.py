@@ -171,11 +171,9 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
 
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def list(self, request, org, instance, *args, **kwargs):
-        ordering_filter = CaseInsensitiveOrderingFilter(["name", "type"])
 
         queryset = instance.devices.all()
-        queryset = queryset.select_related("facility")
-        queryset = ordering_filter.filter_queryset(request, queryset, self)
+        queryset = queryset.select_related("facility").order_by("operational_status__status", "name").exclude(name__startswith="peerctl:")
 
         serializer = Serializers.device(
             queryset,
@@ -202,6 +200,16 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         serializer = Serializers.device(
             instance=device,
             many=False,
+        )
+        return Response(serializer.data)
+
+    @action(detail=True, serializer_class=Serializers.device_operational_status)
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def operational_status(self, request, org, instance, device, *args, **kwargs):
+        
+        serializer = Serializers.device_operational_status(
+            device.operational_status,
         )
         return Response(serializer.data)
 

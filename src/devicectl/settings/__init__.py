@@ -97,7 +97,9 @@ settings_manager.set_option("SERVICE_BRIDGE_REF_PORT_INFO", "")
 settings_manager.set_option(
     "SERVICE_BRIDGE_REF_FACILITY", "fullctl.service_bridge.pdbctl.Facility"
 )
-settings_manager.set_option("SERVICE_BRIDGE_REF_EVENT", "fullctl.service_bridge.auditctl.Event")
+settings_manager.set_option(
+    "SERVICE_BRIDGE_REF_EVENT", "fullctl.service_bridge.auditctl.Event"
+)
 
 # OUTSIDE SERVICES
 

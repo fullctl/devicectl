@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_devicectl', '0020_alter_deviceoperationalstatus_event'),
+        ("django_devicectl", "0020_alter_deviceoperationalstatus_event"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='deviceoperationalstatus',
-            name='error_message',
-            field=models.TextField(blank=True, help_text='Configuration error', max_length=255, null=True),
+            model_name="deviceoperationalstatus",
+            name="error_message",
+            field=models.TextField(
+                blank=True, help_text="Configuration error", max_length=255, null=True
+            ),
         ),
     ]

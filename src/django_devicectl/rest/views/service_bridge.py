@@ -66,10 +66,10 @@ class Device(DataViewSet):
             obj.facility_id = data.get("facility")
             obj.save()
 
-
-
     @action(
-        detail=True, methods=["POST"], serializer_class=Serializers.device_operational_status
+        detail=True,
+        methods=["POST"],
+        serializer_class=Serializers.device_operational_status,
     )
     def set_operational_status(self, request, pk, *args, **kwargs):
         device = self.get_object()
@@ -86,11 +86,13 @@ class Device(DataViewSet):
         except models.DeviceOperationalStatus.DoesNotExist:
             device_operational_status = None
 
-        slz = Serializers.device_operational_status(instance=device_operational_status, data=data)
+        slz = Serializers.device_operational_status(
+            instance=device_operational_status, data=data
+        )
         slz.is_valid(raise_exception=True)
         slz.save()
 
-        return Response(slz.data) 
+        return Response(slz.data)
 
 
 @route

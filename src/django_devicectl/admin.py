@@ -27,6 +27,7 @@ class DeviceOperationalStatusInline(admin.TabularInline):
     readonly_fields = ("status", "error_message", "event", "created", "updated")
     extra = 0
 
+
 @admin.register(Device)
 class DeviceAdmin(VersionAdmin):
     list_display = ("id", "org", "name", "type", "created", "updated")

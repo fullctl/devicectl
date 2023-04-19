@@ -42,12 +42,20 @@ class FacilityAddDevice(serializers.Serializer):
 
 
 @register
+class DeviceOperationalStatus(ModelSerializer):
+    class Meta:
+        model = models.DeviceOperationalStatus
+        fields = ["id", "device", "status", "error_message"]
+
+@register
 class Device(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
     facility_slug = serializers.SerializerMethodField()
 
     management_ip_address_4 = serializers.SerializerMethodField()
     management_ip_address_6 = serializers.SerializerMethodField()
+
+    operational_status = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Device
@@ -67,6 +75,7 @@ class Device(ModelSerializer):
             "instance",
             "management_ip_address_4",
             "management_ip_address_6",
+            "operational_status",
         ]
 
     def get_facility_name(self, obj):
@@ -91,6 +100,11 @@ class Device(ModelSerializer):
             return None
         return f"{port.ip_address_6}"
 
+    def get_operational_status(self, obj):
+        try:
+            return obj.operational_status.status
+        except:
+            return "ok"
 
 @register
 class PhysicalPort(ModelSerializer):
