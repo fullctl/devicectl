@@ -64,6 +64,55 @@ class Device(ModelSerializer):
             # not assigned to facility
             return None
 
+@register
+class DeviceOperationalStatus(ModelSerializer):
+
+    status = serializers.ChoiceField(choices=("ok", "error"))
+
+    class Meta:
+        model = models.DeviceOperationalStatus
+        fields = [
+            "id",
+            "device",
+            "status",
+            "error_message",
+            "event",
+        ]
+
+    def _save(self):
+
+        """
+        When saving a device operational status, we need to either create
+        or update the device's operational status relation.
+        """
+
+        validated_data = self.validated_data
+        
+        print(validated_data)
+
+        device = validated_data["device"]
+        status = validated_data["status"]
+        error_message = validated_data.get("error_message")
+        event = validated_data.get("event")
+
+        try:
+            device_operational_status = models.DeviceOperationalStatus.objects.get(
+                device=device
+            )
+            device_operational_status.status = status
+            device_operational_status.error_message = error_message
+            device_operational_status.event = event
+            device_operational_status.save()
+        except ObjectDoesNotExist:
+            device_operational_status = models.DeviceOperationalStatus.objects.create(
+                device=device,
+                status=status,
+                error_message=error_message,
+                event=event,
+            )
+
+        return device_operational_status
+
 
 @register
 class Port(ModelSerializer):
