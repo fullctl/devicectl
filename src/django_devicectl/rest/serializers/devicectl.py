@@ -47,6 +47,7 @@ class DeviceOperationalStatus(ModelSerializer):
         model = models.DeviceOperationalStatus
         fields = ["id", "device", "status", "error_message"]
 
+
 @register
 class Device(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
@@ -103,8 +104,9 @@ class Device(ModelSerializer):
     def get_operational_status(self, obj):
         try:
             return obj.operational_status.status
-        except:
+        except models.DeviceOperationalStatus.DoesNotExist:
             return "ok"
+
 
 @register
 class PhysicalPort(ModelSerializer):

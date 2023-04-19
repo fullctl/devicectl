@@ -4,10 +4,7 @@ import reversion
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
-from fullctl.django.fields.service_bridge import (
-    ReferencedObjectCharField,
-    ReferencedObjectField,
-)
+from fullctl.django.fields.service_bridge import ReferencedObjectCharField
 from fullctl.django.inet.fields import DeviceDescriptionField
 from fullctl.django.models.abstract import (
     GeoModel,
