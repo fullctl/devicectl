@@ -1,0 +1,24 @@
+.device-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+    row-gap: 1rem;
+    column-gap: 2rem;
+    margin-top: 1rem;
+    width: fit-content;
+    align-items: center;
+}
+
+.device-dashboard .device {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--th-bg);
+    cursor: pointer;
+}
+
+.device-dashboard .device.badge {
+    line-height: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+}

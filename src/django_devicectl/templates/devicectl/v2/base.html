@@ -27,12 +27,30 @@ $(document).ready(() => {
 <div class="app-pages-nav nav h-100" data-component="pages">
 
   <a class="nav-link active"
+    id="dashboard-tab"
+    data-bs-toggle="tab"
+    role="tab"
+    aria-controls="dashboard"
+    aria-selected="true"
+    href="#dashboard">{% trans "Dashboard" %}</a>
+
+  <a class="nav-link"
     id="tab-overview"
     data-bs-toggle="tab"
     role="tab"
     aria-controls="overview"
-    aria-selected="true"
+    aria-selected="false"
     href="#overview">{% trans "Overview" %}</a>
+
+  <!-- hidden tab -->
+  <a class="nav-link"
+    id="device-details-tab"
+    data-bs-toggle="tab"
+    role="tab"
+    aria-controls="device-details"
+    aria-selected="false"
+    style="display:none"
+    href="#device-details">{% trans "Device" %}</a>
 
   <a class="nav-link"
     data-bs-toggle="tab"
@@ -61,7 +79,7 @@ $(document).ready(() => {
 
 {% block "app_content_toolbar" %}
 
-<div class="row">
+<div class="row" id="facility-select-toolbar" style="display:none">
   <div class="col-6 col-md-8">
     <div class="toolbar-control-group">
 
@@ -116,18 +134,23 @@ $(document).ready(() => {
 
 {% block "app_content_main" %}
 <div class="tab-content" id="app-pages">
-  <div class="tab-pane show active" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+  <div class="tab-pane show active" id="dashboard" role="tabpanel" aria-labelledby="tab-dasboard">
+		{% include "devicectl/v2/tool/dashboard/main.html" %}
+  </div>
+  <div class="tab-pane" id="overview" role="tabpanel" aria-labelledby="tab-overview">
 		{% include "devicectl/v2/tool/devices/main.html" %}
   </div>
   <div class="tab-pane" id="facilities" role="tabpanel" aria-labelledby="tab-facilities">
     {% include "devicectl/v2/tool/settings/main.html" %}
   </div>
-  <div class="tab-pane show" id="ports" role="tabpanel" aria-labelledby="tab-ports">
+  <div class="tab-pane" id="ports" role="tabpanel" aria-labelledby="tab-ports">
 		{% include "devicectl/v2/tool/virtual_ports/main.html" %}
 		{% include "devicectl/v2/tool/logical_ports/main.html" %}
 		{% include "devicectl/v2/tool/physical_ports/main.html" %}
   </div>
-
+  <div class="tab-pane" id="device-details" role="tabpanel" aria-labelledby="tab-device-details">
+    {% include "devicectl/v2/tool/device/main.html" %}
+  </div>
 </div>
 {% endblock %}
 

@@ -5,6 +5,7 @@ from django_handleref.admin import VersionAdmin
 
 from django_devicectl.models import (
     Device,
+    DeviceOperationalStatus,
     Facility,
     IPAddress,
     LogicalPort,
@@ -20,9 +21,17 @@ class FacilityAdmin(VersionAdmin):
     list_display = ("id", "org", "name", "slug", "created", "updated")
 
 
+class DeviceOperationalStatusInline(admin.TabularInline):
+    model = DeviceOperationalStatus
+    fields = ("status", "error_message", "event", "created", "updated")
+    readonly_fields = ("status", "error_message", "event", "created", "updated")
+    extra = 0
+
+
 @admin.register(Device)
 class DeviceAdmin(VersionAdmin):
     list_display = ("id", "org", "name", "type", "created", "updated")
+    inlines = [DeviceOperationalStatusInline]
 
 
 @admin.register(LogicalPort)

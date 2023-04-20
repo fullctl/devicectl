@@ -328,6 +328,66 @@ class Device(ServiceBridgeReferenceModel):
         super().delete()
 
 
+@grainy_model(
+    namespace="device",
+    namespace_instance="device.{instance.org.permission_id}.{instance.id}",
+)
+class DeviceOperationalStatus(HandleRefModel):
+
+    """
+    Describes a device's operational status.
+
+    auditCtl will post to this model to indicate the operational status of a device when
+    it receives a device status event.
+    """
+
+    device = models.OneToOneField(
+        Device,
+        related_name="operational_status",
+        on_delete=models.CASCADE,
+    )
+
+    status = models.CharField(
+        max_length=255,
+        choices=(
+            ("ok", "ok"),
+            ("error", "Error"),
+        ),
+        default="ok",
+        help_text=_("Configuration status"),
+    )
+
+    error_message = models.TextField(
+        max_length=255, null=True, blank=True, help_text=_("Configuration error")
+    )
+    event = ReferencedObjectCharField(
+        max_length=255,
+        bridge_type="event",
+        null=True,
+        blank=True,
+        help_text=_("auditCtl event reference"),
+    )  # type: ignore
+
+    class HandleRef:
+        tag = "device_operational_status"
+
+    class Meta:
+        db_table = "devicectl_device_operational_status"
+        verbose_name = _("Device Operational Status")
+        verbose_name_plural = _("Device Operational Statuses")
+
+    @property
+    def instance(self):
+        return self.device.instance
+
+    @property
+    def org(self):
+        return self.device.org
+
+    def __str__(self):
+        return f"DeviceOperationalStatus({self.id}) {self.device.name} {self.status}"
+
+
 @reversion.register()
 @grainy_model(
     namespace="physical_port",

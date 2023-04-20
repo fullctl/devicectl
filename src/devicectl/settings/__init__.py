@@ -97,6 +97,9 @@ settings_manager.set_option("SERVICE_BRIDGE_REF_PORT_INFO", "")
 settings_manager.set_option(
     "SERVICE_BRIDGE_REF_FACILITY", "fullctl.service_bridge.pdbctl.Facility"
 )
+settings_manager.set_option(
+    "SERVICE_BRIDGE_REF_EVENT", "fullctl.service_bridge.auditctl.Event"
+)
 
 # OUTSIDE SERVICES
 
@@ -120,3 +123,4 @@ settings.print_debug(f"loaded settings for version {PACKAGE_VERSION} (DEBUG: {DE
 
 settings_manager.set_option("PREFIXCTL_URL", "")
 settings_manager.set_option("PEERCTL_URL", "")
+settings_manager.set_option("AUDITCTL_URL", "")

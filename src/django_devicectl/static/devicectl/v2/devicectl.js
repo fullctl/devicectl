@@ -15,8 +15,16 @@ $ctl.application.Devicectl = $tc.extend(
 
       this.$c.header.app_slug = "device";
 
+      this.tool("dashboard", () => {
+        return new $ctl.application.Devicectl.DeviceDashboard();
+      })
+
       this.tool("devices", () => {
         return new $ctl.application.Devicectl.Devices();
+      });
+
+      this.tool("device", () => {
+        return new $ctl.application.Devicectl.DeviceDetails();
       });
 
       this.tool("logical_ports", () => {
@@ -82,6 +90,16 @@ $ctl.application.Devicectl = $tc.extend(
       });
       $('#ports-tab').on('hide.bs.tab', () => { this.$c.toolbar.$e.select_device_toggle.hide(); });
 
+      // dont show facility selection toolbar in dashboard
+      // TODO: move toolbar to be tabbed 
+
+      $('#dashboard-tab, #device-details-tab').on('show.bs.tab', () => {
+        $('#facility-select-toolbar').hide();
+        this.$t.dashboard.sync();
+      });
+      $('#dashboard-tab, #device-details-tab').on('hide.bs.tab', () => {
+        $('#facility-select-toolbar').show();
+      });
 
       $($ctl).trigger("init_tools", [this]);
 
@@ -127,6 +145,121 @@ $ctl.application.Devicectl = $tc.extend(
   $ctl.application.ContainerApplication
 );
 
+/**
+ * Extended twentyc.rest list widget that will render a device
+ * dashboard of device tiles, showing devices that are currently
+ * showing operational issues
+ * 
+ * @class $ctl.application.Devicectl.DeviceDashboard
+ * @extends $ctl.application.Tool
+ * @namespoace $ctl.application.Devicectl
+ * @constructor
+ */
+
+$ctl.application.Devicectl.DeviceDashboard = $tc.extend(
+  "DeviceDashboard",
+  {
+    DeviceDashboard: function () {
+      this.Tool("device_dashboard");
+    },
+
+    init: function() {
+      this.widget("list", ($e) => {
+        return new twentyc.rest.List(
+          this.template("list", this.$e.body)
+        );
+      });
+
+      this.$w.list.formatters.row = (row, data) => {
+        if(data.operational_status == "error") {
+          row.addClass("badge bg-danger");
+        }
+
+        row.click(() => {
+          fullctl.devicectl.$t.device.show_device(data.id);
+          fullctl.devicectl.page("device-details");
+        })
+      };
+
+      this.sync();
+    },
+
+    sync : function() {
+      if (!$ctl.devicectl) {
+        return;
+      }
+      let namespace = `device.${$ctl.org.id}`
+      if (!grainy.check(namespace, "r")) {
+        return;
+      }
+      this.$w.list.load();
+    }
+  },
+  $ctl.application.Tool
+);
+
+/**
+ * Device details tool
+ */
+
+$ctl.application.Devicectl.DeviceDetails = $tc.extend(
+  "DeviceDetails",
+  {
+    DeviceDetails: function () {
+      this.Tool("device_details");
+    },
+
+    init : function() {
+      this.widget("device", ($e) => {
+        return new twentyc.rest.Form(
+          this.template("device_widget", this.$e.device_container)
+        );
+      });
+
+      this.widget("operational_status", ($e) => {
+        return new twentyc.rest.Form(
+          this.template("device_operational_status", this.$e.operational_status_container)
+        );
+      });
+
+      this.$w.device.element.find('[data-element=return_to_dashboard]').click(() => {
+        fullctl.devicectl.page("dashboard");
+      });
+    },
+
+    show_device : function(device_id) {
+      this.$w.device.get(""+device_id).then(
+        (response) => {
+          let device = response.first();
+          this.$e.menu.find('.device-name').text(device.display_name);
+          this.$e.menu.find('.operational-status').text(
+            device.operational_status == "error" ? "Issues" : "Ok"
+          ).addClass(
+            device.operational_status == "error" ? "bg-danger" : "bg-success"
+          ).removeClass(
+            device.operational_status == "error" ? "bg-success" : "bg-danger"
+          );
+          this.$w.device.fill(device);
+        }
+      )
+
+      this.$w.operational_status.get(device_id+"/operational_status").then(
+        (response) => {
+          let status = response.first();
+          
+          if(status.status == "error")
+            this.$w.operational_status.element.find('.error-message').show();
+          else 
+            this.$w.operational_status.element.find('.error-message').hide();
+
+          this.$w.operational_status.fill(status);
+        }
+      )
+    }
+  },
+  $ctl.application.Tool
+);
+
 $ctl.application.Devicectl.Devices = $tc.extend(
   "Devices",
   {
@@ -136,9 +269,9 @@ $ctl.application.Devicectl.Devices = $tc.extend(
     },
 
     init: function () {
-      // v2 - create delete selected button
+
       this.delete_selected_button = this.$t.button_delete_selected;
-      // v2 - create SelectionList
+
       this.widget("list", ($e) => {
         return new $ctl.widget.SelectionList(
           this.template("list", this.$e.body),
