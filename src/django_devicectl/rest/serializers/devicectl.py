@@ -135,6 +135,7 @@ class InlinePhysicalPort(ModelSerializer):
         model = models.PhysicalPort
         fields = ["id", "name"]
 
+
 @register
 class Port(ModelSerializer):
     class Meta:
@@ -143,6 +144,7 @@ class Port(ModelSerializer):
             "name",
             "display_name",
         ]
+
 
 @register
 class VirtualPort(ModelSerializer):
@@ -172,6 +174,7 @@ class VirtualPort(ModelSerializer):
 
     def get_port(self, obj):
         return obj.port.id
+
 
 @register
 class PeeringDBFacility(serializers.Serializer):

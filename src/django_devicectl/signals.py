@@ -1,7 +1,7 @@
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-from django_devicectl.models.devicectl import IPAddress, VirtualPort, Port
+from django_devicectl.models.devicectl import IPAddress, Port, VirtualPort
 from django_devicectl.models.tasks import RequestPeerctlSync
 
 
@@ -24,7 +24,7 @@ def ip_address_assignment(sender, instance, **kwargs):
         # new ip address
         RequestPeerctlSync.create_task(org=instance.instance.org)
 
-    
+
 @receiver(post_save, sender=VirtualPort)
 def auto_create_port(sender, instance, created, **kwargs):
     """
