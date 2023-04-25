@@ -101,6 +101,7 @@ class Port(DataViewSet):
     allowed_http_methods = ["GET"]
     valid_filters = [
         ("org", "virtual_port__logical_port__instance__org__remote_id"),
+        ("org_slug", "virtual_port__logical_port__instance__org__slug"),
         ("device", "virtual_port__logical_port__physical_ports__device_id"),
     ]
     allow_unfiltered = True
@@ -110,6 +111,7 @@ class Port(DataViewSet):
 
     join_xl = {
         "device": [],
+        "physical_ports": [],
     }
 
     def filter(self, qset, request):
