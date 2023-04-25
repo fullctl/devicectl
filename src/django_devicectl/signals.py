@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-from django_devicectl.models.devicectl import IPAddress, Port, VirtualPort
+from django_devicectl.models.devicectl import IPAddress, Port, PortInfo, VirtualPort
 from django_devicectl.models.tasks import RequestPeerctlSync
 
 
@@ -29,10 +29,12 @@ def ip_address_assignment(sender, instance, **kwargs):
 def auto_create_port(sender, instance, created, **kwargs):
     """
     When a new virtual port is created, create a port
-    for it
-
-    TODO: also create a portinfo object?
+    for it if one does not already exist
     """
 
     if created:
-        Port.objects.get_or_create(virtual_port=instance)
+        port, port_created = Port.objects.get_or_create(virtual_port=instance)
+        if port_created:
+            port_info = PortInfo.objects.create(instance=instance.logical_port.instance)
+            port.port_info = port_info
+            port.save()
