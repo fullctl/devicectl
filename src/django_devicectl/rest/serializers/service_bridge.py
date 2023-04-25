@@ -276,6 +276,7 @@ class VirtualPort(ModelSerializer):
         ]
         read_only_fields = ["port"]
 
+
 @register
 class PhysicalPort(ModelSerializer):
     class Meta:
@@ -286,6 +287,7 @@ class PhysicalPort(ModelSerializer):
             "device_id",
             "device_name",
         ]
+
 
 @register
 class RequestDummyPorts(serializers.Serializer):
