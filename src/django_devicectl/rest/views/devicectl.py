@@ -234,7 +234,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @load_object("device", models.Device, instance="instance", id="device_id")
     def logical_ports(self, request, org, instance, device, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "channel", "trunk"])
-        queryset = device.logical_ports
+        queryset = device.facility.logical_ports
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.logical_port(

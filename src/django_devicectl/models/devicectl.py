@@ -113,6 +113,18 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         except TypeError:
             return None
 
+    @property
+    def logical_ports(self):
+        """
+        returns all logical ports at the facility through device -> physical ports
+        """
+
+        logical_port_ids = [
+            p["physical_ports__logical_port_id"]
+            for p in self.devices.all().values("physical_ports__logical_port_id")
+        ]
+        return LogicalPort.objects.filter(id__in=logical_port_ids).distinct("id")
+
     def __str__(self):
         return f"{self.name} [#{self.id}]"
 

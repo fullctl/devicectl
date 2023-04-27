@@ -129,6 +129,7 @@ class Port(ModelSerializer):
     logical_port_name = serializers.SerializerMethodField()
     virtual_port_name = serializers.SerializerMethodField()
     device = serializers.SerializerMethodField()
+    physical_ports = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Port
@@ -147,6 +148,7 @@ class Port(ModelSerializer):
             "is_management",
             "logical_port_name",
             "virtual_port_name",
+            "physical_ports",
         ]
 
     def get_org_id(self, port):
@@ -170,6 +172,15 @@ class Port(ModelSerializer):
             device.facility = self.facilities.get(device.facility_id)
 
             return Device(instance=device).data
+        return None
+
+    def get_physical_ports(self, port):
+        if "physical_ports" in self.context.get("joins", []):
+            physical_ports = port.virtual_port.physical_ports
+            if not physical_ports:
+                return None
+
+            return PhysicalPort(instance=physical_ports, many=True).data
         return None
 
     @property
@@ -264,6 +275,18 @@ class VirtualPort(ModelSerializer):
             "display_name",
         ]
         read_only_fields = ["port"]
+
+
+@register
+class PhysicalPort(ModelSerializer):
+    class Meta:
+        model = models.PhysicalPort
+        fields = [
+            "id",
+            "name",
+            "device_id",
+            "device_name",
+        ]
 
 
 @register
