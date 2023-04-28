@@ -1,9 +1,9 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from fullctl.django.models.concrete.tasks import TaskLimitError
 
 from django_devicectl.models.devicectl import IPAddress, Port, PortInfo, VirtualPort
 from django_devicectl.models.tasks import RequestPeerctlSync
-from fullctl.django.models.concrete.tasks import TaskLimitError
 
 
 @receiver(pre_save, sender=IPAddress)
