@@ -700,10 +700,7 @@ class PortInfo(HandleRefModel):
                 return
 
         if address:
-            ip_other = (
-                self.instance.ips.filter(address=address)
-                .first()
-            )
+            ip_other = self.instance.ips.filter(address=address).first()
 
         if not ip and address:
             if not ip_other and reference:
@@ -722,9 +719,7 @@ class PortInfo(HandleRefModel):
                 ip_other.reference = reference
                 ip_other.save()
         else:
-
             if address and ip:
-                
                 if ip_other:
                     ip_other.delete()
 

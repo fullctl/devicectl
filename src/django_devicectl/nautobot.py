@@ -296,14 +296,12 @@ def push(org, *args, **kwargs):
         exists = False
 
         for nautobot_site in nautobot_sites:
-            
             # check if id match exists
             if nautobot_site.custom_fields.devicectl_id == fac.id:
                 exists = nautobot_site
                 break
 
         if not exists:
-            
             # check if slug match exists
             for nautobot_site in nautobot_sites:
                 if nautobot_site.slug.lower() == fac.slug.lower():
@@ -311,17 +309,15 @@ def push(org, *args, **kwargs):
                     break
 
         if not exists:
-            
             # site does not exist (searched slug and devicectl reference id matches)
             # create it
 
             nautobot_site = nautobot.Site().create(fac.service_bridge_data("nautobot"))
-        
+
         else:
-            
             # site exists (searched slug and devicectl reference id matches)
             # update it
-            
+
             nautobot.Site().update(exists, fac.service_bridge_data("nautobot"))
 
     # delete nautobot sites if they no longer exist as facilities in devicectl
