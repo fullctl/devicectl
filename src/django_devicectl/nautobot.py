@@ -289,10 +289,6 @@ def push(org, *args, **kwargs):
     # preload nautobot data
 
     nautobot_sites = [fac for fac in nautobot.Site().objects(limit=NAUTOBOT_PAGE_LIMIT)]
-    # nautobot_devices = [
-    #
-    #     dev for dev in nautobot.Device().objects(limit=NAUTOBOT_PAGE_LIMIT)
-    # ]
 
     # sync devicectl facility -> nautobot site
 
@@ -300,27 +296,29 @@ def push(org, *args, **kwargs):
         exists = False
 
         for nautobot_site in nautobot_sites:
+            # check if id match exists
             if nautobot_site.custom_fields.devicectl_id == fac.id:
                 exists = nautobot_site
                 break
 
         if not exists:
+            # check if slug match exists
+            for nautobot_site in nautobot_sites:
+                if nautobot_site.slug.lower() == fac.slug.lower():
+                    exists = nautobot_site
+                    break
+
+        if not exists:
+            # site does not exist (searched slug and devicectl reference id matches)
+            # create it
+
             nautobot_site = nautobot.Site().create(fac.service_bridge_data("nautobot"))
-            # nautobot_site = nautobot.Site().object(data["id"])
+
         else:
+            # site exists (searched slug and devicectl reference id matches)
+            # update it
+
             nautobot.Site().update(exists, fac.service_bridge_data("nautobot"))
-
-        # assign nautobot facility to site accordign to devicectl
-        # facility device allocation
-
-        # device location managed in nautobot for now. this needs to support stuff like
-        # rack location otherwise. TODO: revisit if needed
-        # for device in fac.devices.all():
-        #    for nautobot_device in nautobot_devices:
-        #        if str(nautobot_device.id) == str(device.reference):
-        #            nautobot.Device().partial_update(
-        #                nautobot_device, {"site": str(nautobot_site.id)}
-        #            )
 
     # delete nautobot sites if they no longer exist as facilities in devicectl
     for site in nautobot_sites:
