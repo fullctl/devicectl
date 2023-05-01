@@ -60,6 +60,7 @@ class VirtualPortAdmin(VersionAdmin):
 @admin.register(IPAddress)
 class IPAddressAdmin(VersionAdmin):
     list_display = ("id", "org", "address", "created", "updated")
+    search_fields = ("address",)
 
 
 @admin.register(Port)
