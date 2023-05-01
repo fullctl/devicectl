@@ -696,14 +696,12 @@ class PortInfo(HandleRefModel):
         if address:
             family = ipaddress.ip_interface(address).version
             ip = self.ips.filter(address__family=family).first()
-
             if ip and str(ip.address) == str(address):
                 return
 
         if address:
             ip_other = (
                 self.instance.ips.filter(address=address)
-                .exclude(port_info=self)
                 .first()
             )
 
@@ -724,7 +722,12 @@ class PortInfo(HandleRefModel):
                 ip_other.reference = reference
                 ip_other.save()
         else:
+
             if address and ip:
+                
+                if ip_other:
+                    ip_other.delete()
+
                 ip.address = address
                 ip.reference = reference
                 ip.save()
