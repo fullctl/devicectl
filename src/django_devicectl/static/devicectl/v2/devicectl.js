@@ -245,6 +245,9 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
 
       this.$w.operational_status.get(device_id+"/operational_status").then(
         (response) => {
+
+          // 200 response, check device operational status
+
           let status = response.first();
           
           if(status.status == "error")
@@ -253,6 +256,16 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
             this.$w.operational_status.element.find('.error-message').hide();
 
           this.$w.operational_status.fill(status);
+        },
+        () => {
+
+          // fail response (404 when device has never had operational status set, for now just assume device is ok)
+
+          this.$w.operational_status.element.find('.error-message').hide();
+          this.$w.operational_status.fill({
+            status: "ok"
+          });
+
         }
       )
     }
