@@ -60,27 +60,51 @@ $ctl.application.Devicectl = $tc.extend(
         };
 
         $(w).on("load:after", (event, element, data) => {
-          this.$t.virtual_ports.sync();
-          this.$t.logical_ports.sync();
-          this.$t.physical_ports.sync();
+
+                    
+          if(!data.length) {
+            $('.no-devices').show();
+            $('.device-container').hide();
+          } else {
+            $('.no-devices').hide();
+            $('.device-container').show();
+            this.$t.virtual_ports.sync();
+            this.$t.logical_ports.sync();
+            this.$t.physical_ports.sync();
+            this.$t.device.show_device(e.val());
+          }
+
         });
+
+
         $(w.element).on("change", (event, element, data) => {
+
           this.$t.virtual_ports.sync();
           this.$t.logical_ports.sync();
           this.$t.physical_ports.sync();
+          this.$t.device.show_device(e.val());
+
         });
-
-
 
         return w;
       });
 
       $(this.$c.toolbar.$w.select_facility).on("load:after", () => {
-        this.$c.toolbar.$w.select_device.load();
+        $('.device-container').hide();
+        //$('.loading-devices').show();
+        this.$c.toolbar.$w.select_device.load().then(() => {
+          $('.device-container').show();
+          //$('.loading-devices').hide();
+        });
       });
 
       $(this.$c.toolbar.$w.select_facility.element).on("change", () => {
-        this.$c.toolbar.$w.select_device.load();
+        $('.device-container').hide();
+        //$('.loading-devices').show();
+        this.$c.toolbar.$w.select_device.load().then(() => {
+          $('.device-container').show();
+          //$('.loading-devices').hide();
+        });
       });
 
 
@@ -93,12 +117,20 @@ $ctl.application.Devicectl = $tc.extend(
       // dont show facility selection toolbar in dashboard
       // TODO: move toolbar to be tabbed 
 
-      $('#dashboard-tab, #device-details-tab').on('show.bs.tab', () => {
+      $('#dashboard-tab').on('show.bs.tab', () => {
         $('#facility-select-toolbar').hide();
         this.$t.dashboard.sync();
       });
-      $('#dashboard-tab, #device-details-tab').on('hide.bs.tab', () => {
+      $('#dashboard-tab').on('hide.bs.tab', () => {
         $('#facility-select-toolbar').show();
+      });
+
+      $('#ports-tab').on('show.bs.tab', () => {
+        $('[data-element=button_create_facility]').hide();
+      });
+
+      $('#tab-overview').on('show.bs.tab', () => {
+        $('[data-element=button_create_facility]').show();
       });
 
       $($ctl).trigger("init_tools", [this]);
@@ -130,8 +162,7 @@ $ctl.application.Devicectl = $tc.extend(
       return this.$c.toolbar.$w.select_device.element.find('option:selected').text();
 
     },
-
-
+    
     permission_ui: function () {
       //let $e = this.$c.toolbar.$e;
       //let facility = this.facilities[this.facility()];
@@ -240,6 +271,8 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
             device.operational_status == "error" ? "bg-success" : "bg-danger"
           );
           this.$w.device.fill(device);
+          
+          this.render_service_links(device);
         }
       )
 
@@ -256,6 +289,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
             this.$w.operational_status.element.find('.error-message').hide();
 
           this.$w.operational_status.fill(status);
+
         },
         () => {
 
@@ -268,6 +302,32 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
 
         }
       )
+    },
+
+    /**
+     * Will render relevant service links (like peerctl session overview)
+     * 
+     * This is called automatically when the device is loaded
+     * @method render_service_links
+     */
+
+    render_service_links: function(device) {
+      // first we check if the app link to peerctl exists for the user
+      // by finding a[data-slug=peerctl]
+
+      let $peerctl_link = $('a[data-slug=peerctl]').attr('href');
+
+      let facility_slug = device.facility_slug;
+      let device_id = device.id;
+
+      if($peerctl_link) {
+        this.$w.device.element.find('[data-field="peerctl_sessions_url"]').empty().append(
+          $('<a>').attr('href', $peerctl_link + `#page-summary-sessions;${facility_slug};${device_id};;`).text("Peerctl sessions")
+        )
+        this.$w.device.element.find('.peerctl-link').show();
+      } else {
+        this.$w.device.element.find('.peerctl-link').hide();
+      }
     }
   },
   $ctl.application.Tool
