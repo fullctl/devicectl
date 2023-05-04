@@ -43,11 +43,15 @@ $ctl.application.Devicectl = $tc.extend(
         fullctl.devicectl.page('facilities');
         fullctl.devicectl.$t.settings.create_facility();
       });
+      $(this.$c.toolbar.$e.return_to_dashboard).click(() => {
+        fullctl.devicectl.page("dashboard");
+      });
 
       $(this).one("no-containers", () => {
         fullctl.devicectl.page('facilities');
         fullctl.devicectl.$t.settings.create_facility();
       });
+
 
 
       this.$c.toolbar.widget("select_device", ($e) => {
@@ -263,9 +267,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
         );
       });
 
-      this.$w.device.element.find('[data-element=return_to_dashboard]').click(() => {
-        fullctl.devicectl.page("dashboard");
-      });
+
     },
 
     show_device : function(device_id) {
