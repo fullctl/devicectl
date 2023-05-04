@@ -42,16 +42,6 @@ $(document).ready(() => {
     aria-selected="false"
     href="#overview">{% trans "Overview" %}</a>
 
-  <!-- hidden tab -->
-  <a class="nav-link"
-    id="device-details-tab"
-    data-bs-toggle="tab"
-    role="tab"
-    aria-controls="device-details"
-    aria-selected="false"
-    style="display:none"
-    href="#device-details">{% trans "Device" %}</a>
-
   <a class="nav-link"
     data-bs-toggle="tab"
     role="tab"
@@ -80,37 +70,55 @@ $(document).ready(() => {
 {% block "app_content_toolbar" %}
 
 <div class="row" id="facility-select-toolbar" style="display:none">
-  <div class="col-6 col-md-8">
+  <div class="col-8 col-md-10">
     <div class="toolbar-control-group">
 
 
       <span class="inline-label">{% trans "Facility:" %}</span>
       <span class="toolbar-control">
-        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-      <select
-        data-api-load="yes"
-        data-name-field="slug"
-        data-api-base="{% url "devicectl_api:facility-list" org_tag=request.org.slug %}"
-        data-element="select_facility"></select>
+        <div class="input-group">
+          <select
+            class="form-select"
+            data-api-load="yes"
+            data-name-field="slug"
+            data-api-base="{% url "devicectl_api:facility-list" org_tag=request.org.slug %}"
+            data-element="select_facility"></select>
+        </div>
       </span>
 
       <span style="display:none" data-element="select_device_toggle">
-      <span class="inline-label">{% trans "Device:" %}</span>
-      <span class="toolbar-control">
-        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-      <select
-        data-name-field="name"
-        data-api-base="{% url "devicectl_api:facility-devices" org_tag=request.org.slug facility_tag="facility_tag" %}"
-        data-element="select_device"></select>
-      </span>
-      </span>
+        <span class="inline-label">{% trans "Device:" %}</span>
+        
+        <span class="toolbar-control">
+          <div class="input-group">
 
+            <select
+              class="form-select"
+              data-name-field="name"
+              data-api-base="{% url "devicectl_api:facility-devices" org_tag=request.org.slug facility_tag="facility_tag" %}"
+              data-element="select_device"></select>
+            <div class="input-group-text loading-indicator-container" style="display:none;">
+              <div class="loading-indicator"></div>
+            </div>
+          </div>
+        </span>
 
+        <span class="toolbar-control">
+            <button class="primary col-md-auto btn d-flex" data-element="return_to_dashboard">
+                <div class="row align-items-center">
+                    <div class="col label pe-0">{% trans "Dashboard" %}</div>
+                    <div class="col-auto">
+                        <span class="icon fullctl icon-as"></span>
+                    </div>
+                </div>
+            </button>
+        
+        </span>
+      </span>
     </div>
-
   </div>
 
-  <div class="col-6 col-md-4 right">
+  <div class="col-4 col-md-2 right">
       <button type="button" class="btn primary small" data-element="button_create_facility">
         <div class="row align-items-center">
           <div class="label col pe-0">{% trans "Create" %}</div>
@@ -143,13 +151,16 @@ $(document).ready(() => {
   <div class="tab-pane" id="facilities" role="tabpanel" aria-labelledby="tab-facilities">
     {% include "devicectl/v2/tool/settings/main.html" %}
   </div>
-  <div class="tab-pane" id="ports" role="tabpanel" aria-labelledby="tab-ports">
-		{% include "devicectl/v2/tool/virtual_ports/main.html" %}
-		{% include "devicectl/v2/tool/logical_ports/main.html" %}
-		{% include "devicectl/v2/tool/physical_ports/main.html" %}
-  </div>
-  <div class="tab-pane" id="device-details" role="tabpanel" aria-labelledby="tab-device-details">
-    {% include "devicectl/v2/tool/device/main.html" %}
+  <div class="tab-pane" id="ports" role="tabpanel" aria-labelledby="tab-ports" style="position:relative">
+    <div class="no-devices" style="display:none">
+      <p class="alert alert-info">{% trans "No devices at this facility" %}</p>
+    </div>
+    <div class="device-container" style="display:none">
+      {% include "devicectl/v2/tool/device/main.html" %}
+      {% include "devicectl/v2/tool/virtual_ports/main.html" %}
+      {% include "devicectl/v2/tool/logical_ports/main.html" %}
+      {% include "devicectl/v2/tool/physical_ports/main.html" %}
+    </div>
   </div>
 </div>
 {% endblock %}

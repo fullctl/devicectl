@@ -1,3 +1,4 @@
+{% load i18n %}
 <div data-api-base="{% url "devicectl_api:device-list" org_tag=request.org.slug %}" data-template="device_widget">
     
 
@@ -5,7 +6,7 @@
 
         <div class="row mb-3">
             <div class="col-4">
-                <label class="form-label">Facility</label>
+                <label class="form-label">{% trans "Facility" %}</label>
             </div>
             <div class="col-8">
                 <span data-field="facility_slug"></span> -
@@ -15,7 +16,7 @@
 
         <div class="row mb-3">
             <div class="col-4">
-                <label class="form-label">Type</label>
+                <label class="form-label">{% trans "Type" %}</label>
             </div>
             <div class="col-8">
                 <span data-field="type"></span>
@@ -24,7 +25,7 @@
 
         <div class="row mb-3">
             <div class="col-4">
-                <label class="form-label">Management IPs</label>
+                <label class="form-label">{% trans "Management IPs" %}</label>
             </div>
             <div class="col-8">
                 <span data-field="management_ip_address_4"></span> -
@@ -32,19 +33,16 @@
             </div>
         </div>
 
-        <div class="row mb-3">
+        <div class="row mb-3 peerctl-link">
             <div class="col-4">
-                <button class="primary col-md-auto btn d-flex" data-element="return_to_dashboard">
-                    <div class="row align-items-center">
-                        <div class="col label pe-0">Dashboard</div>
-                        <div class="col-auto">
-                            <span class="icon fullctl icon-as"></span>
-                        </div>
-                    </div>
-                </button>
-
+                <label class="form-label">{% trans "Sessions" %}</label>
+            </div>
+            <div class="col-8">
+                <span data-field="peerctl_sessions_url"></span>
             </div>
         </div>
+
+
 
 
     </div>
