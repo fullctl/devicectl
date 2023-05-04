@@ -207,8 +207,18 @@ $ctl.application.Devicectl.DeviceDashboard = $tc.extend(
         }
 
         row.click(() => {
-          fullctl.devicectl.$t.device.show_device(data.id);
-          fullctl.devicectl.page("device-details");
+          
+          $(fullctl.devicectl.$c.toolbar.$w.select_device).one("load:after", ()=> {
+            fullctl.devicectl.$c.toolbar.$w.select_device.element.val(data.id);
+          })
+          
+          if(data.facility != parseInt(fullctl.devicectl.facility())) {
+
+            fullctl.devicectl.select_facility(data.facility);
+            
+          } 
+
+          fullctl.devicectl.page("ports");
         })
       };
 
@@ -322,7 +332,11 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
 
       if($peerctl_link) {
         this.$w.device.element.find('[data-field="peerctl_sessions_url"]').empty().append(
-          $('<a>').attr('href', $peerctl_link + `#page-summary-sessions;${facility_slug};${device_id};;`).text("Peerctl sessions")
+          $('<a>').attr('href', $peerctl_link + `#page-summary-sessions;${facility_slug};${device_id};;`).append(
+            $('<img>').attr('src', `${fullctl.static_path}common/logos/peerctl-dark.svg`).addClass("service-link")
+          ).append(
+            $('<span class="icon icon-logout">')
+          )
         )
         this.$w.device.element.find('.peerctl-link').show();
       } else {

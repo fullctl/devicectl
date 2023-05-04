@@ -76,29 +76,44 @@ $(document).ready(() => {
 
       <span class="inline-label">{% trans "Facility:" %}</span>
       <span class="toolbar-control">
-        <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
-      <select
-        data-api-load="yes"
-        data-name-field="slug"
-        data-api-base="{% url "devicectl_api:facility-list" org_tag=request.org.slug %}"
-        data-element="select_facility"></select>
+        <div class="input-group">
+          <select
+            class="form-select"
+            data-api-load="yes"
+            data-name-field="slug"
+            data-api-base="{% url "devicectl_api:facility-list" org_tag=request.org.slug %}"
+            data-element="select_facility"></select>
+        </div>
       </span>
 
       <span style="display:none" data-element="select_device_toggle">
         <span class="inline-label">{% trans "Device:" %}</span>
         
-        <div class="toolbar-control">
+        <span class="toolbar-control">
           <div class="input-group">
-            <img class="caret" src="{% static "common/icons/ui-caret-caret/down.svg" %}">
+
             <select
+              class="form-select"
               data-name-field="name"
               data-api-base="{% url "devicectl_api:facility-devices" org_tag=request.org.slug facility_tag="facility_tag" %}"
               data-element="select_device"></select>
-            <div class="input-group-text loading-indicator-container">
+            <div class="input-group-text loading-indicator-container" style="display:none;">
               <div class="loading-indicator"></div>
             </div>
           </div>
-        </div>
+        </span>
+
+        <span class="toolbar-control">
+            <button class="primary col-md-auto btn d-flex" data-element="return_to_dashboard">
+                <div class="row align-items-center">
+                    <div class="col label pe-0">{% trans "Dashboard" %}</div>
+                    <div class="col-auto">
+                        <span class="icon fullctl icon-as"></span>
+                    </div>
+                </div>
+            </button>
+        
+        </span>
       </span>
     </div>
   </div>
@@ -140,7 +155,7 @@ $(document).ready(() => {
     <div class="no-devices" style="display:none">
       <p class="alert alert-info">{% trans "No devices at this facility" %}</p>
     </div>
-    <div class="device-container">
+    <div class="device-container" style="display:none">
       {% include "devicectl/v2/tool/device/main.html" %}
       {% include "devicectl/v2/tool/virtual_ports/main.html" %}
       {% include "devicectl/v2/tool/logical_ports/main.html" %}
