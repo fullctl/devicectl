@@ -328,9 +328,11 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
       // by finding a[data-slug=peerctl]
 
       let $peerctl_link = $('a[data-slug=peerctl]').attr('href');
+      let $auditctl_link = $('a[data-slug=auditctl]').attr('href');
 
       let facility_slug = device.facility_slug;
       let device_id = device.id;
+      let device_name = device.name;
 
       if($peerctl_link) {
         this.$w.device.element.find('[data-field="peerctl_sessions_url"]').empty().append(
@@ -343,6 +345,19 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
         this.$w.device.element.find('.peerctl-link').show();
       } else {
         this.$w.device.element.find('.peerctl-link').hide();
+      }
+
+      if($auditctl_link) {
+        this.$w.device.element.find('[data-field="auditctl_events_url"]').empty().append(
+          $('<a>').attr('href', $auditctl_link + `/?q=config/device/${device_name}`).append(
+            $('<img>').attr('src', `${fullctl.static_path}common/logos/auditctl-dark.svg`).addClass("service-link")
+          ).append(
+            $('<span class="icon icon-logout">')
+          )
+        )
+        this.$w.device.element.find('.auditctl-link').show();
+      } else {
+        this.$w.device.element.find('.auditctl-link').hide();
       }
     }
   },
