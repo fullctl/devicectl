@@ -1,11 +1,15 @@
 from fullctl.django.rest.route.service_bridge import route
-from fullctl.django.rest.views.service_bridge import (  # MethodFilter,
+from fullctl.django.rest.views.service_bridge import ( 
+    MethodFilter,
     DataViewSet,
     HeartbeatViewSet,
     StatusViewSet,
 )
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from django.db.models import Q
+import ipaddress
 
 import django_devicectl.models.devicectl as models
 from django_devicectl.rest.serializers.service_bridge import Serializers
@@ -103,6 +107,11 @@ class Port(DataViewSet):
         ("org", "virtual_port__logical_port__instance__org__remote_id"),
         ("org_slug", "virtual_port__logical_port__instance__org__slug"),
         ("device", "virtual_port__logical_port__physical_ports__device_id"),
+        ("ip", MethodFilter("ip")),
+        (
+            "q", 
+            MethodFilter("autocomplete")
+        ),
     ]
     allow_unfiltered = True
 
@@ -124,6 +133,12 @@ class Port(DataViewSet):
         )
 
         return qset
+
+    def filter_ip(self, qset, value):
+        return qset.filter(port_info__ips__address__host=value)
+
+    def filter_autocomplete(self, qset, value):
+        return models.Port.search(value).distinct("pk")
 
     @action(
         detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports

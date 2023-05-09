@@ -138,12 +138,24 @@ class InlinePhysicalPort(ModelSerializer):
 
 @register
 class Port(ModelSerializer):
+    logical_port_name = serializers.SerializerMethodField()
+    virtual_port_name = serializers.SerializerMethodField()
     class Meta:
         model = models.Port
         fields = [
             "name",
             "display_name",
+            "logical_port_name",
+            "virtual_port_name",
+            "device_name",
+            "device_id",
         ]
+
+    def get_logical_port_name(self, port):
+        return port.virtual_port.logical_port.name
+
+    def get_virtual_port_name(self, port):
+        return port.virtual_port.name
 
 
 @register
