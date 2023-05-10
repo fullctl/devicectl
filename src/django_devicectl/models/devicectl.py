@@ -805,10 +805,8 @@ class Port(HandleRefModel):
         verbose_name = _("Port")
         verbose_name_plural = _("Ports")
 
-
     @classmethod
     def search(cls, value, qset=None):
-
         """
         Autocomplete search for ports
         """
@@ -816,15 +814,21 @@ class Port(HandleRefModel):
         if not qset:
             qset = cls.objects
 
-        filters =(
-            Q(name__icontains=value) |
-            Q(virtual_port__logical_port__physical_ports__device__name__icontains=value) |
-            Q(virtual_port__logical_port__physical_ports__device__facility__name__icontains=value) |
-            Q(virtual_port__logical_port__physical_ports__device__facility__slug__iexact=value) |
-            Q(virtual_port__name__icontains=value) |
-            Q(virtual_port__logical_port__name__icontains=value) |
-            Q(virtual_port__logical_port__physical_ports__name__icontains=value) |
-            Q(port_info__ips__address__startswith=value)
+        filters = (
+            Q(name__icontains=value)
+            | Q(
+                virtual_port__logical_port__physical_ports__device__name__icontains=value
+            )
+            | Q(
+                virtual_port__logical_port__physical_ports__device__facility__name__icontains=value
+            )
+            | Q(
+                virtual_port__logical_port__physical_ports__device__facility__slug__iexact=value
+            )
+            | Q(virtual_port__name__icontains=value)
+            | Q(virtual_port__logical_port__name__icontains=value)
+            | Q(virtual_port__logical_port__physical_ports__name__icontains=value)
+            | Q(port_info__ips__address__startswith=value)
         )
 
         # check if value is ip
@@ -877,4 +881,3 @@ class Port(HandleRefModel):
 
     def __str__(self):
         return f"Port({self.id}) {self.virtual_port.name}"
-

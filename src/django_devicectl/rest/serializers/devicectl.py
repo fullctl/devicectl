@@ -140,6 +140,7 @@ class InlinePhysicalPort(ModelSerializer):
 class Port(ModelSerializer):
     logical_port_name = serializers.SerializerMethodField()
     virtual_port_name = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Port
         fields = [
