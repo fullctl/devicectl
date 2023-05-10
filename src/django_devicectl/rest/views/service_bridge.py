@@ -1,7 +1,11 @@
+import ipaddress
+
+from django.db.models import Q
 from fullctl.django.rest.route.service_bridge import route
-from fullctl.django.rest.views.service_bridge import (  # MethodFilter,
+from fullctl.django.rest.views.service_bridge import (
     DataViewSet,
     HeartbeatViewSet,
+    MethodFilter,
     StatusViewSet,
 )
 from rest_framework.decorators import action
@@ -103,6 +107,8 @@ class Port(DataViewSet):
         ("org", "virtual_port__logical_port__instance__org__remote_id"),
         ("org_slug", "virtual_port__logical_port__instance__org__slug"),
         ("device", "virtual_port__logical_port__physical_ports__device_id"),
+        ("ip", MethodFilter("ip")),
+        ("q", MethodFilter("autocomplete")),
     ]
     allow_unfiltered = True
 
@@ -124,6 +130,12 @@ class Port(DataViewSet):
         )
 
         return qset
+
+    def filter_ip(self, qset, value):
+        return qset.filter(port_info__ips__address__host=value)
+
+    def filter_autocomplete(self, qset, value):
+        return models.Port.search(value).distinct("pk")
 
     @action(
         detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports
