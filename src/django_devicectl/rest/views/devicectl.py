@@ -582,3 +582,29 @@ class PeeringDBFacilities(CachedObjectMixin, viewsets.GenericViewSet):
             return Response(self.serializer_class([], many=True).data)
         candidates = list(pdbctl.Facility().objects(q=q))
         return Response(self.serializer_class(candidates, many=True).data)
+
+
+@route
+class Port(CachedObjectMixin, viewsets.GenericViewSet):
+    serializer_class = Serializers.port
+    queryset = models.Port.objects.all()
+    lookup_url_kwarg = "port_id"
+    ref_tag = "port"
+    lookup_field = "id"
+
+    @grainy_endpoint(namespace="port.{request.org.permission_id}")
+    def list(self, request, org, instance, *args, **kwargs):
+        qset = models.Port.objects.filter(port_info__instance=instance)
+
+        qset = qset.select_related(
+            "virtual_port", "virtual_port__logical_port", "port_info"
+        )
+        qset = qset.prefetch_related(
+            "port_info__ips", "virtual_port__logical_port__physical_ports"
+        )
+
+        q = request.GET.get("q")
+        if q:
+            qset = models.Port.search(q, qset).distinct("pk")
+
+        return Response(self.serializer_class(qset, many=True).data)

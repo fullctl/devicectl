@@ -2,6 +2,7 @@ import ipaddress
 
 import reversion
 from django.db import models, transaction
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
 from fullctl.django.fields.service_bridge import ReferencedObjectCharField
@@ -803,6 +804,43 @@ class Port(HandleRefModel):
         db_table = "devicectl_port"
         verbose_name = _("Port")
         verbose_name_plural = _("Ports")
+
+    @classmethod
+    def search(cls, value, qset=None):
+        """
+        Autocomplete search for ports
+        """
+
+        if not qset:
+            qset = cls.objects
+
+        filters = (
+            Q(name__icontains=value)
+            | Q(
+                virtual_port__logical_port__physical_ports__device__name__icontains=value
+            )
+            | Q(
+                virtual_port__logical_port__physical_ports__device__facility__name__icontains=value
+            )
+            | Q(
+                virtual_port__logical_port__physical_ports__device__facility__slug__iexact=value
+            )
+            | Q(virtual_port__name__icontains=value)
+            | Q(virtual_port__logical_port__name__icontains=value)
+            | Q(virtual_port__logical_port__physical_ports__name__icontains=value)
+            | Q(port_info__ips__address__startswith=value)
+        )
+
+        # check if value is ip
+        try:
+            ipaddress.ip_address(value)
+            filters |= Q(port_info__ips__address__host=value)
+            print("filtering by ip", value)
+        except ValueError:
+            print("not filtering by ip", value)
+            pass
+
+        return qset.filter(filters)
 
     @property
     def org(self):
