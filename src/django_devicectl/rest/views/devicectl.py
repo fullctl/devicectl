@@ -160,6 +160,20 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+    @action(detail=True, serializer_class=Serializers.logical_port)
+    @grainy_endpoint(namespace="logical_port.{request.org.permission_id}")
+    @load_object("facility", models.Facility, instance="instance", slug="facility_tag")
+    def logical_ports(self, request, org, instance, facility, *args, **kwargs):
+        ordering_filter = CaseInsensitiveOrderingFilter(["name", "channel", "trunk"])
+        queryset = facility.logical_ports
+        queryset = ordering_filter.filter_queryset(request, queryset, self)
+
+        serializer = Serializers.logical_port(
+            queryset,
+            many=True,
+        )
+        return Response(serializer.data)
+
 
 @route
 class Device(CachedObjectMixin, viewsets.GenericViewSet):
@@ -234,7 +248,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @load_object("device", models.Device, instance="instance", id="device_id")
     def logical_ports(self, request, org, instance, device, *args, **kwargs):
         ordering_filter = CaseInsensitiveOrderingFilter(["name", "channel", "trunk"])
-        queryset = device.facility.logical_ports
+        queryset = device.logical_ports
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.logical_port(
