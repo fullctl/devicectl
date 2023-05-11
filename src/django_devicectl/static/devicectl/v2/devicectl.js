@@ -149,6 +149,7 @@ $ctl.application.Devicectl = $tc.extend(
       this.autoload_page();
     },
 
+
     device_id: function () {
       if (!this.$c.toolbar.$e.select_device) {
         return null;
@@ -174,7 +175,6 @@ $ctl.application.Devicectl = $tc.extend(
       //$e.button_create_facility.grainy_toggle(`facility.${org}`, "c");
       //$e.button_import_facility.grainy_toggle(`facility.${org}`, "c");
     }
-
 
   },
   $ctl.application.ContainerApplication

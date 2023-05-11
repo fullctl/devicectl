@@ -1,4 +1,5 @@
 import ipaddress
+import difflib
 
 import reversion
 from django.db import models, transaction
@@ -341,24 +342,15 @@ class Device(ServiceBridgeReferenceModel):
         super().delete()
 
 
-@grainy_model(
-    namespace="device",
-    namespace_instance="device.{instance.org.permission_id}.{instance.id}",
-)
-class DeviceOperationalStatus(HandleRefModel):
+class DeviceConfigStatus(HandleRefModel):
 
     """
-    Describes a device's operational status.
+    Abstract model for device config status models
 
-    auditCtl will post to this model to indicate the operational status of a device when
-    it receives a device status event.
+    Contains a diff of the configuration change
+
+    Stores config status (error or ok), error message and auditCtl event reference
     """
-
-    device = models.OneToOneField(
-        Device,
-        related_name="operational_status",
-        on_delete=models.CASCADE,
-    )
 
     status = models.CharField(
         max_length=255,
@@ -381,6 +373,52 @@ class DeviceOperationalStatus(HandleRefModel):
         help_text=_("auditCtl event reference"),
     )  # type: ignore
 
+    config_current  = models.TextField(help_text=_("Current config contents"), blank=True, null=True)
+    config_reference = models.TextField(help_text=_("Reference config contents"), blank=True, null=True)
+
+    url_current = models.URLField(null=True, blank=True, help_text=_("Current config url"))
+    url_reference = models.URLField(null=True, blank=True, help_text=_("Reference config url"))
+
+    class Meta:
+        abstract = True
+
+
+    @property
+    def diff(self):
+
+        a = self.config_current or ""
+        b = self.config_reference or ""
+
+        if not a and not b:
+            return ""
+
+        a = a.splitlines(keepends=True)
+        b = b.splitlines(keepends=True)
+
+        diff = difflib.unified_diff(a, b, lineterm="")
+
+        return "\n".join(diff)
+    
+
+@grainy_model(
+    namespace="device",
+    namespace_instance="device.{instance.org.permission_id}.{instance.id}",
+)
+class DeviceOperationalStatus(DeviceConfigStatus):
+
+    """
+    Describes a device's current operational status.
+
+    auditCtl will post to this model to indicate the operational status of a device when
+    it receives a device status event.
+    """
+
+    device = models.OneToOneField(
+        Device,
+        related_name="operational_status",
+        on_delete=models.CASCADE,
+    )
+
     class HandleRef:
         tag = "device_operational_status"
 
@@ -400,6 +438,32 @@ class DeviceOperationalStatus(HandleRefModel):
     def __str__(self):
         return f"DeviceOperationalStatus({self.id}) {self.device.name} {self.status}"
 
+
+@grainy_model(
+    namespace="device",
+    namespace_instance="device.{instance.org.permission_id}.{instance.id}",
+)
+class DeviceConfigHistory(DeviceConfigStatus):
+
+    """
+    Describes historical log of device configuration changes
+
+    auditCtl will post to this model to indicate the configuration of a device changed
+    """
+
+    device = models.ForeignKey(
+        Device,
+        related_name="config_history",
+        on_delete=models.CASCADE,
+    )
+
+    class HandleRef:
+        tag = "device_config_history"
+
+    class Meta:
+        db_table = "devicectl_device_config_history"
+        verbose_name = _("Device Config History")
+        verbose_name_plural = _("Device Config Histories")
 
 @reversion.register()
 @grainy_model(
