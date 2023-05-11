@@ -174,6 +174,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         )
         return Response(serializer.data)
 
+
 @route
 class Device(CachedObjectMixin, viewsets.GenericViewSet):
     serializer_class = Serializers.device
