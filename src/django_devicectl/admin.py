@@ -4,11 +4,14 @@ from django.utils.safestring import mark_safe
 
 # from django.utils.translation import gettext as _
 from django_handleref.admin import VersionAdmin
+from pygments import highlight
+from pygments.formatters import HtmlFormatter
+from pygments.lexers import DiffLexer
 
 from django_devicectl.models import (
     Device,
-    DeviceOperationalStatus,
     DeviceConfigHistory,
+    DeviceOperationalStatus,
     Facility,
     IPAddress,
     LogicalPort,
@@ -18,9 +21,6 @@ from django_devicectl.models import (
     VirtualPort,
 )
 
-from pygments import highlight
-from pygments.formatters import HtmlFormatter
-from pygments.lexers import DiffLexer
 
 @admin.register(Facility)
 class FacilityAdmin(VersionAdmin):
@@ -30,7 +30,14 @@ class FacilityAdmin(VersionAdmin):
 class DeviceOperationalStatusInline(admin.TabularInline):
     model = DeviceOperationalStatus
     fields = ("status", "error_message", "pretty_diff", "event", "created", "updated")
-    readonly_fields = ("status", "error_message", "pretty_diff", "event", "created", "updated")
+    readonly_fields = (
+        "status",
+        "error_message",
+        "pretty_diff",
+        "event",
+        "created",
+        "updated",
+    )
     extra = 0
 
     def pretty_diff(self, obj):
@@ -38,28 +45,45 @@ class DeviceOperationalStatusInline(admin.TabularInline):
             return "No diff"
         formatter = HtmlFormatter(style="colorful")
         highlighted_diff = highlight(obj.diff, DiffLexer(), formatter)
-        css = formatter.get_style_defs('.highlight')
-        return mark_safe(f'<div style="white-space: pre-wrap;"><style>{css}</style>{highlighted_diff}</div>')
-    pretty_diff.short_description = 'Pretty diff'
+        css = formatter.get_style_defs(".highlight")
+        return mark_safe(
+            f'<div style="white-space: pre-wrap;"><style>{css}</style>{highlighted_diff}</div>'
+        )
+
+    pretty_diff.short_description = "Pretty diff"
+
 
 @admin.register(Device)
 class DeviceAdmin(VersionAdmin):
     list_display = ("id", "org", "name", "type", "created", "updated")
     inlines = [DeviceOperationalStatusInline]
 
+
 @admin.register(DeviceOperationalStatus)
 class DeviceOperationalStatusAdmin(VersionAdmin):
     list_display = ("id", "device", "status", "error_message", "created", "updated")
     list_filter = ("status",)
-    search_fields = ("device__name", "device__instance__org__slug", "device__facility__slug", "error_message")
+    search_fields = (
+        "device__name",
+        "device__instance__org__slug",
+        "device__facility__slug",
+        "error_message",
+    )
     read_only_fields = ("current_config", "reference_config")
+
 
 @admin.register(DeviceConfigHistory)
 class DeviceConfigHistoryAdmin(VersionAdmin):
     list_display = ("id", "device", "status", "error_message", "created", "updated")
     list_filter = ("status",)
-    search_fields = ("device__name", "device__instance__org__slug", "device__facility__slug", "error_message")
+    search_fields = (
+        "device__name",
+        "device__instance__org__slug",
+        "device__facility__slug",
+        "error_message",
+    )
     read_only_fields = ("current_config", "reference_config")
+
 
 @admin.register(LogicalPort)
 class LogicalPortAdmin(VersionAdmin):

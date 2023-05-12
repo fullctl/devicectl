@@ -80,7 +80,7 @@ class DeviceOperationalStatus(ModelSerializer):
             "url_current",
             "url_reference",
             "config_current",
-            "config_reference"
+            "config_reference",
         ]
 
     def _save(self):

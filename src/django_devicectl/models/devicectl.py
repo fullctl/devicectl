@@ -1,5 +1,5 @@
-import ipaddress
 import difflib
+import ipaddress
 
 import reversion
 from django.db import models, transaction
@@ -373,19 +373,25 @@ class DeviceConfigStatus(HandleRefModel):
         help_text=_("auditCtl event reference"),
     )  # type: ignore
 
-    config_current  = models.TextField(help_text=_("Current config contents"), blank=True, null=True)
-    config_reference = models.TextField(help_text=_("Reference config contents"), blank=True, null=True)
+    config_current = models.TextField(
+        help_text=_("Current config contents"), blank=True, null=True
+    )
+    config_reference = models.TextField(
+        help_text=_("Reference config contents"), blank=True, null=True
+    )
 
-    url_current = models.URLField(null=True, blank=True, help_text=_("Current config url"))
-    url_reference = models.URLField(null=True, blank=True, help_text=_("Reference config url"))
+    url_current = models.URLField(
+        null=True, blank=True, help_text=_("Current config url")
+    )
+    url_reference = models.URLField(
+        null=True, blank=True, help_text=_("Reference config url")
+    )
 
     class Meta:
         abstract = True
 
-
     @property
     def diff(self):
-
         """
         Returns the diff between the current and reference config using difflib
 
@@ -404,7 +410,7 @@ class DeviceConfigStatus(HandleRefModel):
         diff = difflib.unified_diff(a, b, lineterm="")
 
         return "\n".join(diff)
-    
+
 
 @grainy_model(
     namespace="device",
@@ -474,6 +480,7 @@ class DeviceConfigHistory(DeviceConfigStatus):
     @property
     def org(self):
         return self.device.org
+
 
 @reversion.register()
 @grainy_model(

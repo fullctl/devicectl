@@ -3,12 +3,12 @@ from django.dispatch import receiver
 from fullctl.django.models.concrete.tasks import TaskLimitError
 
 from django_devicectl.models.devicectl import (
-    DeviceOperationalStatus, 
     DeviceConfigHistory,
-    IPAddress, 
-    Port, 
-    PortInfo, 
-    VirtualPort
+    DeviceOperationalStatus,
+    IPAddress,
+    Port,
+    PortInfo,
+    VirtualPort,
 )
 from django_devicectl.models.tasks import RequestPeerctlSync
 
