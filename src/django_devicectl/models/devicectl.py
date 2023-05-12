@@ -386,6 +386,12 @@ class DeviceConfigStatus(HandleRefModel):
     @property
     def diff(self):
 
+        """
+        Returns the diff between the current and reference config using difflib
+
+        TODO: cache in a field?
+        """
+
         a = self.config_current or ""
         b = self.config_reference or ""
 
@@ -464,6 +470,10 @@ class DeviceConfigHistory(DeviceConfigStatus):
         db_table = "devicectl_device_config_history"
         verbose_name = _("Device Config History")
         verbose_name_plural = _("Device Config Histories")
+
+    @property
+    def org(self):
+        return self.device.org
 
 @reversion.register()
 @grainy_model(
