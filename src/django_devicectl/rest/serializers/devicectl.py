@@ -49,6 +49,30 @@ class DeviceOperationalStatus(ModelSerializer):
 
 
 @register
+class DeviceConfig(serializers.Serializer):
+    id = serializers.IntegerField(help_text=_("Device id"), read_only=True)
+    config = serializers.CharField(help_text=_("Device configuration"), read_only=True)
+    url = serializers.CharField(
+        help_text=_("Device configuration source"),
+        read_only=True,
+        allow_null=True,
+        allow_blank=True,
+    )
+
+    ref_tag = "device_config"
+
+    class Meta:
+        fields = ["config", "url"]
+
+
+@register
+class DeviceConfigHistory(ModelSerializer):
+    class Meta:
+        model = models.DeviceConfigHistory
+        fields = ["id", "device", "status", "error_message", "created"]
+
+
+@register
 class Device(ModelSerializer):
     facility_name = serializers.SerializerMethodField()
     facility_slug = serializers.SerializerMethodField()

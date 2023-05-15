@@ -8,6 +8,7 @@ from fullctl.django.rest.filters import CaseInsensitiveOrderingFilter
 from fullctl.django.rest.mixins import (  # ContainerQuerysetMixin,; OrgQuerysetMixin,
     CachedObjectMixin,
 )
+from fullctl.django.rest.renderers import PlainTextRenderer
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -226,6 +227,136 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     def operational_status(self, request, org, instance, device, *args, **kwargs):
         serializer = Serializers.device_operational_status(
             device.operational_status,
+        )
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        serializer_class=Serializers.device_config,
+        url_path="config/current",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def current_config(self, request, org, instance, device, *args, **kwargs):
+        """
+        Returns the current config of the device (normal api json response)
+        """
+
+        serializer = Serializers.device_config(
+            {
+                "id": device.id,
+                "config": device.operational_status.config_current,
+                "url": device.operational_status.url_current,
+            },
+        )
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        serializer_class=Serializers.device_config,
+        renderer_classes=[PlainTextRenderer],
+        url_path="config/current/plain",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def current_config_plain(self, request, org, instance, device, *args, **kwargs):
+        """
+        Returns the current config of the device (plain-text response)
+        """
+
+        serializer = Serializers.device_config(
+            {"id": device.id, "config": device.operational_status.config_current},
+        )
+        return Response(serializer.data["config"])
+
+    @action(
+        detail=True,
+        serializer_class=Serializers.device_config,
+        url_path="config/reference",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def reference_config(self, request, org, instance, device, *args, **kwargs):
+        """
+        Returns the reference config of the device (normal api json response)
+        """
+
+        serializer = Serializers.device_config(
+            {
+                "id": device.id,
+                "config": device.operational_status.config_reference,
+                "url": device.operational_status.url_reference,
+            },
+        )
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        serializer_class=Serializers.device_config,
+        renderer_classes=[PlainTextRenderer],
+        url_path="config/reference/plain",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def reference_config_plain(self, request, org, instance, device, *args, **kwargs):
+        """
+        Returns the reference config of the device (plain-text response)
+        """
+
+        serializer = Serializers.device_config(
+            {"id": device.id, "config": device.operational_status.config_reference},
+        )
+        return Response(serializer.data["config"])
+
+    @action(
+        detail=True, serializer_class=Serializers.device_config, url_path="config/diff"
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def diff_config(self, request, org, instance, device, *args, **kwargs):
+        """
+        Returns the diff between the current and reference config of the device (normal api json response)
+        """
+
+        serializer = Serializers.device_config(
+            {"id": device.id, "config": device.operational_status.diff},
+        )
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        serializer_class=Serializers.device_config,
+        renderer_classes=[PlainTextRenderer],
+        url_path="config/diff/plain",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def diff_config_plain(self, request, org, instance, device, *args, **kwargs):
+        """
+        Returns the diff between the current and reference config of the device (plain-text response)
+        """
+
+        serializer = Serializers.device_config(
+            {"id": device.id, "config": device.operational_status.diff},
+        )
+        return Response(serializer.data["config"])
+
+    @action(
+        detail=True,
+        serializer_class=Serializers.device_config_history,
+        url_path="config/history",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def config_history(self, request, org, instance, device, *args, **kwargs):
+        """
+        Returns the config history of the device
+        """
+
+        queryset = device.config_history.order_by("-created")[:255]
+        serializer = Serializers.device_config_history(
+            queryset,
+            many=True,
         )
         return Response(serializer.data)
 

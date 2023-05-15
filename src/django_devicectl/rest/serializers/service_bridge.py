@@ -77,6 +77,10 @@ class DeviceOperationalStatus(ModelSerializer):
             "status",
             "error_message",
             "event",
+            "url_current",
+            "url_reference",
+            "config_current",
+            "config_reference",
         ]
 
     def _save(self):
@@ -93,6 +97,10 @@ class DeviceOperationalStatus(ModelSerializer):
         status = validated_data["status"]
         error_message = validated_data.get("error_message")
         event = validated_data.get("event")
+        url_current = validated_data.get("url_current")
+        url_reference = validated_data.get("url_reference")
+        config_current = validated_data.get("config_current")
+        config_reference = validated_data.get("config_reference")
 
         try:
             device_operational_status = models.DeviceOperationalStatus.objects.get(
@@ -101,6 +109,10 @@ class DeviceOperationalStatus(ModelSerializer):
             device_operational_status.status = status
             device_operational_status.error_message = error_message
             device_operational_status.event = event
+            device_operational_status.url_current = url_current
+            device_operational_status.url_reference = url_reference
+            device_operational_status.config_current = config_current
+            device_operational_status.config_reference = config_reference
             device_operational_status.save()
         except ObjectDoesNotExist:
             device_operational_status = models.DeviceOperationalStatus.objects.create(
@@ -108,6 +120,10 @@ class DeviceOperationalStatus(ModelSerializer):
                 status=status,
                 error_message=error_message,
                 event=event,
+                url_current=url_current,
+                url_reference=url_reference,
+                config_current=config_current,
+                config_reference=config_reference,
             )
 
         return device_operational_status

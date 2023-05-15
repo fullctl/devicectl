@@ -65,7 +65,6 @@ $ctl.application.Devicectl = $tc.extend(
 
         $(w).on("load:after", (event, element, data) => {
 
-                    
           if(!data.length) {
             $('.no-devices').show();
             $('.device-container').hide();
@@ -94,20 +93,12 @@ $ctl.application.Devicectl = $tc.extend(
       });
 
       $(this.$c.toolbar.$w.select_facility).on("load:after", () => {
-        $('.device-container').hide();
-        //$('.loading-devices').show();
         this.$c.toolbar.$w.select_device.load().then(() => {
-          $('.device-container').show();
-          //$('.loading-devices').hide();
         });
       });
 
       $(this.$c.toolbar.$w.select_facility.element).on("change", () => {
-        $('.device-container').hide();
-        //$('.loading-devices').show();
         this.$c.toolbar.$w.select_device.load().then(() => {
-          $('.device-container').show();
-          //$('.loading-devices').hide();
         });
       });
 
@@ -131,6 +122,9 @@ $ctl.application.Devicectl = $tc.extend(
 
       $('#ports-tab').on('show.bs.tab', () => {
         $('[data-element=button_create_facility]').hide();
+        $('[data-component=virtual_ports').appendTo($("#device-detail"));
+        $('[data-component=logical_ports').appendTo($("#device-detail"));
+        $('[data-component=physical_ports').appendTo($("#device-detail"));
       });
 
       $('#tab-overview').on('show.bs.tab', () => {
@@ -147,6 +141,19 @@ $ctl.application.Devicectl = $tc.extend(
       this.sync();
 
       this.autoload_page();
+    },
+
+    page: function(page) {
+      switch(page) {
+        case "device-details":
+        case "changes":
+        case "current-config":
+        case "reference-config":
+        case "history":
+          page = "ports";
+      }  
+
+      this.ContainerApplication_page(page);
     },
 
     device_id: function () {
@@ -174,7 +181,6 @@ $ctl.application.Devicectl = $tc.extend(
       //$e.button_create_facility.grainy_toggle(`facility.${org}`, "c");
       //$e.button_import_facility.grainy_toggle(`facility.${org}`, "c");
     }
-
 
   },
   $ctl.application.ContainerApplication
@@ -244,6 +250,62 @@ $ctl.application.Devicectl.DeviceDashboard = $tc.extend(
 );
 
 /**
+ * Config loader widget
+ * 
+ * @class ConfigLoader
+ * @extends twentyc.rest.widget
+ * @namespace twentyc.rest
+ * @constructor
+ */
+
+
+$ctl.application.Devicectl.ConfigLoader = $tc.extend(
+  "ConfigLoader",
+  {
+    ConfigLoader: function(jq) {
+      var base_url = jq.data("api-base");
+      this.Widget(base_url, jq);
+    },
+
+    bind : function(jq) {
+      this.Widget_bind(jq);
+      this.config_content = jq.find(".config-content")
+      this.button_raw = jq.find("[data-element=button_raw]")
+      this.button_source = jq.find("[data-element=button_source]")
+      this.syntax_highlight = this.config_content.data("syntax-highlight")
+    },
+
+    /**
+     * loads config
+     *
+     * triggers load:after event
+     *
+     * @method load
+     */
+
+    load : function() {
+      this.config_content.empty();
+      return this.get(this.action, this.payload()).then(function(response) {
+        let config = response.first();
+        if(!config)
+          return;
+          
+        let code_block = $("<pre>").addClass("language-diff").text(config.config);
+        this.config_content.append(code_block);
+
+        if(this.syntax_highlight) {
+          hljs.highlightBlock(code_block[0]);
+        }
+
+        this.button_raw.attr("href", this.format_request_url(this.base_url) + "/plain");
+        this.button_source.attr("href", config.url);
+      }.bind(this));
+    },
+  },
+  twentyc.rest.Widget
+);
+
+/**
  * Device details tool
  */
 
@@ -252,14 +314,23 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
   {
     DeviceDetails: function () {
       this.Tool("device_details");
+      this.device_id = 0;
+      this.config_history_loaded = false;
+
+      $("#deviceStatusTabs")
     },
 
     init : function() {
+
+      // create device details widget that holds device kind, facility, sessions and events
+
       this.widget("device", ($e) => {
         return new twentyc.rest.Form(
           this.template("device_widget", this.$e.device_container)
         );
       });
+
+      // create operational status widget (will show error message if status is error)
 
       this.widget("operational_status", ($e) => {
         return new twentyc.rest.Form(
@@ -267,10 +338,107 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
         );
       });
 
+      // create config history listing widget
+
+      this.widget("config_history", ($e) => {
+        return new twentyc.rest.List(
+          this.template("device_config_history", this.$e.config_history_container)
+        )
+      });
+
+      // create config changes widget
+
+      this.widget("config_changes", ($e) => {
+        return new $ctl.application.Devicectl.ConfigLoader(
+          this.template("device_config_changes", this.$e.config_changes_container)
+        )
+      });
+
+      // create current config widget
+
+      this.widget("current_config", ($e) => {
+        return new $ctl.application.Devicectl.ConfigLoader(
+          this.template("device_current_config", this.$e.current_config_container)
+        )
+      });
+
+      // create reference config widget
+
+      this.widget("reference_config", ($e) => {
+        return new $ctl.application.Devicectl.ConfigLoader(
+          this.template("device_reference_config", this.$e.reference_config_container)
+        )
+      });
+
+      // url formatting to replace /0/ with /<device_id>/ across
+      // all widgets
+
+      this.$w.config_changes.format_request_url = (url) => {
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+
+      this.$w.current_config.format_request_url = (url) => {
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+
+      this.$w.reference_config.format_request_url = (url) => {
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+      
+      this.$w.config_history.format_request_url = (url) => {
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+
+      // set up config history listing widget
+
+      this.$w.config_history.formatters.error_message = (value, data) => {
+        if(value) {
+          return $("<div class='text-danger'>").text(value);
+        }
+        return value;
+      };
+      // format status to be a badge
+
+      this.$w.config_history.formatters.status = (value, data) => {
+        let badge = $("<span>").addClass("badge");
+        if(data.status=="ok") {
+          badge.addClass("bg-success");
+        } else if(data.status=="error") {
+          badge.addClass("bg-danger");
+        }
+        return badge.text(data.status);
+      };
+
+      this.$w.config_history.formatters.created = fullctl.formatters.datetime;
+
+      // upon showing the config history tab, load the config history
+      // if it has not been loaded yet
+      $('#history-tab').on('show.bs.tab', () => {
+        this.$w.config_history.load().then(() => {this.config_history_loaded = true;})
+      });
+
+      // upon showing the changes tab, load the config changes diff
+      $('#changes-tab').on('show.bs.tab', () => {
+        this.$w.config_changes.load();
+      });
+
+      // upon showing the current-config tab, load the current config
+      $('#current-config-tab').on('show.bs.tab', () => {
+        this.$w.current_config.load();
+      });
+      
+      // upon showing the reference-config tab, load the reference config
+      $('#reference-config-tab').on('show.bs.tab', () => {
+        this.$w.reference_config.load();
+      });
 
     },
 
     show_device : function(device_id) {
+
+      this.device_id = device_id;
+      this.config_history_loaded = false;
+
       this.$w.device.get(""+device_id).then(
         (response) => {
           let device = response.first();
@@ -283,6 +451,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
             device.operational_status == "error" ? "bg-success" : "bg-danger"
           );
           this.$w.device.fill(device);
+          //$("#device-detail-tab").tab("show");
           
           this.render_service_links(device);
         }
