@@ -91,7 +91,18 @@ class Device(DataViewSet):
             instance=device_operational_status, data=data
         )
         slz.is_valid(raise_exception=True)
-        slz.save()
+        instance = slz.save()
+
+        models.DeviceConfigHistory.objects.create(
+            device=instance.device,
+            status=instance.status,
+            error_message=instance.error_message,
+            event=instance.event,
+            url_current=instance.url_current,
+            url_reference=instance.url_reference,
+            config_current=instance.config_current,
+            config_reference=instance.config_reference,
+        )
 
         return Response(slz.data)
 

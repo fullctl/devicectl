@@ -495,6 +495,16 @@ class DeviceConfigHistory(DeviceConfigStatus):
 
     @classmethod
     def diff(cls, device):
+        """
+        Returns the diff between the current and reference config using difflib
+        for a specified device.
+
+        Will use the most recent reference and current config pushed to the history
+        for the device.
+
+        They may exist on separate history records.
+        """
+
         current = (
             DeviceConfigHistory.objects.filter(device=device)
             .exclude(config_current__isnull=True)
