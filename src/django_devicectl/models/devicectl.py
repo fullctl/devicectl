@@ -447,6 +447,22 @@ class DeviceOperationalStatus(DeviceConfigStatus):
     def org(self):
         return self.device.org
 
+    def get_current_config(self):
+        return (
+            DeviceConfigHistory.objects.filter(device=self.device)
+            .exclude(config_current__isnull=True)
+            .order_by("-created")
+            .first()
+        )
+
+    def get_reference_config(self):
+        return (
+            DeviceConfigHistory.objects.filter(device=self.device)
+            .exclude(config_reference__isnull=True)
+            .order_by("-created")
+            .first()
+        )
+
     def __str__(self):
         return f"DeviceOperationalStatus({self.id}) {self.device.name} {self.status}"
 
@@ -476,6 +492,51 @@ class DeviceConfigHistory(DeviceConfigStatus):
         db_table = "devicectl_device_config_history"
         verbose_name = _("Device Config History")
         verbose_name_plural = _("Device Config Histories")
+
+    @classmethod
+    def diff(cls, device):
+        """
+        Returns the diff between the current and reference config using difflib
+        for a specified device.
+
+        Will use the most recent reference and current config pushed to the history
+        for the device.
+
+        They may exist on separate history records.
+        """
+
+        current = (
+            DeviceConfigHistory.objects.filter(device=device)
+            .exclude(config_current__isnull=True)
+            .order_by("-created")
+            .first()
+        )
+
+        if not current:
+            return ""
+
+        reference = (
+            DeviceConfigHistory.objects.filter(device=device)
+            .exclude(config_reference__isnull=True)
+            .order_by("-created")
+            .first()
+        )
+
+        if not reference:
+            return ""
+
+        a = current.config_current or ""
+        b = reference.config_reference or ""
+
+        if not a and not b:
+            return ""
+
+        a = a.splitlines(keepends=True)
+        b = b.splitlines(keepends=True)
+
+        diff = difflib.unified_diff(a, b, lineterm="")
+
+        return "\n".join(diff)
 
     @property
     def org(self):

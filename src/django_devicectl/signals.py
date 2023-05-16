@@ -2,14 +2,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from fullctl.django.models.concrete.tasks import TaskLimitError
 
-from django_devicectl.models.devicectl import (
-    DeviceConfigHistory,
-    DeviceOperationalStatus,
-    IPAddress,
-    Port,
-    PortInfo,
-    VirtualPort,
-)
+from django_devicectl.models.devicectl import IPAddress, Port, PortInfo, VirtualPort
 from django_devicectl.models.tasks import RequestPeerctlSync
 
 
@@ -52,26 +45,3 @@ def auto_create_port(sender, instance, created, **kwargs):
             port_info = PortInfo.objects.create(instance=instance.logical_port.instance)
             port.port_info = port_info
             port.save()
-
-
-@receiver(post_save, sender=DeviceOperationalStatus)
-def device_config_history(sender, instance, **kwargs):
-    """
-    When a device operational status is saved, create a
-    device config history entry
-    """
-
-    latest = instance.device.config_history.order_by("-created").first()
-
-    # only create a new history entry if the config has changed
-    if not latest or latest.diff != instance.diff:
-        DeviceConfigHistory.objects.create(
-            device=instance.device,
-            status=instance.status,
-            error_message=instance.error_message,
-            event=instance.event,
-            url_current=instance.url_current,
-            url_reference=instance.url_reference,
-            config_current=instance.config_current,
-            config_reference=instance.config_reference,
-        )

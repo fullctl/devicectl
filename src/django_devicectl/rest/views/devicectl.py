@@ -242,11 +242,20 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         Returns the current config of the device (normal api json response)
         """
 
+        config = device.operational_status.get_current_config()
+
+        if config:
+            url = config.url_current
+            config = config.config_current
+        else:
+            url = None
+            config = None
+
         serializer = Serializers.device_config(
             {
                 "id": device.id,
-                "config": device.operational_status.config_current,
-                "url": device.operational_status.url_current,
+                "config": config,
+                "url": url,
             },
         )
         return Response(serializer.data)
@@ -264,8 +273,13 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         Returns the current config of the device (plain-text response)
         """
 
+        config = device.operational_status.get_current_config()
+
+        if config:
+            config = config.config_current
+
         serializer = Serializers.device_config(
-            {"id": device.id, "config": device.operational_status.config_current},
+            {"id": device.id, "config": config},
         )
         return Response(serializer.data["config"])
 
@@ -281,11 +295,20 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         Returns the reference config of the device (normal api json response)
         """
 
+        config = device.operational_status.get_reference_config()
+
+        if config:
+            url = config.url_reference
+            config = config.config_reference
+        else:
+            url = None
+            config = None
+
         serializer = Serializers.device_config(
             {
                 "id": device.id,
-                "config": device.operational_status.config_reference,
-                "url": device.operational_status.url_reference,
+                "config": config,
+                "url": url,
             },
         )
         return Response(serializer.data)
@@ -302,9 +325,13 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         """
         Returns the reference config of the device (plain-text response)
         """
+        config = device.operational_status.get_reference_config()
+
+        if config:
+            config = config.config_reference
 
         serializer = Serializers.device_config(
-            {"id": device.id, "config": device.operational_status.config_reference},
+            {"id": device.id, "config": config},
         )
         return Response(serializer.data["config"])
 
@@ -319,7 +346,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         """
 
         serializer = Serializers.device_config(
-            {"id": device.id, "config": device.operational_status.diff},
+            {"id": device.id, "config": models.DeviceConfigHistory.diff(device)},
         )
         return Response(serializer.data)
 
@@ -337,7 +364,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         """
 
         serializer = Serializers.device_config(
-            {"id": device.id, "config": device.operational_status.diff},
+            {"id": device.id, "config": models.DeviceConfigHistory.diff(device)},
         )
         return Response(serializer.data["config"])
 
