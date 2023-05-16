@@ -61,17 +61,15 @@ def device_config_history(sender, instance, **kwargs):
     device config history entry
     """
 
-    latest = instance.device.config_history.order_by("-created").first()
+    # latest = instance.device.config_history.order_by("-created").first()
 
-    # only create a new history entry if the config has changed
-    if not latest or (latest.diff != instance.diff or latest.status != instance.status):
-        DeviceConfigHistory.objects.create(
-            device=instance.device,
-            status=instance.status,
-            error_message=instance.error_message,
-            event=instance.event,
-            url_current=instance.url_current,
-            url_reference=instance.url_reference,
-            config_current=instance.config_current,
-            config_reference=instance.config_reference,
-        )
+    DeviceConfigHistory.objects.create(
+        device=instance.device,
+        status=instance.status,
+        error_message=instance.error_message,
+        event=instance.event,
+        url_current=instance.url_current,
+        url_reference=instance.url_reference,
+        config_current=instance.config_current,
+        config_reference=instance.config_reference,
+    )
