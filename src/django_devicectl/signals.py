@@ -64,7 +64,7 @@ def device_config_history(sender, instance, **kwargs):
     latest = instance.device.config_history.order_by("-created").first()
 
     # only create a new history entry if the config has changed
-    if not latest or latest.diff != instance.diff:
+    if not latest or (latest.diff != instance.diff or latest.status != instance.status):
         DeviceConfigHistory.objects.create(
             device=instance.device,
             status=instance.status,
