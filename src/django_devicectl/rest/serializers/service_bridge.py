@@ -418,3 +418,21 @@ class RequestDummyPorts(serializers.Serializer):
                 created_ports.append(port)
 
         return created_ports
+
+
+class Traffic(serializers.Serializer):
+
+    bps_in = serializers.IntegerField()
+    bps_out = serializers.IntegerField()
+    timestamp = serializers.IntegerField()
+
+    class Meta:
+        fields = ["bps_in", "bps_out", "timestamp"]
+
+@register
+class VirtualPortTraffic(Traffic):
+    ref_tag = "virtual_port_traffic"
+
+@register
+class PhysicalPortTraffic(Traffic):
+    ref_tag = "physical_port_traffic"

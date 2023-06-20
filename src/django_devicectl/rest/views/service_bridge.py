@@ -5,6 +5,9 @@ from fullctl.django.rest.views.service_bridge import (
     MethodFilter,
     StatusViewSet,
 )
+
+import fullctl.graph.loaders.mock as mock_graph
+
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -198,6 +201,15 @@ class VirtualPort(DataViewSet):
                 data["vlan_id"] = 0
 
         return data
+
+    @action(detail=True, methods=["GET"], serializer_class=Serializers.virtual_port_traffic)
+    def traffic(self, request, pk, *args, **kwargs):
+
+        """
+        Returns current traffic data for the virtual port
+        """
+
+        return Response(mock_graph.port_traffic(300, 60))
 
 
 @route
