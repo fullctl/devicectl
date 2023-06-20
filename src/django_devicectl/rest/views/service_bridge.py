@@ -53,6 +53,7 @@ class Device(DataViewSet):
         ("port", "physical_ports__logical_port__virtual_ports__port__in"),
         ("facility", "facility_id"),
         ("facility_slug", "facility__slug"),
+        ("device", "physical_ports__device_id"),
     ]
     autocomplete = "name"
     allow_unfiltered = True
@@ -91,7 +92,18 @@ class Device(DataViewSet):
             instance=device_operational_status, data=data
         )
         slz.is_valid(raise_exception=True)
-        slz.save()
+        instance = slz.save()
+
+        models.DeviceConfigHistory.objects.create(
+            device=instance.device,
+            status=instance.status,
+            error_message=instance.error_message,
+            event=instance.event,
+            url_current=instance.url_current,
+            url_reference=instance.url_reference,
+            config_current=instance.config_current,
+            config_reference=instance.config_reference,
+        )
 
         return Response(slz.data)
 
