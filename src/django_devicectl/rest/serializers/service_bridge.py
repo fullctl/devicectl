@@ -424,15 +424,21 @@ class Traffic(serializers.Serializer):
 
     bps_in = serializers.IntegerField()
     bps_out = serializers.IntegerField()
+    bps_in_max = serializers.IntegerField()
+    bps_out_max = serializers.IntegerField()
     timestamp = serializers.IntegerField()
 
     class Meta:
-        fields = ["bps_in", "bps_out", "timestamp"]
+        fields = ["bps_in", "bps_out", "bps_in_max", "bps_out_max", "timestamp"]
+
 
 @register
-class VirtualPortTraffic(Traffic):
-    ref_tag = "virtual_port_traffic"
+class PortTraffic(serializers.Serializer):
 
-@register
-class PhysicalPortTraffic(Traffic):
-    ref_tag = "physical_port_traffic"
+    id = serializers.IntegerField()
+    traffic = Traffic(many=True)
+
+    ref_tag = "port_traffic"
+
+    class Meta:
+        fields = ["id", "traffic"]

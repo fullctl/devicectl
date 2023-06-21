@@ -564,6 +564,10 @@ class PhysicalPort(HandleRefModel):
         on_delete=models.CASCADE,
     )
 
+    meta = models.JSONField(
+        help_text=_("Meta data for this physical port"), blank=True, null=True, default=dict
+    )
+
     class HandleRef:
         tag = "physical_port"
 
@@ -622,6 +626,10 @@ class LogicalPort(HandleRefModel):
     description = DeviceDescriptionField()
     trunk = models.IntegerField(blank=True, null=True)
     channel = models.IntegerField(blank=True, null=True)
+
+    meta = models.JSONField(
+        help_text=_("Meta data for this logical port"), blank=True, null=True, default=dict
+    )
 
     class HandleRef:
         tag = "logical_port"
@@ -683,6 +691,10 @@ class VirtualPort(ServiceBridgeReferenceModel):
         null=True,
         blank=True,
         help_text=_("Remote reference id"),
+    )
+
+    meta = models.JSONField(
+        help_text=_("Meta data for this virtual port"), blank=True, null=True, default=dict
     )
 
     class HandleRef:

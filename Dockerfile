@@ -36,6 +36,7 @@ ARG extra_pip_install_dir
 COPY pyproject.toml poetry.lock $extra_pip_install_dir ./
 
 # Need to upgrade pip and wheel within Poetry for all its installs
+RUN apk add rrdtool-dev
 RUN poetry install --no-root
 
 RUN test -z "$extra_pip_install_dir" || pip install *.tar.gz

@@ -3,6 +3,9 @@ from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
 
+import fullctl.graph.mrtg.rrd as mrtg_rrd
+import os
+
 import django_devicectl.models as models
 
 Serializers, register = serializer_registry()
@@ -233,3 +236,42 @@ class PeeringDBFacility(serializers.Serializer):
 
     def get_router_id(self, obj):
         return obj.ipaddr4 or ""
+
+class Traffic(serializers.Serializer):
+
+    bps_in = serializers.IntegerField()
+    bps_out = serializers.IntegerField()
+    bps_in_max = serializers.IntegerField()
+    bps_out_max = serializers.IntegerField()
+    timestamp = serializers.IntegerField()
+
+    class Meta:
+        fields = ["bps_in", "bps_out", "timestamp"]
+
+
+@register
+class PortTraffic(serializers.Serializer):
+
+    id = serializers.IntegerField()
+    traffic = Traffic(many=True)
+
+    ref_tag = "port_traffic"
+
+    class Meta:
+        fields = ["id", "traffic"]
+
+    def save(self):
+
+        context_obj = self.context["obj"]
+
+        # check if graph file already exists
+
+        if not context_obj.meta or "graph" not in context_obj.meta:
+            graph_file = f"{context_obj.HandleRef.tag}-{context_obj.id}.rrd"
+        else:
+            graph_file = context_obj.meta["graph"]
+
+        for traffic_line in self.validated_data["traffic"]:
+            mrtg_rrd.update_rrd(graph_file, traffic_line)
+
+        

@@ -124,3 +124,7 @@ settings.print_debug(f"loaded settings for version {PACKAGE_VERSION} (DEBUG: {DE
 settings_manager.set_option("PREFIXCTL_URL", "")
 settings_manager.set_option("PEERCTL_URL", "")
 settings_manager.set_option("AUDITCTL_URL", "")
+
+
+settings_manager.set_option("GRAPHS_PATH", "./graphs")
+settings_manager.set_option("GRAPHS_URL", "/graphs")

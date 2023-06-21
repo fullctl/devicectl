@@ -22,6 +22,7 @@ devicectl = "devicectl.cli:main"
 python = "^3.7"
 fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
 pygments = "^2.14"
+rrdtool = "*"
 
 [tool.poetry.dev-dependencies]
 # testing

@@ -18,6 +18,10 @@ from django_devicectl.rest.decorators import grainy_endpoint
 from django_devicectl.rest.route.devicectl import route
 from django_devicectl.rest.serializers.devicectl import Serializers
 
+from fullctl.graph.mrtg import rrd as mrtg_rrd
+import time
+import os
+
 
 @route
 class Facility(CachedObjectMixin, viewsets.GenericViewSet):
@@ -470,8 +474,48 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         return r
 
 
+class PortTrafficMixin:
+
+    def _update_traffic(self, data, port):
+        serializer = Serializers.port_traffic(
+            data=data,
+            context={"obj":port}
+        )
+
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+
+        serializer.save()
+        return Response(serializer.data)
+
+
+    def _get_traffic(self, port, start_time, duration):
+
+        if not start_time:
+            start_time = time.time()
+
+        if not duration:
+            duration = 86400
+
+
+        if not port.meta or "graph" not in port.meta:
+            return Response([])
+
+        
+        graph_file = port.meta.get("graph")
+    
+        serializer = Serializers.port_traffic(
+            instance={
+                "id": port.id,
+                "traffic": mrtg_rrd.load_rrd_file(graph_file, start_time, duration)
+            }
+        )
+
+        return Response(serializer.data)
+
+
 @route
-class PhysicalPort(CachedObjectMixin, viewsets.GenericViewSet):
+class PhysicalPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
     serializer_class = Serializers.physical_port
     queryset = models.PhysicalPort.objects.all()
 
@@ -566,6 +610,23 @@ class PhysicalPort(CachedObjectMixin, viewsets.GenericViewSet):
         r = Response(Serializers.physical_port(instance=physical_port).data)
         physical_port.delete()
         return r
+
+
+    @grainy_endpoint(
+        namespace="physical_port.{request.org.permission_id}.{physical_port_id}.traffic"
+    )
+    @load_object(
+        "physical_port",
+        models.PhysicalPort,
+        device__instance="instance",
+        id="physical_port_id",
+    )
+    @action(detail=True, methods=["get", "post"])
+    def traffic(self, request, org, instance, physical_port, *args, **kwargs):
+        if request.method == "POST":
+            return self._update_traffic(request.data, physical_port)
+        else:
+            return self._get_traffic(physical_port, request.GET.get("start_time"), request.GET.get("duration"))
 
 
 @route
