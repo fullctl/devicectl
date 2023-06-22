@@ -421,22 +421,19 @@ class RequestDummyPorts(serializers.Serializer):
 
 
 class Traffic(serializers.Serializer):
-    bps_in = serializers.IntegerField()
-    bps_out = serializers.IntegerField()
-    bps_in_max = serializers.IntegerField()
-    bps_out_max = serializers.IntegerField()
-    timestamp = serializers.IntegerField()
+    id = serializers.IntegerField(allow_null=True)
+    bps_in = serializers.IntegerField(allow_null=True)
+    bps_out = serializers.IntegerField(allow_null=True)
+    bps_in_max = serializers.IntegerField(allow_null=True)
+    bps_out_max = serializers.IntegerField(allow_null=True)
+    timestamp = serializers.IntegerField(allow_null=True)
 
     class Meta:
-        fields = ["bps_in", "bps_out", "bps_in_max", "bps_out_max", "timestamp"]
+        fields = ["id", "bps_in", "bps_out", "bps_in_max", "bps_out_max", "timestamp"]
 
 
 @register
-class PortTraffic(serializers.Serializer):
-    id = serializers.IntegerField()
-    traffic = Traffic(many=True)
+class PortTraffic(serializers.ListSerializer):
+    child = Traffic()
 
     ref_tag = "port_traffic"
-
-    class Meta:
-        fields = ["id", "traffic"]
