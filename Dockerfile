@@ -39,6 +39,10 @@ COPY pyproject.toml poetry.lock $extra_pip_install_dir ./
 RUN apk add rrdtool-dev
 RUN poetry install --no-root
 
+# Cant be in poetry because that fails to install unless rrdtool
+# is installed in the system, so it breaks github CI for linting and stuff
+RUN pip install rrdtool
+
 RUN test -z "$extra_pip_install_dir" || pip install *.tar.gz
 
 COPY Ctl/VERSION Ctl/

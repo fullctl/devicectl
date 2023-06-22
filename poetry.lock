@@ -1648,17 +1648,6 @@ typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.9
 jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
-name = "rrdtool"
-version = "0.1.16"
-description = "Python bindings for rrdtool"
-category = "main"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
-files = [
-    {file = "rrdtool-0.1.16.tar.gz", hash = "sha256:5f0aff8b3e0a0f701652fa88bf605a54be9e6b25fba52a13b67c71f7b35a1451"},
-]
-
-[[package]]
 name = "setuptools"
 version = "68.0.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -1954,4 +1943,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "bdcfcc51d3ecddcfb5a25161e17e048e7d3d93bc9afe902eaaf1268746d87bff"
+content-hash = "1e26c242ea856000672a5285b308e64045ac978859773d94bc0997a798a9245e"
