@@ -565,7 +565,10 @@ class PhysicalPort(HandleRefModel):
     )
 
     meta = models.JSONField(
-        help_text=_("Meta data for this physical port"), blank=True, null=True, default=dict
+        help_text=_("Meta data for this physical port"),
+        blank=True,
+        null=True,
+        default=dict,
     )
 
     class HandleRef:
@@ -628,7 +631,10 @@ class LogicalPort(HandleRefModel):
     channel = models.IntegerField(blank=True, null=True)
 
     meta = models.JSONField(
-        help_text=_("Meta data for this logical port"), blank=True, null=True, default=dict
+        help_text=_("Meta data for this logical port"),
+        blank=True,
+        null=True,
+        default=dict,
     )
 
     class HandleRef:
@@ -694,7 +700,10 @@ class VirtualPort(ServiceBridgeReferenceModel):
     )
 
     meta = models.JSONField(
-        help_text=_("Meta data for this virtual port"), blank=True, null=True, default=dict
+        help_text=_("Meta data for this virtual port"),
+        blank=True,
+        null=True,
+        default=dict,
     )
 
     class HandleRef:

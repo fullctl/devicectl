@@ -1,3 +1,4 @@
+import fullctl.graph.mrtg.rrd as mrtg_rrd
 from fullctl.django.rest.route.service_bridge import route
 from fullctl.django.rest.views.service_bridge import (
     DataViewSet,
@@ -5,10 +6,6 @@ from fullctl.django.rest.views.service_bridge import (
     MethodFilter,
     StatusViewSet,
 )
-
-import fullctl.graph.mrtg.mock as mock_graph
-import fullctl.graph.mrtg.rrd as mrtg_rrd
-
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -205,18 +202,18 @@ class VirtualPort(DataViewSet):
 
     @action(detail=True, methods=["GET"], serializer_class=Serializers.port_traffic)
     def traffic(self, request, pk, *args, **kwargs):
-
         """
         Returns current traffic data for the virtual port
         """
 
-        #return Response(mrtg_rrd.log_file_to_list("django_devicectl/static/ixp_peering-mass_ixp64_mtu1500-bits.log"))
+        # return Response(mrtg_rrd.log_file_to_list("django_devicectl/static/ixp_peering-mass_ixp64_mtu1500-bits.log"))
 
         # set a datetime with a specific date (for testing purposes for now)
         import datetime
+
         dt = datetime.datetime(2023, 6, 19, 15, 35, 0, 0)
 
-        #convert to imt timestamp
+        # convert to imt timestamp
         unixtimestamp = int(dt.timestamp())
 
         serializer = Serializers.port_traffic(

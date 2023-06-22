@@ -1,12 +1,13 @@
+import os
+
+import fullctl.graph.mrtg.rrd as mrtg_rrd
 import fullctl.service_bridge.nautobot as nautobot
 import fullctl.service_bridge.peerctl as peerctl
+from django.conf import settings
 from fullctl.django.models import Task
 from fullctl.django.tasks import register
-from django.conf import settings
 
 import django_devicectl.models.devicectl as models
-import os
-import fullctl.graph.mrtg.rrd as mrtg_rrd
 
 
 @register
@@ -81,7 +82,7 @@ class UpdateTrafficGraphs(Task):
     - `update`: list of dicts with keys `id`, `bps_in`, `bps_out`, `bps_in_max`, `bps_out_max`, `timestamp`
     - `import_mrtg`: list of dicts with keys `id`, `log_lines`
     """
-    
+
     class Meta:
         proxy = True
 
@@ -90,7 +91,6 @@ class UpdateTrafficGraphs(Task):
 
     @property
     def context_model(self):
-
         """
         Returns the context model class based on ref tag value stored
         in the task instance's `param['kwargs']['context_model']` field.
@@ -106,15 +106,13 @@ class UpdateTrafficGraphs(Task):
             raise ValueError(f"Unknown context model {ref_tag}")
 
     def run(self, *args, **kwargs):
-
         for data in kwargs.get("update", []):
             self.update_rrd(data)
-        
+
         for data in kwargs.get("import_mrtg", []):
             self.import_mrtg(data)
 
     def update_rrd(self, data):
-
         """
         Update the RRD file for the given context object with the given data point (single data point)
         """
@@ -136,13 +134,16 @@ class UpdateTrafficGraphs(Task):
         if not os.path.exists(graph_path):
             mrtg_rrd.create_rrd_file(graph_path, timestamp)
 
-        mrtg_rrd.update_rrd(graph_path, f"{timestamp} {bps_in} {bps_out} {bps_in_max} {bps_out_max}", mrtg_rrd.get_last_update_time(graph_path))
+        mrtg_rrd.update_rrd(
+            graph_path,
+            f"{timestamp} {bps_in} {bps_out} {bps_in_max} {bps_out_max}",
+            mrtg_rrd.get_last_update_time(graph_path),
+        )
 
         context_obj.meta["graph"] = graph_file
         context_obj.save()
 
     def import_mrtg(self, data):
-
         """
         Import MRTG log lines into RRD file for the given context object
         """
@@ -167,7 +168,7 @@ class UpdateTrafficGraphs(Task):
 
         for log_line in log_lines:
             print(log_line)
-            
+
         mrtg_rrd.stream_log_lines_to_rrd(graph_path, log_lines)
 
         context_obj.meta["graph"] = graph_file

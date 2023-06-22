@@ -2,10 +2,6 @@ from django.utils.translation import ugettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
-from django.conf import settings
-
-import fullctl.graph.mrtg.rrd as mrtg_rrd
-import os
 
 import django_devicectl.models as models
 import django_devicectl.models.tasks as tasks
@@ -239,8 +235,8 @@ class PeeringDBFacility(serializers.Serializer):
     def get_router_id(self, obj):
         return obj.ipaddr4 or ""
 
-class Traffic(serializers.Serializer):
 
+class Traffic(serializers.Serializer):
     id = serializers.IntegerField(allow_null=True)
     bps_in = serializers.IntegerField(allow_null=True)
     bps_out = serializers.IntegerField(allow_null=True)
@@ -254,7 +250,6 @@ class Traffic(serializers.Serializer):
 
 @register
 class PortTraffic(serializers.ListSerializer):
-
     child = Traffic()
 
     ref_tag = "port_traffic"
@@ -267,6 +262,8 @@ class PortTraffic(serializers.ListSerializer):
             org=self.context["org"],
             context_model=context_model,
         )
+
+
 @register
 class PortTrafficMRTGImport(serializers.Serializer):
 
@@ -286,7 +283,6 @@ class PortTrafficMRTGImport(serializers.Serializer):
         fields = ["id", "log_lines"]
 
     def validate_log_lines(self, log_lines):
-
         for line in log_lines:
             try:
                 timestamp, bits_in, bits_out, bits_in_max, bits_out_max = line.split()
@@ -302,7 +298,9 @@ class PortTrafficMRTGImport(serializers.Serializer):
                 bits_in_max = int(bits_in_max)
                 bits_out_max = int(bits_out_max)
             except ValueError:
-                raise serializers.ValidationError("Invalid log line format, expected integers")
+                raise serializers.ValidationError(
+                    "Invalid log line format, expected integers"
+                )
 
         return log_lines
 
@@ -311,8 +309,8 @@ class PortTrafficMRTGImport(serializers.Serializer):
 class PortTrafficMRTGImportBatch(serializers.ListSerializer):
     child = PortTrafficMRTGImport()
     ref_tag = "port_traffic_mrtg_import_batch"
-    def save(self):
 
+    def save(self):
         context_model = list(self.context["context_objs"].values())[0].HandleRef.tag
 
         tasks.UpdateTrafficGraphs.create_task(

@@ -4,25 +4,39 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_devicectl', '0024_device_config_2'),
+        ("django_devicectl", "0024_device_config_2"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='logicalport',
-            name='meta',
-            field=models.JSONField(blank=True, default=dict, help_text='Meta data for this logical port', null=True),
+            model_name="logicalport",
+            name="meta",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="Meta data for this logical port",
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='physicalport',
-            name='meta',
-            field=models.JSONField(blank=True, default=dict, help_text='Meta data for this physical port', null=True),
+            model_name="physicalport",
+            name="meta",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="Meta data for this physical port",
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='virtualport',
-            name='meta',
-            field=models.JSONField(blank=True, default=dict, help_text='Meta data for this virtual port', null=True),
+            model_name="virtualport",
+            name="meta",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="Meta data for this virtual port",
+                null=True,
+            ),
         ),
     ]

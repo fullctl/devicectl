@@ -421,7 +421,6 @@ class RequestDummyPorts(serializers.Serializer):
 
 
 class Traffic(serializers.Serializer):
-
     bps_in = serializers.IntegerField()
     bps_out = serializers.IntegerField()
     bps_in_max = serializers.IntegerField()
@@ -434,7 +433,6 @@ class Traffic(serializers.Serializer):
 
 @register
 class PortTraffic(serializers.Serializer):
-
     id = serializers.IntegerField()
     traffic = Traffic(many=True)
 
