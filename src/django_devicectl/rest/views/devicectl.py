@@ -476,11 +476,11 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
 
 class PortTrafficMixin:
 
-    def _update_traffic(self, data, port):
+    def _update_traffic_batch(self, data, context_objs, org=None):
 
         serializer = Serializers.port_traffic(
             data=data,
-            context={"obj":port}
+            context={"context_objs": context_objs, "org": org}
         )
 
         if not serializer.is_valid():
@@ -489,37 +489,11 @@ class PortTrafficMixin:
         serializer.save()
         return Response(serializer.data)
 
-    def _update_traffic_batch(self, data, context_objs):
-
-        serializer = Serializers.port_traffic(
-            data=data,
-            context={"context_objs": context_objs}
-        )
-
-        if not serializer.is_valid():
-            return BadRequest(serializer.errors)
-
-        serializer.save()
-        return Response(serializer.data)
-
-    def _import_traffic_mrtg(self, data, port):
-
-        serializer = Serializers.port_traffic_mrtg_import(
-            data=data,
-            context={"obj":port}
-        )
-
-        if not serializer.is_valid():
-            return BadRequest(serializer.errors)
-
-        serializer.save()
-        return Response(serializer.data)
-
-    def _import_traffic_mrtg_batch(self, data, context_objs):
+    def _import_traffic_mrtg_batch(self, data, context_objs, org=None):
 
         serializer = Serializers.port_traffic_mrtg_import_batch(
             data=data,
-            context={"context_objs": context_objs}
+            context={"context_objs": context_objs, "org": org}
         )
 
         if not serializer.is_valid():
@@ -544,7 +518,6 @@ class PortTrafficMixin:
             return Response([])
 
         graph_file = os.path.join(settings.GRAPHS_PATH, port.meta.get("graph"))
-        print("loading graph from", graph_file, "date", datetime.fromtimestamp(start_time), "duration", duration)
     
         if not os.path.exists(graph_file):
             return Response({})
@@ -661,36 +634,68 @@ class PhysicalPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet)
         physical_port.delete()
         return r
 
-
+    @action(detail=True, methods=["get"])
     @grainy_endpoint(
-        namespace="physical_port.{request.org.permission_id}.{physical_port_id}.traffic"
+        namespace="physical_port.{request.org.permission_id}.{physical_port_id}"
     )
     @load_object(
         "physical_port",
         models.PhysicalPort,
-        device__instance="instance",
+        logical_port__instance="instance",
         id="physical_port_id",
     )
-    @action(detail=True, methods=["get", "post"])
-    def traffic(self, request, org, instance, physical_port, *args, **kwargs):
-        if request.method == "POST":
-            return self._update_traffic(request.data, physical_port)
-        else:
-            return self._get_traffic(physical_port, request.GET.get("start_time"), request.GET.get("duration"))
+    def traffic(self, request, org, instance, physical_port_id, physical_port, *args, **kwargs):
+
+        """
+        Returns traffic data points for this specific physical port
+
+        URL Parameters:
+
+        * `start_time` - start time of the traffic data points (int unix epoch)
+        * `duration` - duration of the traffic data points (int seconds)
+        """
+
+        return self._get_traffic(physical_port, request.GET.get("start_time"), request.GET.get("duration"))
 
 
+    @action(detail=False, methods=["post"], url_path="traffic")
     @grainy_endpoint(
-        namespace="physical_port.{request.org.permission_id}.{physical_port_id}.traffic"
+        namespace="physical_port.{request.org.permission_id}"
     )
-    @load_object(
-        "physical_port",
-        models.PhysicalPort,
-        device__instance="instance",
-        id="physical_port_id",
+    def traffic_update(self, request, org, instance, *args, **kwargs):
+
+        """
+        Queues a traffic data update for one or multiple physical ports
+
+        The processing is done in a job queue and will not be instantly reflected
+        in a query to the traffic endpoint.
+        """
+
+        ports = {port.id : port for port in models.PhysicalPort.objects.filter(
+            logical_port__instance=instance,
+            id__in=[p["id"] for p in request.data],
+        )}
+        return self._update_traffic_batch(request.data, ports, org=org)
+
+    @action(detail=False, methods=["post"], url_path="traffic/import/mrtg")
+    @grainy_endpoint(
+        namespace="physical_port.{request.org.permission_id}"
     )
-    @action(detail=True, methods=["post"], url_path="traffic/import/mrtg")
-    def traffic_import_mrtg(self, request, org, instance, physical_port, *args, **kwargs):
-        return self._import_traffic_mrtg(request.data, physical_port)
+    def traffic_import_mrtg(self, request, org, instance, *args, **kwargs):
+
+        """
+        Queues a traffic data import from MRTG for one or multiple physical ports
+
+        The processing is done in a job queue and will not be instantly reflected
+        in a query to the traffic endpoint.
+        """
+
+        ports = {port.id : port for port in models.PhysicalPort.objects.filter(
+            logical_port__instance=instance,
+            id__in=[p["id"] for p in request.data],
+        )}
+        return self._import_traffic_mrtg_batch(request.data, ports, org=org)
+
 
 
 @route
@@ -865,7 +870,7 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         virtual_port.delete()
         return r
 
-    @action(detail=True, methods=["get", "post"])
+    @action(detail=True, methods=["get"])
     @grainy_endpoint(
         namespace="virtual_port.{request.org.permission_id}.{virtual_port_id}"
     )
@@ -876,46 +881,56 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         id="virtual_port_id",
     )
     def traffic(self, request, org, instance, virtual_port_id, virtual_port, *args, **kwargs):
-        if request.method == "POST":
-            return self._update_traffic(request.data, virtual_port)
-        else:
-            return self._get_traffic(virtual_port, request.GET.get("start_time"), request.GET.get("duration"))
 
-    @action(detail=True, methods=["post"], url_path="traffic/import/mrtg")
-    @grainy_endpoint(
-        namespace="virtual_port.{request.org.permission_id}.{virtual_port_id}"
-    )
-    @load_object(
-        "virtual_port",
-        models.VirtualPort,
-        logical_port__instance="instance",
-        id="virtual_port_id",
-    )
-    def traffic_import_mrtg(self, request, org, instance, virtual_port_id, virtual_port, *args, **kwargs):
-        print("importing traffic")
-        return self._import_traffic_mrtg(request.data, virtual_port)
+        """
+        Returns traffic data points for this specific virtual port
+
+        URL Parameters:
+
+        * `start_time` - start time of the traffic data points (int unix epoch)
+        * `duration` - duration of the traffic data points (int seconds)
+        """
+
+        return self._get_traffic(virtual_port, request.GET.get("start_time"), request.GET.get("duration"))
+
 
     @action(detail=False, methods=["post"], url_path="traffic")
     @grainy_endpoint(
         namespace="virtual_port.{request.org.permission_id}"
     )
-    def traffic_import_batch(self, request, org, instance, *args, **kwargs):
+    def traffic_update(self, request, org, instance, *args, **kwargs):
+
+        """
+        Queues a traffic data update for one or multiple virtual ports
+
+        The processing is done in a job queue and will not be instantly reflected
+        in a query to the traffic endpoint.
+        """
+
         ports = {port.id : port for port in models.VirtualPort.objects.filter(
             logical_port__instance=instance,
             id__in=[p["id"] for p in request.data],
         )}
-        return self._update_traffic_batch(request.data, ports)
+        return self._update_traffic_batch(request.data, ports, org=org)
 
     @action(detail=False, methods=["post"], url_path="traffic/import/mrtg")
     @grainy_endpoint(
         namespace="virtual_port.{request.org.permission_id}"
     )
-    def traffic_import_mrtg_batch(self, request, org, instance, *args, **kwargs):
+    def traffic_import_mrtg(self, request, org, instance, *args, **kwargs):
+
+        """
+        Queues a traffic data import from MRTG for one or multiple virtual ports
+
+        The processing is done in a job queue and will not be instantly reflected
+        in a query to the traffic endpoint.
+        """
+
         ports = {port.id : port for port in models.VirtualPort.objects.filter(
             logical_port__instance=instance,
             id__in=[p["id"] for p in request.data],
         )}
-        return self._import_traffic_mrtg_batch(request.data, ports)
+        return self._import_traffic_mrtg_batch(request.data, ports, org=org)
 
 
 @route

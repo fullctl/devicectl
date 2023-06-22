@@ -8,6 +8,7 @@ import fullctl.graph.mrtg.rrd as mrtg_rrd
 import os
 
 import django_devicectl.models as models
+import django_devicectl.models.tasks as tasks
 
 Serializers, register = serializer_registry()
 
@@ -250,30 +251,6 @@ class Traffic(serializers.Serializer):
     class Meta:
         fields = ["id", "bps_in", "bps_out", "bps_in_max", "bps_out_max", "timestamp"]
 
-    def save(self):
-
-        context_obj = self.context["obj"]
-        bps_in = self.validated_data["bps_in"]
-        bps_out = self.validated_data["bps_out"]
-        timestamp = self.validated_data["timestamp"]
-        bps_in_max = self.validated_data["bps_in_max"]
-        bps_out_max = self.validated_data["bps_out_max"]
-
-        if not context_obj.meta or "graph" not in context_obj.meta:
-            graph_file = f"{context_obj.HandleRef.tag}-{context_obj.id}.rrd"
-        else:
-            graph_file = context_obj.meta["graph"]
-
-        graph_path = os.path.join(settings.GRAPHS_PATH, graph_file)
-
-        if not os.path.exists(graph_path):
-            mrtg_rrd.create_rrd_file(graph_path, timestamp)
-
-        mrtg_rrd.update_rrd(graph_path, f"{timestamp} {bps_in} {bps_out} {bps_in_max} {bps_out_max}", mrtg_rrd.get_last_update_time(graph_path))
-
-        context_obj.meta["graph"] = graph_file
-        context_obj.save()
-
 
 @register
 class PortTraffic(serializers.ListSerializer):
@@ -283,25 +260,13 @@ class PortTraffic(serializers.ListSerializer):
     ref_tag = "port_traffic"
 
     def save(self):
+        context_model = list(self.context["context_objs"].values())[0].HandleRef.tag
 
-        ports = self.context["context_objs"]
-
-        serializers  = []
-
-        sorted_data = sorted(self.validated_data, key=lambda x: x["timestamp"])
-
-        for item in sorted_data:
-            print(item)
-            serializer = Traffic(data=item, context={"obj": ports.get(item["id"])})
-            serializers.append(serializer)
-
-            if not serializer.is_valid(raise_exception=True):
-                return
-            
-        for serializer in serializers:
-            serializer.save()       
-
-
+        tasks.UpdateTrafficGraphs.create_task(
+            update=self.validated_data,
+            org=self.context["org"],
+            context_model=context_model,
+        )
 @register
 class PortTrafficMRTGImport(serializers.Serializer):
 
@@ -341,53 +306,17 @@ class PortTrafficMRTGImport(serializers.Serializer):
 
         return log_lines
 
-    def save(self):
-
-        context_obj = self.context["obj"]
-
-        # check if graph file already exists
-
-        if not context_obj.meta or "graph" not in context_obj.meta:
-            graph_file = f"{context_obj.HandleRef.tag}-{context_obj.id}.rrd"
-        else:
-            graph_file = context_obj.meta["graph"]
-
-        graph_path = os.path.join(settings.GRAPHS_PATH, graph_file)
-
-        if os.path.exists(graph_path):
-            os.remove(graph_path)
-
-        log_lines = self.validated_data["log_lines"]
-
-        log_lines.reverse()
-
-        for log_line in log_lines:
-            print(log_line)
-            
-        mrtg_rrd.stream_log_lines_to_rrd(graph_path, log_lines)
-
-        context_obj.meta["graph"] = graph_file
-        context_obj.save()
-
 
 @register
 class PortTrafficMRTGImportBatch(serializers.ListSerializer):
     child = PortTrafficMRTGImport()
     ref_tag = "port_traffic_mrtg_import_batch"
-
     def save(self):
 
-        ports = self.context["context_objs"]
+        context_model = list(self.context["context_objs"].values())[0].HandleRef.tag
 
-        serializers  = []
-
-        for item in self.validated_data:
-            print(item)
-            serializer = PortTrafficMRTGImport(data=item, context={"obj": ports.get(item["id"])})
-            serializers.append(serializer)
-
-            if not serializer.is_valid(raise_exception=True):
-                return
-            
-        for serializer in serializers:
-            serializer.save()
+        tasks.UpdateTrafficGraphs.create_task(
+            import_mrtg=self.validated_data,
+            org=self.context["org"],
+            context_model=context_model,
+        )
