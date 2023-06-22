@@ -205,7 +205,7 @@ class Device(ServiceBridgeReferenceModel):
 
     @property
     def display_name(self):
-        return f"{self.name} ({self.type})"
+        return self.name
 
     @property
     def logical_ports(self):
