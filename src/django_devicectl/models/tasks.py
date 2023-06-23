@@ -106,8 +106,10 @@ class UpdateTrafficGraphs(Task):
             raise ValueError(f"Unknown context model {ref_tag}")
 
     def run(self, *args, **kwargs):
-        for data in kwargs.get("update", []):
-            self.update_rrd(data)
+        for data in sorted(kwargs.get("update", []), key=lambda x: int(x["timestamp"])):
+            end_early = self.update_rrd(data)
+            if end_early:
+                break
 
         for data in kwargs.get("import_mrtg", []):
             self.import_mrtg(data)
@@ -133,11 +135,13 @@ class UpdateTrafficGraphs(Task):
 
         if not os.path.exists(graph_path):
             mrtg_rrd.create_rrd_file(graph_path, timestamp)
+        
+        last_update = mrtg_rrd.get_last_update_time(graph_path)
 
         mrtg_rrd.update_rrd(
             graph_path,
             f"{timestamp} {bps_in} {bps_out} {bps_in_max} {bps_out_max}",
-            mrtg_rrd.get_last_update_time(graph_path),
+            last_update,
         )
 
         context_obj.meta["graph"] = graph_file
