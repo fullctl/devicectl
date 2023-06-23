@@ -135,7 +135,7 @@ class UpdateTrafficGraphs(Task):
 
         if not os.path.exists(graph_path):
             mrtg_rrd.create_rrd_file(graph_path, timestamp)
-        
+
         last_update = mrtg_rrd.get_last_update_time(graph_path)
 
         mrtg_rrd.update_rrd(
