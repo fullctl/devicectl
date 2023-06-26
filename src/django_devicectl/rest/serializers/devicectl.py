@@ -255,7 +255,11 @@ class PortTraffic(serializers.ListSerializer):
     ref_tag = "port_traffic"
 
     def save(self):
-        context_model = list(self.context["context_objs"].values())[0].HandleRef.tag
+        try:
+            context_model = list(self.context["context_objs"].values())[0].HandleRef.tag
+        except IndexError:
+            # no valid context models pushed to the serializer
+            return
 
         tasks.UpdateTrafficGraphs.create_task(
             update=self.validated_data,
