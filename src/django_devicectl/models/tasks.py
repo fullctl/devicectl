@@ -1,5 +1,6 @@
 import os
 
+import fullctl.django.tasks.qualifiers as qualifiers
 import fullctl.graph.mrtg.rrd as mrtg_rrd
 import fullctl.service_bridge.nautobot as nautobot
 import fullctl.service_bridge.peerctl as peerctl
@@ -8,7 +9,7 @@ from fullctl.django.models import Task
 from fullctl.django.tasks import register
 
 import django_devicectl.models.devicectl as models
-import fullctl.django.tasks.qualifiers as qualifiers
+
 
 class OrgConcurrencyLimit(qualifiers.Base):
 
@@ -30,6 +31,7 @@ class OrgConcurrencyLimit(qualifiers.Base):
             ).count()
             < self.limit
         )
+
 
 @register
 class NautobotPull(Task):
