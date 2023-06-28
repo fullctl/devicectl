@@ -9,6 +9,7 @@ ARG build_deps=""
 ARG run_deps=" \
     libgcc \
     postgresql-libs \
+    rrdtool-dev \
     "
 # XXX ARG extra_pip_install
 ARG uid=6300
@@ -35,7 +36,12 @@ ARG extra_pip_install_dir
 COPY pyproject.toml poetry.lock $extra_pip_install_dir ./
 
 # Need to upgrade pip and wheel within Poetry for all its installs
+RUN apk add rrdtool-dev
 RUN poetry install --no-root
+
+# Cant be in poetry because that fails to install unless rrdtool
+# is installed in the system, so it breaks github CI for linting and stuff
+RUN pip install rrdtool
 
 RUN test -z "$extra_pip_install_dir" || pip install *.tar.gz
 

@@ -4,6 +4,7 @@ from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
 
 import django_devicectl.models as models
+import django_devicectl.models.tasks as tasks
 
 Serializers, register = serializer_registry()
 
@@ -233,3 +234,91 @@ class PeeringDBFacility(serializers.Serializer):
 
     def get_router_id(self, obj):
         return obj.ipaddr4 or ""
+
+
+class Traffic(serializers.Serializer):
+    id = serializers.IntegerField(allow_null=True)
+    bps_in = serializers.IntegerField(allow_null=True)
+    bps_out = serializers.IntegerField(allow_null=True)
+    bps_in_max = serializers.IntegerField(allow_null=True)
+    bps_out_max = serializers.IntegerField(allow_null=True)
+    timestamp = serializers.IntegerField(allow_null=True)
+
+    class Meta:
+        fields = ["id", "bps_in", "bps_out", "bps_in_max", "bps_out_max", "timestamp"]
+
+
+@register
+class PortTraffic(serializers.ListSerializer):
+    child = Traffic()
+
+    ref_tag = "port_traffic"
+
+    def save(self):
+        try:
+            context_model = list(self.context["context_objs"].values())[0].HandleRef.tag
+        except IndexError:
+            # no valid context models pushed to the serializer
+            return
+
+        tasks.UpdateTrafficGraphs.create_task(
+            update=self.validated_data,
+            org=self.context["org"],
+            context_model=context_model,
+        )
+
+
+@register
+class PortTrafficMRTGImport(serializers.Serializer):
+
+    """
+    Allows importing of port traffic data points using log lines
+    from an MRTG log file.
+
+    timestamp bits_in bits_out bits_in_max bits_out_max
+    """
+
+    id = serializers.IntegerField(allow_null=True)
+    log_lines = serializers.ListField(child=serializers.CharField())
+
+    ref_tag = "port_traffic_mrtg_import"
+
+    class Meta:
+        fields = ["id", "log_lines"]
+
+    def validate_log_lines(self, log_lines):
+        for line in log_lines:
+            try:
+                timestamp, bits_in, bits_out, bits_in_max, bits_out_max = line.split()
+            except ValueError:
+                raise serializers.ValidationError(
+                    "Invalid log line format, expected: timestamp bits_in bits_out bits_in_max bits_out_max"
+                )
+
+            try:
+                timestamp = int(timestamp)
+                bits_in = int(bits_in)
+                bits_out = int(bits_out)
+                bits_in_max = int(bits_in_max)
+                bits_out_max = int(bits_out_max)
+            except ValueError:
+                raise serializers.ValidationError(
+                    "Invalid log line format, expected integers"
+                )
+
+        return log_lines
+
+
+@register
+class PortTrafficMRTGImportBatch(serializers.ListSerializer):
+    child = PortTrafficMRTGImport()
+    ref_tag = "port_traffic_mrtg_import_batch"
+
+    def save(self):
+        context_model = list(self.context["context_objs"].values())[0].HandleRef.tag
+
+        tasks.UpdateTrafficGraphs.create_task(
+            import_mrtg=self.validated_data,
+            org=self.context["org"],
+            context_model=context_model,
+        )

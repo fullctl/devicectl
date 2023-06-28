@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 import django_devicectl.models.devicectl as models
 from django_devicectl.rest.serializers.service_bridge import Serializers
+from django_devicectl.rest.views.devicectl import PortTrafficMixin
 
 
 @route
@@ -174,7 +175,7 @@ class Portinfo(DataViewSet):
 
 
 @route
-class VirtualPort(DataViewSet):
+class VirtualPort(PortTrafficMixin, DataViewSet):
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
@@ -198,6 +199,17 @@ class VirtualPort(DataViewSet):
                 data["vlan_id"] = 0
 
         return data
+
+    @action(detail=True, methods=["GET"], serializer_class=Serializers.port_traffic)
+    def traffic(self, request, pk, *args, **kwargs):
+        """
+        Returns current traffic data for the virtual port
+        """
+        return self._get_traffic(
+            self.get_queryset().get(id=pk),
+            request.GET.get("start_time"),
+            request.GET.get("duration"),
+        )
 
 
 @route
