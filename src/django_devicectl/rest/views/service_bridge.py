@@ -114,10 +114,12 @@ class Port(DataViewSet):
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
+        ("ids", "id__in"),
         ("org", "virtual_port__logical_port__instance__org__remote_id"),
         ("org_slug", "virtual_port__logical_port__instance__org__slug"),
         ("device", "virtual_port__logical_port__physical_ports__device_id"),
         ("ip", MethodFilter("ip")),
+        ("has_ips", MethodFilter("has_ips")),
         ("q", MethodFilter("autocomplete")),
     ]
     allow_unfiltered = True
@@ -144,8 +146,11 @@ class Port(DataViewSet):
     def filter_ip(self, qset, value):
         return qset.filter(port_info__ips__address__host=value)
 
+    def filter_has_ips(self, qset, value):
+        return qset.filter(port_info__ips__isnull=False).distinct("pk")
+
     def filter_autocomplete(self, qset, value):
-        return models.Port.search(value).distinct("pk")
+        return models.Port.search(value, qset).distinct("pk")
 
     @action(
         detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports

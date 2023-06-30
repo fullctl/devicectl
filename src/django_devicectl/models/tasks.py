@@ -1,5 +1,6 @@
 import os
 
+import fullctl.django.tasks.qualifiers as qualifiers
 import fullctl.graph.mrtg.rrd as mrtg_rrd
 import fullctl.service_bridge.nautobot as nautobot
 import fullctl.service_bridge.peerctl as peerctl
@@ -8,6 +9,28 @@ from fullctl.django.models import Task
 from fullctl.django.tasks import register
 
 import django_devicectl.models.devicectl as models
+
+
+class OrgConcurrencyLimit(qualifiers.Base):
+
+    """
+    Limits how many instance of the task can be worked on at
+    the same time (per organization)
+    """
+
+    def __init__(self, limit):
+        self.limit = limit
+
+    def __str__(self):
+        return f"{self.__class__.__name__} {self.limit}"
+
+    def check(self, task):
+        return (
+            task.__class__.objects.filter(
+                status="pending", queue_id__isnull=False, op=task.op, org=task.org
+            ).count()
+            < self.limit
+        )
 
 
 @register
@@ -88,6 +111,13 @@ class UpdateTrafficGraphs(Task):
 
     class HandleRef:
         tag = "task_update_virtual_port_traffic_graphs"
+
+    class TaskMeta:
+        qualifiers = [
+            # in order to avoid any race conditions when inserting
+            # data into graphs, we limit concurrency to 1 per org
+            OrgConcurrencyLimit(1),
+        ]
 
     @property
     def context_model(self):
