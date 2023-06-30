@@ -146,7 +146,7 @@ class Port(DataViewSet):
         return qset.filter(port_info__ips__address__host=value)
 
     def filter_has_ips(self, qset, value):
-        return qset.filter(port_info__ips__isnull=False)
+        return qset.filter(port_info__ips__isnull=False).distinct("pk")
 
     def filter_autocomplete(self, qset, value):
         return models.Port.search(value, qset).distinct("pk")
