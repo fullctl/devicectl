@@ -132,15 +132,37 @@ def pull_ip_addresses(virtual_port):
         virtual_port.port.port_info.ip_address_6 = None
 
 
+def interface_is_physical(typ):
+    """
+    For interfaces that arent marked as logical or virtual in nautobot
+
+    Compares the nautobot interface type value against a list of
+    tokens to determine if we want to pull the interface into devicectl
+
+    If any token is found inside the type identifier of the interface
+    devicectl will pull it in and create a physical, logical and virtual port chain
+    for it.
+    """
+
+    for phy_if_name in settings.NAUTOBOT_INTERFACE_PHYSICAL:
+        if phy_if_name.lower() in typ.lower():
+            return True
+    return False
+
+
 def pull_interfaces(device):
     """
     Pulls interfaces into virtual ports from nautobot for the specified devices
     """
 
-    for nautobot_if in nautobot.Interface().objects(device_id=str(device.reference)):
+    for nautobot_if in nautobot.Interface().objects(
+        device_id=str(device.reference), limit=NAUTOBOT_PAGE_LIMIT
+    ):
         # for now only pull virtual and lag  interfaces
 
-        if nautobot_if.type.value in ["virtual", "lag"]:
+        if nautobot_if.type.value in ["virtual", "lag"] or interface_is_physical(
+            nautobot_if.type.value
+        ):
             pull_interface(nautobot_if, device)
 
 
@@ -164,6 +186,20 @@ def pull_interface(nautobot_if, device):
                 instance=device.instance,
             )
             models.PhysicalPort.objects.create(device=device, logical_port=logical_port)
+        elif interface_is_physical(nautobot_if.type.value):
+            if getattr(nautobot_if, "lag", None):
+                # we dont want to pull in lag interfaces through this
+                return
+
+            # interface is physical
+            logical_port = models.LogicalPort.objects.create(
+                name=nautobot_if.display,
+                instance=device.instance,
+            )
+            models.PhysicalPort.objects.create(
+                device=device, logical_port=logical_port, name=nautobot_if.display
+            )
+
         virtual_port = models.VirtualPort.objects.create(
             reference=nautobot_if.id,
             vlan_id=0,
@@ -281,7 +317,6 @@ def push(org, *args, **kwargs):
     """
     Push data to nautobot
     """
-
     # make sure required custom fields exist on the nautobot side
 
     sync_custom_fields()
