@@ -718,7 +718,7 @@ pyflakes = ">=2.5.0,<2.6.0"
 
 [[package]]
 name = "fullctl"
-version = "1.5.0-rc.3"
+version = "1.5.0-rc.4"
 description = "Core classes and functions for service applications"
 optional = false
 python-versions = "^3.8"
@@ -752,7 +752,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "e773715a964a90ae34537f2055daaf0b601ad322"
+resolved_reference = "ba7b618e4405b99762d25eb0453ecbd5e21a0a56"
 
 [[package]]
 name = "git-url-parse"
