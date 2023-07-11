@@ -454,6 +454,8 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
           //$("#device-detail-tab").tab("show");
           
           this.render_service_links(device);
+          this.show_graph_controls(device);
+          this.show_graph(device);
         }
       )
 
@@ -528,7 +530,63 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
       } else {
         this.$w.device.element.find('.auditctl-link').hide();
       }
+    },
+
+    // Function to indicate loading
+    indicate_loading : function() {
+      let graph_container = this.$w.device.element.find("[data-element=graph_container]");
+      console.log("LOADING GRAPH", graph_container.length, fullctl.template("graph_placeholder"))
+      graph_container.empty().append(
+        fullctl.template("graph_placeholder")
+      );
+      return this;
+    },  
+
+    show_graph_controls(device) {
+      let node = this.$w.device.element;
+      fullctl.graphs.init_controls(node, this, (end_date, duration)=>{
+        this.indicate_loading().show_graph(device, end_date, duration);
+      });
+      node.find('.graph-controls').show();
+      return this;
+    },
+
+    // Function to show graphs
+    show_graph : function(device, end_date, duration) {
+      let graph_container = this.$w.device.element.find("[data-element=graph_container]");
+      let url = twentyc.rest.url.url_join(
+        this.$w.device.element.data('api-base'),
+        device.id,
+        "traffic"
+      );
+      let params = [];
+      if (end_date) {
+        params.push('start_time=' + end_date);
+      }
+      if (end_date && duration) {
+        params.push('duration=' + duration);
+      }
+      if (params.length > 0) {
+        url += '?' + params.join('&');
+      }
+      fullctl.graphs.render_graph_from_file(
+        url,
+        ".graph_container",
+        device.display_name,
+      ).then(() => {
+        // check if a svg has been added to the container, if not, graph data was empty
+        if(graph_container.find("svg").length == 0) {
+          graph_container.empty().append(
+            $('<div class="alert alert-info">').append(
+              $('<p>').text("No traffic data available for this device.")
+            )
+          )
+        } else {
+          this.$e.refresh_traffic_graph.show();
+        }
+      })
     }
+
   },
   $ctl.application.Tool
 );

@@ -249,6 +249,20 @@ class Traffic(serializers.Serializer):
 
 
 @register
+class DeviceTraffic(serializers.ListSerializer):
+    child = Traffic()
+
+    ref_tag = "device_traffic"
+
+
+@register
+class DeviceGroupTraffic(serializers.ListSerializer):
+    child = Traffic()
+
+    ref_tag = "device_group_traffic"
+
+
+@register
 class PortTraffic(serializers.ListSerializer):
     child = Traffic()
 

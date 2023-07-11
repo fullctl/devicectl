@@ -18,6 +18,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 import django_devicectl.models as models
+import django_devicectl.traffic as traffic
 from django_devicectl.rest.decorators import grainy_endpoint
 from django_devicectl.rest.route.devicectl import route
 from django_devicectl.rest.serializers.devicectl import Serializers
@@ -473,8 +474,31 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
         device.delete()
         return r
 
+    @action(detail=True, methods=["get"])
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def traffic(self, request, org, instance, device_id, device, *args, **kwargs):
+        """
+        Returns traffic data points for this specific physical port
+
+        URL Parameters:
+
+        * `start_time` - start time of the traffic data points (int unix epoch)
+        * `duration` - duration of the traffic data points (int seconds)
+        """
+
+        traffic_data = traffic.get_traffic_for_obj(
+            device, request.GET.get("start_time"), request.GET.get("duration")
+        )
+
+        return Response(Serializers.device_traffic(instance=traffic_data).data)
+
 
 class PortTrafficMixin:
+    """
+    Mixin for port traffic endpoints (both reading and writing)
+    """
+
     def _update_traffic_batch(self, data, context_objs, org=None):
         serializer = Serializers.port_traffic(
             data=data, context={"context_objs": context_objs, "org": org}
@@ -966,3 +990,39 @@ class Port(CachedObjectMixin, viewsets.GenericViewSet):
             qset = models.Port.search(q, qset).distinct("pk")
 
         return Response(self.serializer_class(qset, many=True).data)
+
+
+@route
+class TrafficGroup(viewsets.GenericViewSet):
+    serializer_class = Serializers.device_group_traffic
+    queryset = models.Device.objects.all()
+    ref_tag = "traffic"
+
+    def _get_traffic(self, group_type, id, start_time, duration):
+        try:
+            traffic_data = traffic.get_traffic_for_group(
+                group_type, id, start_time, duration
+            )
+        except ValueError as e:
+            return BadRequest(str(e))
+
+        return Response(self.serializer_class(instance=traffic_data, many=False).data)
+
+    @action(detail=False, methods=["get"], url_path="ix/(?P<ix_id>[^/.]+)")
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    def ix(self, request, org, instance, ix_id, *args, **kwargs):
+        """
+        Returns traffic data points for this specific physical port
+
+        URL Parameters:
+
+        * `start_time` - start time of the traffic data points (int unix epoch)
+        * `duration` - duration of the traffic data points (int seconds)
+        """
+
+        return self._get_traffic(
+            "ixctl-ix",
+            ix_id,
+            request.GET.get("start_time"),
+            request.GET.get("duration"),
+        )

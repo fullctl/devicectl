@@ -184,6 +184,13 @@ class Device(ServiceBridgeReferenceModel):
         help_text=_("Remote reference id"),
     )
 
+    meta = models.JSONField(
+        help_text=_("Meta data for this device"),
+        blank=True,
+        null=True,
+        default=dict,
+    )
+
     class HandleRef:
         tag = "device"
         unique_together = (("instance", "name"),)
