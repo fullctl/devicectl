@@ -106,10 +106,10 @@ class VirtualPortAdmin(VersionAdmin):
         "updated",
     )
     search_fields = (
-        "port__port_info__instance__org__name", 
+        "port__port_info__instance__org__name",
         "port__port_info__instance__org__slug",
         "port__port_info__ips__address",
-        "name", 
+        "name",
         "reference",
     )
 
