@@ -713,12 +713,15 @@ class VirtualPort(ServiceBridgeReferenceModel):
         default=dict,
     )
 
+    description = DeviceDescriptionField()
+
     class HandleRef:
         tag = "virtual_port"
 
     class ServiceBridge:
         map_nautobot = {
             "display": "name",
+            "description": "description",
         }
 
     class Meta:
