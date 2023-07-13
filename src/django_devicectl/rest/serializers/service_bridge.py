@@ -294,6 +294,7 @@ class VirtualPort(ModelSerializer):
             "reference_is_sot",
             "name",
             "display_name",
+            "description",
         ]
         read_only_fields = ["port"]
 
