@@ -1026,3 +1026,35 @@ class TrafficGroup(viewsets.GenericViewSet):
             request.GET.get("start_time"),
             request.GET.get("duration"),
         )
+
+
+    @action(detail=False, methods=["get"], url_path="peers/(?P<port_aid>[^/.]+)/(?P<port_b_id>[^/.]+)")
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    def peers(self, request, org, instance, port_a_id, port_b_id, *args, **kwargs):
+
+        """
+        Returns traffic data points between two virtual ports
+
+        data points will be returned in the perspective of port_a
+        """
+
+        # graph files are stored with the lower port id first
+
+        graph_file_id = f"{min(port_a_id, port_b_id)}-{max(port_a_id, port_b_id)}"
+
+        return self._get_traffic(
+            "peers",
+            graph_file_id,
+            request.GET.get("start_time"),
+            request.GET.get("duration"),
+        )
+
+    @action(detail=False, methods=["post"], url_path="peers")
+    @grainy_endpoint(namespace="device.{request.org.permission_id}")
+    def peers_update(self, request, org, instance, *args, **kwargs):
+        """
+        Batch update ofr peers traffic data
+        """
+        raise NotImplementedError()
+
+

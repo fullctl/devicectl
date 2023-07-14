@@ -236,8 +236,7 @@ class PeeringDBFacility(serializers.Serializer):
         return obj.ipaddr4 or ""
 
 
-class Traffic(serializers.Serializer):
-    id = serializers.IntegerField(allow_null=True)
+class TrafficBase(serializers.Serializer):
     bps_in = serializers.IntegerField(allow_null=True)
     bps_out = serializers.IntegerField(allow_null=True)
     bps_in_max = serializers.IntegerField(allow_null=True)
@@ -245,7 +244,25 @@ class Traffic(serializers.Serializer):
     timestamp = serializers.IntegerField(allow_null=True)
 
     class Meta:
-        fields = ["id", "bps_in", "bps_out", "bps_in_max", "bps_out_max", "timestamp"]
+        fields = ["bps_in", "bps_out", "bps_in_max", "bps_out_max", "timestamp"]
+
+class Traffic(TrafficBase):
+    id = serializers.IntegerField(allow_null=True)
+
+    class Meta:
+        fields = ["id"] + TrafficBase.Meta.fields
+
+class PeerToPeerTraffic(TrafficBase):
+    ids = serializers.ListField(child=serializers.IntegerField(allow_null=False))
+
+    ref_tag = "peer_to_peer_traffic"
+    class Meta:
+        fields = ["ids"] + TrafficBase.Meta.fields
+
+    def validate_ids(self, ids):
+        if len(ids) != 2:
+            raise serializers.ValidationError("Exactly two IDs must be provided")
+        return ids
 
 
 @register
@@ -335,4 +352,16 @@ class PortTrafficMRTGImportBatch(serializers.ListSerializer):
             import_mrtg=self.validated_data,
             org=self.context["org"],
             context_model=context_model,
+        )
+
+
+@register
+class PeerToPeerTrafficUpdate(serializers.ListSerializer):
+    child = PeerToPeerTraffic()
+    ref_tag = "peer_to_peer_traffic_update"
+
+    def save(self):
+        tasks.UpdatePeerToPeerTrafficGraphs.create_task(
+            update=self.validated_data,
+            org=self.context["org"],
         )

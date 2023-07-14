@@ -10,6 +10,7 @@ from fullctl.django.models import Task
 from fullctl.django.tasks import register
 
 import django_devicectl.models.devicectl as models
+import django_devicectl.traffic as traffic
 
 
 class OrgConcurrencyLimit(qualifiers.Base):
@@ -325,3 +326,70 @@ class UpdateIxctlIxTrafficGraphs(Task):
             output_file = f"ixctl-ix-{ix_id}.rrd"
             output_path = os.path.join(settings.GRAPHS_PATH, output_file)
             mrtg_rrd.aggregate_rrd_files(rrd_files, output_path)
+
+
+@register
+class UpdatePeerToPeerTrafficGraphs(Task):
+
+    """
+    Will update given Peer2Peer traffic graphs
+
+    Optional keyword parameters for `create_task` are
+
+    - `update`: list of dicts with keys `ids`, `bps_in`, `bps_out`, `bps_in_max`, `bps_out_max`, `timestamp`
+    """
+
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_update_peer_to_peer_traffic_graphs"
+
+    class TaskMeta:
+        qualifiers = [
+            # in order to avoid any race conditions when inserting
+            # data into graphs, we limit concurrency to 1 per org
+            OrgConcurrencyLimit(1),
+        ]
+
+    def run(self, *args, **kwargs):
+
+        # sort the data by timestamp so oldest is first
+        
+        sorted_data = sorted(kwargs.get("update", []), key=lambda x: int(x["timestamp"]))
+
+        virtual_ports = self._virtual_ports(sorted_data)
+
+        for data in sorted_data:
+
+            # collect the two virtual ports from the preloaded
+            # virtual ports and update the traffic
+            _virtual_ports=  [
+                virtual_ports[vp_id] for vp_id in data["ids"]
+            ]
+            self.update_rrd(data, _virtual_ports)
+     
+    def _virtual_ports(self, data):
+        """
+        Preload the virtual ports for the given data
+        """
+
+        virtual_port_ids = []
+
+        for _d in data:
+            virtual_port_ids.extend(_d["ids"])
+
+        virtual_port_ids = list(set(virtual_port_ids))
+        return {
+            vp.id: vp for vp in models.VirtualPort.objects.filter(id__in=virtual_port_ids)
+        }
+
+    def update_rrd(self, data, virtual_ports):
+        """
+        Update the RRD file for the given context object with the given data point (single data point)
+        """
+
+        traffic.update_peer_traffic(
+            data["ids"],
+            virtual_ports
+        )
