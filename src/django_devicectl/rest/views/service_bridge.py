@@ -118,6 +118,7 @@ class Port(DataViewSet):
         ("org", "virtual_port__logical_port__instance__org__remote_id"),
         ("org_slug", "virtual_port__logical_port__instance__org__slug"),
         ("device", "virtual_port__logical_port__physical_ports__device_id"),
+        ("devices", "virtual_port__logical_port__physical_ports__device_id__in"),
         ("ip", MethodFilter("ip")),
         ("has_ips", MethodFilter("has_ips")),
         ("q", MethodFilter("autocomplete")),
