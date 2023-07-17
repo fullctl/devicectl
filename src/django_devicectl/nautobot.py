@@ -208,11 +208,13 @@ def pull_interface(nautobot_if, device):
         )
 
     changed = virtual_port.sync_from_reference(ref_obj=nautobot_if)
+
     if changed:
         virtual_port.save()
 
         if nautobot_if.type.value == "lag":
             virtual_port.logical_port.name = virtual_port.name
+            virtual_port.logical_port.description = virtual_port.description
             virtual_port.logical_port.save()
 
     try:

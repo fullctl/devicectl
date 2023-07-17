@@ -143,6 +143,7 @@ class Port(ModelSerializer):
         read_only=True, source="port_info.is_management"
     )
     logical_port_name = serializers.SerializerMethodField()
+    virtual_port_description = serializers.SerializerMethodField()
     virtual_port_name = serializers.SerializerMethodField()
     device = serializers.SerializerMethodField()
     physical_ports = serializers.SerializerMethodField()
@@ -164,6 +165,7 @@ class Port(ModelSerializer):
             "is_management",
             "logical_port_name",
             "virtual_port_name",
+            "virtual_port_description",
             "physical_ports",
         ]
 
@@ -175,6 +177,9 @@ class Port(ModelSerializer):
 
     def get_virtual_port_name(self, port):
         return port.virtual_port.name
+
+    def get_virtual_port_description(self, port):
+        return port.virtual_port.description
 
     def get_device(self, port):
         if "device" in self.context.get("joins", []):
@@ -289,6 +294,7 @@ class VirtualPort(ModelSerializer):
             "reference_is_sot",
             "name",
             "display_name",
+            "description",
         ]
         read_only_fields = ["port"]
 

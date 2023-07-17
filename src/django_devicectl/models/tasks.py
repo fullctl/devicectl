@@ -2,6 +2,7 @@ import os
 
 import fullctl.django.tasks.qualifiers as qualifiers
 import fullctl.graph.mrtg.rrd as mrtg_rrd
+import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.nautobot as nautobot
 import fullctl.service_bridge.peerctl as peerctl
 from django.conf import settings
@@ -136,13 +137,26 @@ class UpdateTrafficGraphs(Task):
             raise ValueError(f"Unknown context model {ref_tag}")
 
     def run(self, *args, **kwargs):
+        processed_port_ids = set()
         for data in sorted(kwargs.get("update", []), key=lambda x: int(x["timestamp"])):
             end_early = self.update_rrd(data)
+            processed_port_ids.add(data["id"])
             if end_early:
                 break
 
         for data in kwargs.get("import_mrtg", []):
             self.import_mrtg(data)
+            processed_port_ids.add(data["id"])
+
+        if self.context_model == models.PhysicalPort:
+            UpdateDeviceTrafficGraphs.create_task(
+                org=self.org,
+                *processed_port_ids,
+            )
+        else:
+            UpdateIxctlIxTrafficGraphs.create_task(
+                org=self.org,
+            )
 
     def update_rrd(self, data):
         """
@@ -207,3 +221,107 @@ class UpdateTrafficGraphs(Task):
 
         context_obj.meta["graph"] = graph_file
         context_obj.save()
+
+
+@register
+class UpdateDeviceTrafficGraphs(Task):
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_update_device_traffic_graphs"
+
+    class TaskMeta:
+        qualifiers = [
+            # in order to avoid any race conditions when inserting
+            # data into graphs, we limit concurrency to 1 per org
+            OrgConcurrencyLimit(1),
+        ]
+
+    def run(self, *args, **kwargs):
+        self.aggregate_device_graphs(args)
+
+    def aggregate_device_graphs(self, port_ids):
+        """
+        Aggregate the individual physical port graphs into device graphs
+        """
+        device_ids = set(
+            models.PhysicalPort.objects.filter(id__in=port_ids).values_list(
+                "device", flat=True
+            )
+        )
+
+        for device_id in device_ids:
+            device = models.Device.objects.get(id=device_id)
+            ports = device.physical_ports.all()
+
+            rrd_files = [
+                os.path.join(settings.GRAPHS_PATH, port.meta["graph"])
+                for port in ports
+                if (port.meta and "graph" in port.meta)
+            ]
+
+            rrd_files = [f for f in rrd_files if os.path.exists(f)]
+
+            output_file = f"{device.HandleRef.tag}-{device.id}.rrd"
+            output_path = os.path.join(settings.GRAPHS_PATH, output_file)
+
+            mrtg_rrd.aggregate_rrd_files(rrd_files, output_path)
+
+            device.meta["graph"] = output_file
+            device.save()
+
+
+@register
+class UpdateIxctlIxTrafficGraphs(Task):
+    """
+    Will update all IX traffic graphs (ixctl)
+
+    This will use the service bridge to query what exchange the devices belong to and then
+    run a grouped aggregation accordingly.
+    """
+
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_update_ixctl_ix_traffic_graphs"
+
+    class TaskMeta:
+        qualifiers = [
+            # in order to avoid any race conditions when inserting
+            # data into graphs, we limit concurrency to 1 per org
+            OrgConcurrencyLimit(1),
+        ]
+
+    def run(self, *args, **kwargs):
+        self.aggregate_ix_graphs()
+
+    def aggregate_ix_graphs(self):
+        devices = models.Device.objects.filter(instance__org=self.org)
+
+        ix_ports = {}
+
+        ports = []
+
+        for device in devices:
+            ports += [vp.port.id for vp in device.virtual_ports if vp.port]
+
+        members = ixctl.InternetExchangeMember().objects(ports=ports, org=self.org.id)
+        for member in members:
+            ix_ports.setdefault(member.ix_id, []).append(member.port)
+
+        for ix_id, ports in ix_ports.items():
+            print(ports)
+            virtual_ports = models.VirtualPort.objects.filter(port__id__in=ports)
+            rrd_files = [
+                os.path.join(settings.GRAPHS_PATH, port.meta["graph"])
+                for port in virtual_ports
+                if (port.meta and "graph" in port.meta)
+            ]
+
+            rrd_files = [f for f in rrd_files if os.path.exists(f)]
+
+            output_file = f"ixctl-ix-{ix_id}.rrd"
+            output_path = os.path.join(settings.GRAPHS_PATH, output_file)
+            mrtg_rrd.aggregate_rrd_files(rrd_files, output_path)
