@@ -361,13 +361,7 @@ class UpdatePeerToPeerTrafficGraphs(Task):
         virtual_ports = self._virtual_ports(sorted_data)
 
         for data in sorted_data:
-
-            # collect the two virtual ports from the preloaded
-            # virtual ports and update the traffic
-            _virtual_ports=  [
-                virtual_ports[vp_id] for vp_id in data["ids"]
-            ]
-            self.update_rrd(data, _virtual_ports)
+            self.update_rrd(data, virtual_ports)
      
     def _virtual_ports(self, data):
         """
@@ -377,7 +371,7 @@ class UpdatePeerToPeerTrafficGraphs(Task):
         virtual_port_ids = []
 
         for _d in data:
-            virtual_port_ids.extend(_d["ids"])
+            virtual_port_ids.extend([_d["from_port"], _d["to_port"]])
 
         virtual_port_ids = list(set(virtual_port_ids))
         return {
@@ -390,6 +384,6 @@ class UpdatePeerToPeerTrafficGraphs(Task):
         """
 
         traffic.update_peer_traffic(
-            data["ids"],
+            data,
             virtual_ports
         )

@@ -252,12 +252,14 @@ class Traffic(TrafficBase):
     class Meta:
         fields = ["id"] + TrafficBase.Meta.fields
 
+@register
 class PeerToPeerTraffic(TrafficBase):
-    ids = serializers.ListField(child=serializers.IntegerField(allow_null=False))
+    from_port = serializers.IntegerField()
+    to_port = serializers.IntegerField()
 
     ref_tag = "peer_to_peer_traffic"
     class Meta:
-        fields = ["ids"] + TrafficBase.Meta.fields
+        fields = ["from_port", "to_port"] + TrafficBase.Meta.fields
 
     def validate_ids(self, ids):
         if len(ids) != 2:

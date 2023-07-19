@@ -78,20 +78,13 @@ def get_traffic_for_group(group_type: str, id: str, start_time: int, duration: i
 
 
 
-def update_peer_traffic(data: dict, virtual_ports: list):
+def update_peer_traffic(data: dict, virtual_ports: dict):
     """
     Updates traffic data for two virtual ports (peers)
-
-    Note: data["ids"] order needs to be the same as virtual_ports order
-
-    There should be two virtual ports in the list
-
-    The virtual port with the lowest id should be first in the list
     """
 
-
-    ids = sorted(data["ids"])
-    virtual_ports = sorted(virtual_ports, key=lambda x: x.id)
+    from_port = data["from_port"]
+    to_port = data["to_port"]
 
     bps_in = data["bps_in"]
     bps_out = data["bps_out"]
@@ -99,25 +92,36 @@ def update_peer_traffic(data: dict, virtual_ports: list):
     bps_in_max = data["bps_in_max"]
     bps_out_max = data["bps_out_max"]
 
-    graph_path = os.path.join(settings.GRAPHS_PATH, f"peers-{ids[0]}-{ids[1]}.rrd")
+    graph_path_from_port = os.path.join(settings.GRAPHS_PATH, f"peers-{from_port}-{to_port}.rrd")
+    graph_path_to_port = os.path.join(settings.GRAPHS_PATH, f"peers-{to_port}-{from_port}.rrd")
 
-    if not os.path.exists(graph_path):
-        mrtg_rrd.create_rrd_file(graph_path, timestamp)
+    if not os.path.exists(graph_path_from_port):
+        mrtg_rrd.create_rrd_file(graph_path_from_port, timestamp)
 
-    last_update = mrtg_rrd.get_last_update_time(graph_path)
+    if not os.path.exists(graph_path_to_port):
+        mrtg_rrd.create_rrd_file(graph_path_to_port, timestamp)
 
-    key = f"graph-peer-{ids[1]}"
-    if key not in virtual_ports[0].meta:
-        virtual_ports[0].meta[key] = graph_path
-        virtual_ports[0].save()
+    last_update_from = mrtg_rrd.get_last_update_time(graph_path_from_port)
+    last_update_to = mrtg_rrd.get_last_update_time(graph_path_to_port)
+
+    key = f"graph-peer-{to_port}"
+    if key not in virtual_ports[from_port].meta:
+        virtual_ports[from_port].meta[key] = graph_path_from_port
+        virtual_ports[from_port].save()
     
-    key = f"graph-peer-{ids[0]}"
-    if key not in virtual_ports[1].meta:
-        virtual_ports[1].meta[key] = graph_path
-        virtual_ports[1].save()
+    key = f"graph-peer-{from_port}"
+    if key not in virtual_ports[to_port].meta:
+        virtual_ports[to_port].meta[key] = graph_path_to_port
+        virtual_ports[to_port].save()
 
     mrtg_rrd.update_rrd(
-        graph_path,
+        graph_path_from_port,
         f"{timestamp} {bps_in} {bps_out} {bps_in_max} {bps_out_max}",
-        last_update,
+        last_update_from,
+    )
+
+    mrtg_rrd.update_rrd(
+        graph_path_to_port,
+        f"{timestamp} {bps_out} {bps_in} {bps_out_max} {bps_in_max}",
+        last_update_to,
     )

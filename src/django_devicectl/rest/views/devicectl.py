@@ -950,6 +950,57 @@ class VirtualPort(PortTrafficMixin, CachedObjectMixin, viewsets.GenericViewSet):
         }
         return self._import_traffic_mrtg_batch(request.data, ports, org=org)
 
+    @action(
+        detail=True, 
+        methods=["get"], 
+        url_path="traffic/peer/(?P<port_b_id>[^/.]+)",
+        serializer_class=Serializers.peer_to_peer_traffic,
+    )
+    @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
+    @load_object(
+        "virtual_port",
+        models.VirtualPort,
+        logical_port__instance="instance",
+        id="virtual_port_id",
+    )
+    def traffic_to_peer(self, request, org, instance, virtual_port_id, virtual_port, port_b_id, *args, **kwargs):
+
+        """
+        Returns traffic data points between two virtual ports
+
+        data points will be returned in the perspective of port_a
+        """
+
+        port_a_id = virtual_port_id
+        # graph files are stored with the lower port id first
+        graph_file_id = f"{min(port_a_id, port_b_id)}-{max(port_a_id, port_b_id)}"
+
+        traffic_data = traffic.get_traffic_for_group(
+            "peers", graph_file_id, request.GET.get("start_time"), request.GET.get("duration")
+        )
+
+        return Response(Serializers.peer_to_peer_traffic(instance=traffic_data, many=False).data)
+
+    @action(
+        detail=False,
+        methods=["POST"], 
+        url_path="traffic/peers",
+        serializer_class=Serializers.peer_to_peer_traffic_update,
+    )
+    @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")
+    def traffic_to_peer_update(self, request, org, instance, *args, **kwargs):
+        """
+        Batch update for peers traffic data
+        """
+        print("got here")
+        serializer = Serializers.peer_to_peer_traffic_update(data=request.data, context={"org":org})
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+
+        return Response(serializer.data)
 
 @route
 class PeeringDBFacilities(CachedObjectMixin, viewsets.GenericViewSet):
@@ -1026,35 +1077,3 @@ class TrafficGroup(viewsets.GenericViewSet):
             request.GET.get("start_time"),
             request.GET.get("duration"),
         )
-
-
-    @action(detail=False, methods=["get"], url_path="peers/(?P<port_aid>[^/.]+)/(?P<port_b_id>[^/.]+)")
-    @grainy_endpoint(namespace="device.{request.org.permission_id}")
-    def peers(self, request, org, instance, port_a_id, port_b_id, *args, **kwargs):
-
-        """
-        Returns traffic data points between two virtual ports
-
-        data points will be returned in the perspective of port_a
-        """
-
-        # graph files are stored with the lower port id first
-
-        graph_file_id = f"{min(port_a_id, port_b_id)}-{max(port_a_id, port_b_id)}"
-
-        return self._get_traffic(
-            "peers",
-            graph_file_id,
-            request.GET.get("start_time"),
-            request.GET.get("duration"),
-        )
-
-    @action(detail=False, methods=["post"], url_path="peers")
-    @grainy_endpoint(namespace="device.{request.org.permission_id}")
-    def peers_update(self, request, org, instance, *args, **kwargs):
-        """
-        Batch update ofr peers traffic data
-        """
-        raise NotImplementedError()
-
-
