@@ -10,6 +10,7 @@ ARG run_deps=" \
     libgcc \
     postgresql-libs \
     rrdtool-dev \
+    libstdc++ \
     "
 # XXX ARG extra_pip_install
 ARG uid=6300

@@ -2,12 +2,14 @@ import os
 
 import fullctl.django.tasks.qualifiers as qualifiers
 import fullctl.graph.mrtg.rrd as mrtg_rrd
+from fullctl.graph.render.traffic import render_graph
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.nautobot as nautobot
 import fullctl.service_bridge.peerctl as peerctl
 from django.conf import settings
 from fullctl.django.models import Task
 from fullctl.django.tasks import register
+from fullctl.django.models.concrete import OrganizationFile
 
 import django_devicectl.models.devicectl as models
 
@@ -295,7 +297,12 @@ class UpdateIxctlIxTrafficGraphs(Task):
         ]
 
     def run(self, *args, **kwargs):
-        self.aggregate_ix_graphs()
+        graph_files = self.aggregate_ix_graphs()
+
+        RenderTrafficGraphs.create_task(
+            *graph_files,
+            org=self.org
+        )
 
     def aggregate_ix_graphs(self):
         devices = models.Device.objects.filter(instance__org=self.org)
@@ -311,6 +318,8 @@ class UpdateIxctlIxTrafficGraphs(Task):
         for member in members:
             ix_ports.setdefault(member.ix_id, []).append(member.port)
 
+        graph_files = []
+
         for ix_id, ports in ix_ports.items():
             print(ports)
             virtual_ports = models.VirtualPort.objects.filter(port__id__in=ports)
@@ -325,3 +334,80 @@ class UpdateIxctlIxTrafficGraphs(Task):
             output_file = f"ixctl-ix-{ix_id}.rrd"
             output_path = os.path.join(settings.GRAPHS_PATH, output_file)
             mrtg_rrd.aggregate_rrd_files(rrd_files, output_path)
+            graph_files.append(output_file)
+
+        return graph_files
+
+@register
+class RenderTrafficGraphs(Task):
+
+    """
+    Takes a list of rrd files for traffic graphs and renders them into png files
+    """
+
+    class Meta:
+        proxy = True
+
+    class HandleRef:
+        tag = "task_render_traffic_graphs"
+
+    def run(self, *args, **kwargs):
+
+        for graph_file in args:
+            self.render_from_rrd(graph_file)
+
+    
+    def render_from_rrd(self, filepath):
+
+        # get filename
+        filename = os.path.basename(filepath)
+
+        # remove extension
+        filename = filename.split(".")[0]
+
+        obj_id = filename.split("-")[-1]
+        public = False
+
+        if filename.startswith("virtual-port"):
+            obj = models.VirtualPort.objects.get(id=obj_id)
+            title = f"{obj.name}"
+            service = "devicectl"
+        elif filename.startswith("physical-port"):
+            obj = models.PhysicalPort.objects.get(id=obj_id)
+            title = f"{obj.name}"
+            service = "devicectl"
+        elif filename.startswith("device"):
+            obj = models.Device.objects.get(id=obj_id)
+            title = f"{obj.name}"
+            service = "devicectl"
+
+        elif filename.startswith("ixctl-ix"):
+            obj = ixctl.InternetExchange().object(obj_id)
+            title = f"{obj.name}"
+            service = "ixctl"
+            public = True
+            
+        filepath = os.path.join(settings.GRAPHS_PATH, filepath)
+
+        png_data = render_graph(
+            mrtg_rrd.load_rrd_file(filepath),
+            title_label=title,
+            service=service,
+        )
+
+        image_file_name = f"{filename}.png"
+
+        try:
+            f = OrganizationFile.objects.get(org=self.org, name=image_file_name)
+            f.content=png_data
+            f.public = public
+            f.content_type = "image/png"
+            f.save()
+        except OrganizationFile.DoesNotExist:
+            OrganizationFile.objects.create(
+                org=self.org,
+                name=image_file_name,
+                content=png_data,
+                content_type="image/png",
+                public=public,
+            )
