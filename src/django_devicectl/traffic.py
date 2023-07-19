@@ -4,6 +4,7 @@ import time
 import fullctl.graph.mrtg.rrd as mrtg_rrd
 from django.conf import settings
 
+
 def start_time_and_duration(start_time: int, duration: int):
     """
     Helper function to return start_time and duration

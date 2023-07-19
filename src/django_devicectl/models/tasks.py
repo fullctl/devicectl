@@ -2,14 +2,14 @@ import os
 
 import fullctl.django.tasks.qualifiers as qualifiers
 import fullctl.graph.mrtg.rrd as mrtg_rrd
-from fullctl.graph.render.traffic import render_graph
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.nautobot as nautobot
 import fullctl.service_bridge.peerctl as peerctl
 from django.conf import settings
 from fullctl.django.models import Task
-from fullctl.django.tasks import register
 from fullctl.django.models.concrete import OrganizationFile
+from fullctl.django.tasks import register
+from fullctl.graph.render.traffic import render_graph
 
 import django_devicectl.models.devicectl as models
 
@@ -299,10 +299,7 @@ class UpdateIxctlIxTrafficGraphs(Task):
     def run(self, *args, **kwargs):
         graph_files = self.aggregate_ix_graphs()
 
-        RenderTrafficGraphs.create_task(
-            *graph_files,
-            org=self.org
-        )
+        RenderTrafficGraphs.create_task(*graph_files, org=self.org)
 
     def aggregate_ix_graphs(self):
         devices = models.Device.objects.filter(instance__org=self.org)
@@ -338,6 +335,7 @@ class UpdateIxctlIxTrafficGraphs(Task):
 
         return graph_files
 
+
 @register
 class RenderTrafficGraphs(Task):
 
@@ -352,13 +350,10 @@ class RenderTrafficGraphs(Task):
         tag = "task_render_traffic_graphs"
 
     def run(self, *args, **kwargs):
-
         for graph_file in args:
             self.render_from_rrd(graph_file)
 
-    
     def render_from_rrd(self, filepath):
-
         # get filename
         filename = os.path.basename(filepath)
 
@@ -386,7 +381,7 @@ class RenderTrafficGraphs(Task):
             title = f"{obj.name}"
             service = "ixctl"
             public = True
-            
+
         filepath = os.path.join(settings.GRAPHS_PATH, filepath)
 
         png_data = render_graph(
@@ -399,7 +394,7 @@ class RenderTrafficGraphs(Task):
 
         try:
             f = OrganizationFile.objects.get(org=self.org, name=image_file_name)
-            f.content=png_data
+            f.content = png_data
             f.public = public
             f.content_type = "image/png"
             f.save()
