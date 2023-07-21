@@ -343,6 +343,14 @@ class RenderTrafficGraphs(Task):
     Takes a list of rrd files for traffic graphs and renders them into png files
     """
 
+    periods = [
+        # durartion, resolution, filename suffix
+        (86400, 300, "5m"),
+        (86400 * 7, 1800, "30m"),
+        (86400 * 30, 7200, "2h"),
+        (86400 * 365, 86400, "1d"),
+    ]
+
     class Meta:
         proxy = True
 
@@ -354,6 +362,10 @@ class RenderTrafficGraphs(Task):
             self.render_from_rrd(graph_file)
 
     def render_from_rrd(self, filepath):
+        for period, resolution, suffix in self.periods:
+            self._render_from_rrd(filepath, period, resolution, suffix)
+
+    def _render_from_rrd(self, filepath, duration, resolution, suffix):
         # get filename
         filename = os.path.basename(filepath)
 
@@ -385,12 +397,12 @@ class RenderTrafficGraphs(Task):
         filepath = os.path.join(settings.GRAPHS_PATH, filepath)
 
         png_data = render_graph(
-            mrtg_rrd.load_rrd_file(filepath),
+            mrtg_rrd.load_rrd_file(filepath, duration=duration),
             title_label=title,
             service=service,
         )
 
-        image_file_name = f"{filename}.png"
+        image_file_name = f"{filename}-{suffix}.png"
 
         try:
             f = OrganizationFile.objects.get(org=self.org, name=image_file_name)
