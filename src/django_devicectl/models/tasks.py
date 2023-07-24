@@ -311,7 +311,9 @@ class UpdateIxctlIxTrafficGraphs(Task):
         for device in devices:
             ports += [vp.port.id for vp in device.virtual_ports if vp.port]
 
-        members = ixctl.InternetExchangeMember().objects(ports=ports, org_slug=self.org.permission_id)
+        members = ixctl.InternetExchangeMember().objects(
+            ports=ports, org_slug=self.org.permission_id
+        )
         for member in members:
             ix_ports.setdefault(member.ix_id, []).append(member.port)
 
