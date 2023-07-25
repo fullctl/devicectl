@@ -907,7 +907,7 @@ woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
 name = "fullctl"
-version = "1.5.0"
+version = "1.5.1-rc.2"
 description = "Core classes and functions for service applications"
 optional = false
 python-versions = "^3.8"
@@ -941,7 +941,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "9dee781d69bac3ba4925bd6f570b0f07ec7442b7"
+resolved_reference = "8cd6186ef719276d560c8a92b74eca33edca23bd"
 
 [[package]]
 name = "git-url-parse"
