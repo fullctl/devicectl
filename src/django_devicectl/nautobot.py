@@ -311,9 +311,6 @@ def pull(org, *args, **kwargs):
             platform = nautobot_device.platform.slug
             if platform != device.meta.get("platform"):
                 device.meta["platform"] = platform
-                print(
-                    f"[PULL] Nautobot device {nautobot_device.name} platform {platform}"
-                )
                 changed = True
 
         if changed or created:
