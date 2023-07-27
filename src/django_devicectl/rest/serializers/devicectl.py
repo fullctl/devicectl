@@ -79,17 +79,18 @@ class TagMixin:
 
 
 class DeviceMeta(serializers.Serializer):
-    platform = serializers.CharField(
-        help_text=_("Device platform"), required=False
+    tags = serializers.ListField(
+        help_text=_("Device tags"),
+        child=serializers.CharField(help_text=_("Device tag")),
+        required=False,
     )
-    firmware = serializers.CharField(
-        help_text=_("Device firmware"), required=False
-    )
+    platform = serializers.CharField(help_text=_("Device platform"), required=False)
+    firmware = serializers.CharField(help_text=_("Device firmware"), required=False)
 
     ref_tag = "device_meta"
 
     class Meta:
-        fields = ["platform", "firmware"]
+        fields = ["tags", "platform", "firmware"]
 
 
 @register
