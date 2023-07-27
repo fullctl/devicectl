@@ -347,8 +347,6 @@ def push(org, *args, **kwargs):
     """
     Push data to nautobot
     """
-
-    return
     # make sure required custom fields exist on the nautobot side
 
     sync_custom_fields()
