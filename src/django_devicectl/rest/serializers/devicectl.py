@@ -73,8 +73,13 @@ class DeviceConfigHistory(ModelSerializer):
         fields = ["id", "device", "status", "error_message", "created"]
 
 
+class TagMixin:
+    def get_tags(self, obj):
+        return obj.meta.get("tags", [])
+
+
 @register
-class Device(ModelSerializer):
+class Device(TagMixin, ModelSerializer):
     facility_name = serializers.SerializerMethodField()
     facility_slug = serializers.SerializerMethodField()
 
@@ -82,6 +87,7 @@ class Device(ModelSerializer):
     management_ip_address_6 = serializers.SerializerMethodField()
 
     operational_status = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Device
@@ -102,6 +108,7 @@ class Device(ModelSerializer):
             "management_ip_address_4",
             "management_ip_address_6",
             "operational_status",
+            "tags",
         ]
 
     def get_facility_name(self, obj):
@@ -149,10 +156,20 @@ class PhysicalPort(ModelSerializer):
 
 
 @register
-class LogicalPort(ModelSerializer):
+class LogicalPort(TagMixin, ModelSerializer):
+    tags = serializers.SerializerMethodField()
+
     class Meta:
         model = models.LogicalPort
-        fields = ["name", "display_name", "trunk", "channel", "description", "instance"]
+        fields = [
+            "name",
+            "display_name",
+            "trunk",
+            "channel",
+            "description",
+            "instance",
+            "tags",
+        ]
 
 
 class InlinePhysicalPort(ModelSerializer):
@@ -185,10 +202,11 @@ class Port(ModelSerializer):
 
 
 @register
-class VirtualPort(ModelSerializer):
+class VirtualPort(TagMixin, ModelSerializer):
     physical_ports = serializers.SerializerMethodField()
     device = serializers.SerializerMethodField()
     port = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
 
     class Meta:
         model = models.VirtualPort
@@ -202,6 +220,7 @@ class VirtualPort(ModelSerializer):
             "physical_ports",
             "vlan_id",
             "port",
+            "tags",
         ]
 
     def get_physical_ports(self, obj):

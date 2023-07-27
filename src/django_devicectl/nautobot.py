@@ -101,6 +101,30 @@ def sync_custom_fields():
     )
 
 
+def sync_tags(nautobot_object, devicectl_object):
+    """
+    Will transfer the tags from a nautobot object to a devicectl object
+
+    Requires the devicectl model to have a `meta` JSON field
+
+    Will return True if the tags have changed, False if not
+    """
+
+    if not nautobot_object.tags:
+        return False
+
+    if not devicectl_object._meta.get_field("meta"):
+        return False
+
+    tags = sorted([tag["display"] for tag in nautobot_object.tags])
+
+    if tags != devicectl_object.meta.get("tags", []):
+        devicectl_object.meta["tags"] = tags
+        return True
+
+    return False
+
+
 def pull_ip_addresses(virtual_port):
     """
     Pull ip addresses into port infos from nautobot for the specified virtualport
@@ -207,14 +231,16 @@ def pull_interface(nautobot_if, device):
             name=nautobot_if.display,
         )
 
-    changed = virtual_port.sync_from_reference(ref_obj=nautobot_if)
+    changed = virtual_port.sync_from_reference(ref_obj=nautobot_if) or sync_tags(
+        nautobot_if, virtual_port
+    )
 
     if changed:
         virtual_port.save()
-
         if nautobot_if.type.value == "lag":
             virtual_port.logical_port.name = virtual_port.name
             virtual_port.logical_port.description = virtual_port.description
+            sync_tags(nautobot_if, virtual_port.logical_port)
             virtual_port.logical_port.save()
 
     try:
@@ -277,7 +303,9 @@ def pull(org, *args, **kwargs):
         )
         print(f"[PULL] Nautobot device {nautobot_device.name} {device.reference} ...")
         references.append(device.reference)
-        changed = device.sync_from_reference(ref_obj=nautobot_device)
+        changed = device.sync_from_reference(ref_obj=nautobot_device) or sync_tags(
+            nautobot_device, device
+        )
 
         if changed or created:
             device.save()
@@ -319,6 +347,8 @@ def push(org, *args, **kwargs):
     """
     Push data to nautobot
     """
+
+    return
     # make sure required custom fields exist on the nautobot side
 
     sync_custom_fields()
