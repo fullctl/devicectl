@@ -941,7 +941,7 @@ whitenoise = ">=6"
 type = "git"
 url = "https://github.com/fullctl/fullctl.git"
 reference = "prep-release"
-resolved_reference = "8cd6186ef719276d560c8a92b74eca33edca23bd"
+resolved_reference = "16c10318c6401fd3565f680d1996cec7921f2981"
 
 [[package]]
 name = "git-url-parse"
