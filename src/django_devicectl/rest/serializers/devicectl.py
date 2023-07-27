@@ -78,6 +78,21 @@ class TagMixin:
         return obj.meta.get("tags", [])
 
 
+class DeviceMeta(serializers.Serializer):
+    tags = serializers.ListField(
+        help_text=_("Device tags"),
+        child=serializers.CharField(help_text=_("Device tag")),
+        required=False,
+    )
+    platform = serializers.CharField(help_text=_("Device platform"), required=False)
+    firmware = serializers.CharField(help_text=_("Device firmware"), required=False)
+
+    ref_tag = "device_meta"
+
+    class Meta:
+        fields = ["tags", "platform", "firmware"]
+
+
 @register
 class Device(TagMixin, ModelSerializer):
     facility_name = serializers.SerializerMethodField()
@@ -88,6 +103,7 @@ class Device(TagMixin, ModelSerializer):
 
     operational_status = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
+    meta = DeviceMeta(help_text=_("Device meta"))
 
     class Meta:
         model = models.Device
@@ -109,6 +125,7 @@ class Device(TagMixin, ModelSerializer):
             "management_ip_address_6",
             "operational_status",
             "tags",
+            "meta",
         ]
 
     def get_facility_name(self, obj):

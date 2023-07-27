@@ -307,6 +307,12 @@ def pull(org, *args, **kwargs):
             nautobot_device, device
         )
 
+        if nautobot_device.platform:
+            platform = nautobot_device.platform.slug
+            if platform != device.meta.get("platform"):
+                device.meta["platform"] = platform
+                changed = True
+
         if changed or created:
             device.save()
 
