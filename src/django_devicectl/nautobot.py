@@ -116,7 +116,7 @@ def sync_tags(nautobot_object, devicectl_object):
     if not devicectl_object._meta.get_field("meta"):
         return False
 
-    tags = sorted([tag["display"] for tag in nautobot_object.tags])
+    tags = sorted([tag["slug"] for tag in nautobot_object.tags])
 
     if tags != devicectl_object.meta.get("tags", []):
         devicectl_object.meta["tags"] = tags
