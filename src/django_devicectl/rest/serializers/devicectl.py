@@ -88,7 +88,9 @@ class Device(TagMixin, ModelSerializer):
 
     operational_status = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
-    platform = serializers.CharField(read_only=True, source="meta.platform", default=None)
+    platform = serializers.CharField(
+        read_only=True, source="meta.platform", default=None
+    )
 
     class Meta:
         model = models.Device
