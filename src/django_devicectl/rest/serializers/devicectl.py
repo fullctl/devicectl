@@ -77,6 +77,7 @@ class TagMixin:
     def get_tags(self, obj):
         return obj.meta.get("tags", [])
 
+
 @register
 class DeviceMeta(serializers.Serializer):
     tags = serializers.ListField(
@@ -85,7 +86,9 @@ class DeviceMeta(serializers.Serializer):
         required=False,
     )
     platform = serializers.CharField(help_text=_("Device platform"), required=False)
-    firmware_version = serializers.CharField(help_text=_("Firmware version"), required=False)
+    firmware_version = serializers.CharField(
+        help_text=_("Firmware version"), required=False
+    )
 
     ref_tag = "device_meta"
 

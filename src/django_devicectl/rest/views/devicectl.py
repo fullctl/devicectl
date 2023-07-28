@@ -471,7 +471,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
     @load_object("device", models.Device, instance="instance", id="device_id")
     def meta(self, request, org, instance, device_id, device, *args, **kwargs):
-        
         """
         updates device meta
         """
@@ -483,11 +482,10 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
 
         if not serializer.is_valid():
             return BadRequest(serializer.errors)
-        
 
-        for k,v in serializer.validated_data.items():
+        for k, v in serializer.validated_data.items():
             device.meta[k] = v
-        
+
         device.save()
 
         serializer = Serializers.device_meta(data=device.meta)
