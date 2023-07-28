@@ -466,6 +466,35 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
 
         return Response(Serializers.device(instance=device).data)
 
+    @action(detail=True, methods=["patch"], serializer_class=Serializers.device_meta)
+    @auditlog()
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def meta(self, request, org, instance, device_id, device, *args, **kwargs):
+        
+        """
+        updates device meta
+        """
+
+        serializer = Serializers.device_meta(
+            device,
+            data=request.data,
+        )
+
+        if not serializer.is_valid():
+            return BadRequest(serializer.errors)
+        
+
+        for k,v in serializer.validated_data.items():
+            device.meta[k] = v
+        
+        device.save()
+
+        serializer = Serializers.device_meta(data=device.meta)
+        serializer.is_valid()
+
+        return Response(serializer.data)
+
     @auditlog()
     @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
     @load_object("device", models.Device, instance="instance", id="device_id")
