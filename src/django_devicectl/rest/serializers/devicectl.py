@@ -85,12 +85,12 @@ class DeviceMeta(serializers.Serializer):
         required=False,
     )
     platform = serializers.CharField(help_text=_("Device platform"), required=False)
-    firmware = serializers.CharField(help_text=_("Device firmware"), required=False)
+    firmware_version = serializers.CharField(help_text=_("Device firmware Version"), required=False)
 
     ref_tag = "device_meta"
 
     class Meta:
-        fields = ["tags", "platform", "firmware"]
+        fields = ["tags", "platform", "firmware_version"]
 
 
 @register
