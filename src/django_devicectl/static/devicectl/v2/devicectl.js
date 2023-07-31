@@ -325,7 +325,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
       // create device details widget that holds device kind, facility, sessions and events
 
       this.widget("device", ($e) => {
-        return new twentyc.rest.Form(
+        return new $ctl.application.Devicectl.DeviceWidget(
           this.template("device_widget", this.$e.device_container)
         );
       });
@@ -590,6 +590,40 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
   },
   $ctl.application.Tool
 );
+
+$ctl.application.Devicectl.DeviceWidget = $tc.extend(
+  "DeviceWidget",
+  {
+    DeviceWidget: function (jq) {
+      this.Form(jq);
+    },
+
+    fill : function(data) {
+      this.Form_fill(data);
+      if (!data.meta) {
+        return;
+      }
+      for (const key in data.meta) {
+        const row = this.template("device_widget_info_row");
+
+        let formatted_key = key.split('_').join(' '); // replace underscores with sapces
+        // convert to title case
+        formatted_key = formatted_key.replace(
+          /\w\S*/g,
+          (txt) => {
+            return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
+          }
+        );
+        row.find(".key").text(formatted_key);
+
+        row.find(".value").text(data.meta[key]);
+        this.element.find("#management-ips").before(row);
+      }
+    }
+  },
+  twentyc.rest.Form
+);
+
 
 $ctl.application.Devicectl.Devices = $tc.extend(
   "Devices",

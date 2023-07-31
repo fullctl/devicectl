@@ -13,6 +13,7 @@
       </div>
     </div>
 
+
     <div class="row mb-3">
       <div class="col-4">
         <label class="form-label">{% trans "Type" %}</label>
@@ -22,7 +23,18 @@
       </div>
     </div>
 
-    <div class="row mb-3">
+    <div class="templates">
+      <div class="row mb-3" data-template="device_widget_info_row">
+        <div class="col-4">
+          <label class="key"></label>
+        </div>
+        <div class="col-8">
+          <span class="value"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-3" id="management-ips">
       <div class="col-4">
         <label class="form-label">{% trans "Management IPs" %}</label>
       </div>
