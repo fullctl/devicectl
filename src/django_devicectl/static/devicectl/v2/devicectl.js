@@ -621,13 +621,6 @@ $ctl.application.Devicectl.DeviceWidget = $tc.extend(
         const row = this.template("device_widget_info_row");
 
         let formatted_key = key.split('_').join(' '); // replace underscores with sapces
-        // convert to title case
-        formatted_key = formatted_key.replace(
-          /\w\S*/g,
-          (txt) => {
-            return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
-          }
-        );
         row.find(".key").text(formatted_key);
 
         row.find(".value").text(data.meta[key]);
