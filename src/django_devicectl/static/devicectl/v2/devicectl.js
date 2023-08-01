@@ -614,11 +614,13 @@ $ctl.application.Devicectl.DeviceWidget = $tc.extend(
 
     fill : function(data) {
       this.Form_fill(data);
+      this.element.find('.meta-row').remove();
       if (!data.meta) {
         return;
       }
       for (const key in data.meta) {
         const row = this.template("device_widget_info_row");
+        row.addClass("meta-row");
 
         let formatted_key = key.split('_').join(' '); // replace underscores with sapces
         row.find(".key").text(formatted_key);
