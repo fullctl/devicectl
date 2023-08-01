@@ -53,43 +53,10 @@ $ctl.application.Devicectl = $tc.extend(
       });
 
 
-
       this.$c.toolbar.widget("select_device", ($e) => {
-        var e = $e["select_device"];
+        const e = $e["select_device"];
 
-        var w = new twentyc.rest.Select(e);
-
-        w.format_request_url = (url) => {
-          return url.replace(/facility_tag/g, this.facility_slug());
-        };
-
-        $(w).on("load:after", (event, element, data) => {
-
-          if(!data.length) {
-            $('.no-devices').show();
-            $('.device-container').hide();
-          } else {
-            $('.no-devices').hide();
-            $('.device-container').show();
-            this.$t.virtual_ports.sync();
-            this.$t.logical_ports.sync();
-            this.$t.physical_ports.sync();
-            this.$t.device.show_device(e.val());
-          }
-
-        });
-
-
-        $(w.element).on("change", (event, element, data) => {
-
-          this.$t.virtual_ports.sync();
-          this.$t.logical_ports.sync();
-          this.$t.physical_ports.sync();
-          this.$t.device.show_device(e.val());
-
-        });
-
-        return w;
+        return new $ctl.application.Devicectl.DeviceSelect(e);
       });
 
       $(this.$c.toolbar.$w.select_facility).on("load:after", () => {
@@ -110,7 +77,7 @@ $ctl.application.Devicectl = $tc.extend(
       $('#ports-tab').on('hide.bs.tab', () => { this.$c.toolbar.$e.select_device_toggle.hide(); });
 
       // dont show facility selection toolbar in dashboard
-      // TODO: move toolbar to be tabbed 
+      // TODO: move toolbar to be tabbed
 
       $('#dashboard-tab').on('show.bs.tab', () => {
         $('#facility-select-toolbar').hide();
@@ -151,7 +118,7 @@ $ctl.application.Devicectl = $tc.extend(
         case "reference-config":
         case "history":
           page = "ports";
-      }  
+      }
 
       this.ContainerApplication_page(page);
     },
@@ -173,7 +140,7 @@ $ctl.application.Devicectl = $tc.extend(
       return this.$c.toolbar.$w.select_device.element.find('option:selected').text();
 
     },
-    
+
     permission_ui: function () {
       //let $e = this.$c.toolbar.$e;
       //let facility = this.facilities[this.facility()];
@@ -187,10 +154,56 @@ $ctl.application.Devicectl = $tc.extend(
 );
 
 /**
+ * Extends the twentyc.rest.Select widget to show and process the device
+ * currently selected for the application.
+ *
+ * @class $ctl.application.Devicectl.DeviceSelect
+ * @extends twentyc.rest.Select
+ * @namespoace $ctl.application.Devicectl
+ * @constructor
+ */
+
+$ctl.application.Devicectl.DeviceSelect = $tc.extend(
+  "DeviceSelect",
+  {
+    DeviceSelect: function (jq) {
+      this.Select(jq);
+
+      $(this).on("load:after", (event, element, data) => {
+        if(!data.length) {
+          $('.no-devices').show();
+          $('.device-container').hide();
+        } else {
+          $('.no-devices').hide();
+          $('.device-container').show();
+          this.sync();
+        }
+      });
+
+      $(this.element).on("change", () => {
+        this.sync();
+      });
+    },
+
+    sync : function() {
+      $ctl.devicectl.$t.virtual_ports.sync();
+      $ctl.devicectl.$t.logical_ports.sync();
+      $ctl.devicectl.$t.physical_ports.sync();
+      $ctl.devicectl.$t.device.show_device(this.element.val());
+    },
+
+    format_request_url : function(url) {
+      return url.replace(/facility_tag/g, $ctl.devicectl.facility_slug());
+    }
+  },
+  twentyc.rest.Select
+);
+
+/**
  * Extended twentyc.rest list widget that will render a device
  * dashboard of device tiles, showing devices that are currently
  * showing operational issues
- * 
+ *
  * @class $ctl.application.Devicectl.DeviceDashboard
  * @extends $ctl.application.Tool
  * @namespoace $ctl.application.Devicectl
@@ -217,16 +230,17 @@ $ctl.application.Devicectl.DeviceDashboard = $tc.extend(
         }
 
         row.click(() => {
-          
+
           $(fullctl.devicectl.$c.toolbar.$w.select_device).one("load:after", ()=> {
             fullctl.devicectl.$c.toolbar.$w.select_device.element.val(data.id);
+            fullctl.devicectl.$c.toolbar.$w.select_device.sync();
           })
-          
+
           if(data.facility != parseInt(fullctl.devicectl.facility())) {
 
             fullctl.devicectl.select_facility(data.facility);
-            
-          } 
+
+          }
 
           fullctl.devicectl.page("ports");
         })
@@ -251,7 +265,7 @@ $ctl.application.Devicectl.DeviceDashboard = $tc.extend(
 
 /**
  * Config loader widget
- * 
+ *
  * @class ConfigLoader
  * @extends twentyc.rest.widget
  * @namespace twentyc.rest
@@ -289,7 +303,7 @@ $ctl.application.Devicectl.ConfigLoader = $tc.extend(
         let config = response.first();
         if(!config)
           return;
-          
+
         let code_block = $("<pre>").addClass("language-diff").text(config.config);
         this.config_content.append(code_block);
 
@@ -325,7 +339,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
       // create device details widget that holds device kind, facility, sessions and events
 
       this.widget("device", ($e) => {
-        return new twentyc.rest.Form(
+        return new $ctl.application.Devicectl.DeviceWidget(
           this.template("device_widget", this.$e.device_container)
         );
       });
@@ -384,7 +398,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
       this.$w.reference_config.format_request_url = (url) => {
         return url.replace("/0/", "/"+this.device_id+"/");
       };
-      
+
       this.$w.config_history.format_request_url = (url) => {
         return url.replace("/0/", "/"+this.device_id+"/");
       };
@@ -426,7 +440,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
       $('#current-config-tab').on('show.bs.tab', () => {
         this.$w.current_config.load();
       });
-      
+
       // upon showing the reference-config tab, load the reference config
       $('#reference-config-tab').on('show.bs.tab', () => {
         this.$w.reference_config.load();
@@ -452,7 +466,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
           );
           this.$w.device.fill(device);
           //$("#device-detail-tab").tab("show");
-          
+
           this.render_service_links(device);
           this.show_graph_controls(device);
           this.show_graph(device);
@@ -465,10 +479,10 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
           // 200 response, check device operational status
 
           let status = response.first();
-          
+
           if(status.status == "error")
             this.$w.operational_status.element.find('.error-message').show();
-          else 
+          else
             this.$w.operational_status.element.find('.error-message').hide();
 
           this.$w.operational_status.fill(status);
@@ -489,7 +503,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
 
     /**
      * Will render relevant service links (like peerctl session overview)
-     * 
+     *
      * This is called automatically when the device is loaded
      * @method render_service_links
      */
@@ -540,7 +554,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
         fullctl.template("graph_placeholder")
       );
       return this;
-    },  
+    },
 
     show_graph_controls(device) {
       let node = this.$w.device.element;
@@ -590,6 +604,33 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
   },
   $ctl.application.Tool
 );
+
+$ctl.application.Devicectl.DeviceWidget = $tc.extend(
+  "DeviceWidget",
+  {
+    DeviceWidget: function (jq) {
+      this.Form(jq);
+    },
+
+    fill : function(data) {
+      this.Form_fill(data);
+      if (!data.meta) {
+        return;
+      }
+      for (const key in data.meta) {
+        const row = this.template("device_widget_info_row");
+
+        let formatted_key = key.split('_').join(' '); // replace underscores with sapces
+        row.find(".key").text(formatted_key);
+
+        row.find(".value").text(data.meta[key]);
+        this.element.find("#management-ips").before(row);
+      }
+    }
+  },
+  twentyc.rest.Form
+);
+
 
 $ctl.application.Devicectl.Devices = $tc.extend(
   "Devices",
