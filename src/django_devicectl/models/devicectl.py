@@ -370,7 +370,7 @@ class DeviceConfigStatus(HandleRefModel):
     )
 
     error_message = models.TextField(
-        max_length=255, null=True, blank=True, help_text=_("Configuration error")
+        null=True, blank=True, help_text=_("Configuration error")
     )
     event = ReferencedObjectCharField(
         max_length=255,
