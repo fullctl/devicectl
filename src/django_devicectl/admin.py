@@ -51,10 +51,11 @@ class DeviceOperationalStatusInline(admin.TabularInline):
 
     pretty_diff.short_description = "Pretty diff"
 
-
 @admin.register(Device)
 class DeviceAdmin(VersionAdmin):
     list_display = ("id", "org", "name", "type", "created", "updated")
+    search_fields = ("name", "instance__org__name", "instance__org__slug")
+    list_filter = ("type",)
     inlines = [DeviceOperationalStatusInline]
 
 
@@ -134,11 +135,18 @@ class PortAdmin(VersionAdmin):
     )
 
 
+class IPAddressInline(admin.TabularInline):
+    model = IPAddress
+    fields = ("address", "created", "updated")
+    readonly_fields = ("created", "updated")
+    extra = 0
+
 @admin.register(PortInfo)
 class PortInfoAdmin(VersionAdmin):
     list_display = (
         "id",
         "org",
+        "device",
         "port",
         "ip_address_4",
         "ip_address_6",
@@ -148,3 +156,7 @@ class PortInfoAdmin(VersionAdmin):
         "created",
         "updated",
     )
+
+    readonly_fields = ("device",)
+    search_fields = ("port__virtual_port__logical_port__physical_ports__device__name",)
+    inlines = [IPAddressInline]
