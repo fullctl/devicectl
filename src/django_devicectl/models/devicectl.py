@@ -302,6 +302,7 @@ class Device(ServiceBridgeReferenceModel):
         management_port = self.management_port
 
         if ip.version == 4:
+            management_port.ip_address_4 = None
             if (
                 management_port.ip_address_4
                 and ipaddress.ip_interface(management_port.ip_address_4) == ip
@@ -309,6 +310,7 @@ class Device(ServiceBridgeReferenceModel):
                 return
             management_port.ip_address_4 = ip
         else:
+            management_port.ip_address_6 = None
             if (
                 management_port.ip_address_6
                 and ipaddress.ip_interface(management_port.ip_address_6) == ip
