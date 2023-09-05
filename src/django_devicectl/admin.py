@@ -86,6 +86,7 @@ class DeviceConfigHistoryAdmin(VersionAdmin):
     )
     read_only_fields = ("current_config", "reference_config")
 
+
 @admin.register(DeviceRefereeReport)
 class DeviceRefereeReportAdmin(VersionAdmin):
     list_display = ("id", "org", "device", "status", "kind", "created")
@@ -96,7 +97,8 @@ class DeviceRefereeReportAdmin(VersionAdmin):
         "device__facility__slug",
         "kind",
     )
-    read_only_fields = ("report","org")
+    read_only_fields = ("report", "org")
+
 
 @admin.register(LogicalPort)
 class LogicalPortAdmin(VersionAdmin):

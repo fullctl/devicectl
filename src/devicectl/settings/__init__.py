@@ -131,4 +131,4 @@ settings_manager.set_option("GRAPHS_PATH", "../graphs")
 settings_manager.set_option("GRAPHS_URL", "/graphs")
 
 # when are referee reports discarded (seconds, default=30 days)
-settings_manager.set_option("REFEREE_REPORT_MAX_AGE", 86400*30)
+settings_manager.set_option("REFEREE_REPORT_MAX_AGE", 86400 * 30)

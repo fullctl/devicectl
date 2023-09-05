@@ -1,6 +1,7 @@
 import difflib
 import ipaddress
 import json
+
 import reversion
 from django.db import models, transaction
 from django.db.models import Q
@@ -18,6 +19,7 @@ from fullctl.service_bridge import nautobot
 from netfields.fields import InetAddressField
 
 import django_devicectl.referee as referee_util
+
 
 @reversion.register()
 @grainy_model(
@@ -570,13 +572,13 @@ class DeviceRefereeReport(HandleRefModel):
         on_delete=models.CASCADE,
     )
 
-    report = models.JSONField(
-        help_text=_("Report contents")
-    )
+    report = models.JSONField(help_text=_("Report contents"))
 
     kind = models.CharField(
         max_length=255,
-        help_text=_("Report type. For example: 'stacked', 'sequential' etc."), blank=True, null=True
+        help_text=_("Report type. For example: 'stacked', 'sequential' etc."),
+        blank=True,
+        null=True,
     )
 
     class HandleRef:
@@ -606,6 +608,7 @@ class DeviceRefereeReport(HandleRefModel):
         Will set the report kind based on the report contents
         """
         self.kind = referee_util.get_report_kind(self.report)
+
 
 @reversion.register()
 @grainy_model(

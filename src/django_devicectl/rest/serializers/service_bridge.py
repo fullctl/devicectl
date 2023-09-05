@@ -125,6 +125,7 @@ class DeviceOperationalStatus(ModelSerializer):
 
         return device_operational_status
 
+
 @register
 class DeviceRefereeReport(ModelSerializer):
     class Meta:
@@ -134,6 +135,7 @@ class DeviceRefereeReport(ModelSerializer):
             "device",
             "report",
         ]
+
 
 @register
 class Port(ModelSerializer):

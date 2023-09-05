@@ -2,11 +2,13 @@
 Referee util
 """
 
-from typing import Union
 import json
+from typing import Union
+
 from django.utils import timezone
 
-def get_report_kind(report:str) -> Union[str, None]:
+
+def get_report_kind(report: str) -> Union[str, None]:
     """
     Returns the kind of the report based on the contents of the report
 
@@ -32,7 +34,8 @@ def get_report_kind(report:str) -> Union[str, None]:
     # unknown
     return None
 
-def delete_old_reports(device, max_age:int):
+
+def delete_old_reports(device, max_age: int):
     """
     Removes any referee reports for device that are older than max_age
 

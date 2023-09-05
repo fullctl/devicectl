@@ -1,6 +1,6 @@
+import json
 import os
 import time
-import json
 
 import fullctl.service_bridge.pdbctl as pdbctl
 from django.conf import settings
@@ -416,8 +416,10 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
 
         # get most recent referee reports
 
-        queryset = device.referee_reports.filter(created__gte=cutoff_date).order_by("-created")
-        
+        queryset = device.referee_reports.filter(created__gte=cutoff_date).order_by(
+            "-created"
+        )
+
         serializer = Serializers.device_referee_report(
             queryset,
             many=True,
@@ -433,7 +435,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @load_object("device", models.Device, instance="instance", id="device_id")
     def report(self, request, org, instance, device, report_id, *args, **kwargs):
         """
-        Single referee reports for this device by report id. 
+        Single referee reports for this device by report id.
 
         Will return report data in `report_data`
         """
@@ -441,7 +443,6 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
             models.DeviceRefereeReport.objects.get(id=report_id, device=device),
         )
         return Response(serializer.data)
-
 
     @action(
         detail=True,
@@ -453,7 +454,7 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
     @load_object("device", models.Device, instance="instance", id="device_id")
     def report_plain(self, request, org, instance, device, report_id, *args, **kwargs):
         """
-        Single referee report for this device by report id. 
+        Single referee report for this device by report id.
 
         Will return report data as plain text
         """

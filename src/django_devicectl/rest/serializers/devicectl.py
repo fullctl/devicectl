@@ -74,9 +74,9 @@ class DeviceConfigHistory(ModelSerializer):
         model = models.DeviceConfigHistory
         fields = ["id", "device", "status", "error_message", "created"]
 
+
 @register
 class DeviceRefereeReport(ModelSerializer):
-
     report_data = serializers.SerializerMethodField()
 
     class Meta:
@@ -89,7 +89,7 @@ class DeviceRefereeReport(ModelSerializer):
 
         if isinstance(self.instance, models.DeviceRefereeReport):
             return json.loads(report.report)
-        
+
 
 class TagMixin:
     def get_tags(self, obj):
