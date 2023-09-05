@@ -19,8 +19,12 @@
           <a class="nav-link" id="reference-config-tab" data-bs-toggle="tab" href="#reference-config" role="tab" aria-controls="reference-config" aria-selected="false">Reference Config</a>
         </li>
         <li class="nav-item" role="presentation">
+          <a class="nav-link" id="reports-tab" data-bs-toggle="tab" href="#reports" role="tab" aria-controls="reports" aria-selected="false">Reports</a>
+        </li>
+        <li class="nav-item" role="presentation">
           <a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="false">History</a>
         </li>
+
       </ul>
     
       <div class="tab-content" id="deviceStatusTabsContent" style="position:relative">
@@ -45,10 +49,14 @@
         <!-- Reference Config Tab -->
         <div class="tab-pane fade" data-element="reference_config_container" id="reference-config" role="tabpanearia-labelledby="reference-config-tab">
         </div>
+        <!-- Reports Tab -->
+        <div class="tab-pane fade" id="reports" role="tabpanel" data-element="device_reports_container" aria-labelledby="reports-tab">
+        </div>
         <!-- History Tab -->
         <div class="tab-pane fade" id="history" role="tabpanel" data-element="config_history_container" aria-labelledby="history-tab">
           
         </div>
+
       </div>
 
     </div>
@@ -62,6 +70,7 @@
     {% include "devicectl/v2/tool/device/config-changes.html" %}
     {% include "devicectl/v2/tool/device/config-current.html" %}
     {% include "devicectl/v2/tool/device/config-reference.html" %}
+    {% include "devicectl/v2/tool/device/reports.html" %}
 
   </div>
 </div>

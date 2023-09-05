@@ -1,10 +1,12 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django.conf import settings
 from fullctl.django.models.concrete.tasks import TaskLimitError
 
-from django_devicectl.models.devicectl import IPAddress, Port, PortInfo, VirtualPort
+from django_devicectl.models.devicectl import IPAddress, Port, PortInfo, VirtualPort, DeviceRefereeReport
 from django_devicectl.models.tasks import RequestPeerctlSync
 
+import django_devicectl.referee as referee_util
 
 @receiver(pre_save, sender=IPAddress)
 def ip_address_assignment(sender, instance, **kwargs):
@@ -45,3 +47,22 @@ def auto_create_port(sender, instance, created, **kwargs):
             port_info = PortInfo.objects.create(instance=instance.logical_port.instance)
             port.port_info = port_info
             port.save()
+
+@receiver(pre_save, sender=DeviceRefereeReport)
+def set_report_kind(sender, instance, **kwargs):
+    """
+    When a new report is created, set the kind of the report
+    based on the status of the report
+    """
+
+    instance.set_report_kind()
+
+@receiver(post_save, sender=DeviceRefereeReport)
+def delete_old_reports(sender, instance, created, **kwargs):
+    """
+    When a new report is created, delete all old reports based on max
+    age
+    """
+
+    if created and settings.REFEREE_REPORT_MAX_AGE > 0:
+        referee_util.delete_old_reports(instance.device, settings.REFEREE_REPORT_MAX_AGE)

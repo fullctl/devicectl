@@ -108,6 +108,19 @@ class Device(DataViewSet):
 
         return Response(slz.data)
 
+    @action(
+        detail=True,
+        methods=["POST"],
+        serializer_class=Serializers.device_referee_report
+    )
+    def push_referee_report(self, request, pk, *args, **kwargs):
+        device = self.get_object()
+        data = self.prepare_write_data(request)
+        data["device"] = device.id
+        slz = Serializers.device_referee_report(data=data)
+        slz.is_valid(raise_exception=True)
+        instance = slz.save()
+        return Response(Serializers.device_referee_report(instance).data)
 
 @route
 class Port(DataViewSet):

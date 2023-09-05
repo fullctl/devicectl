@@ -21,3 +21,23 @@
     font-size: inherit;
     font-weight: inherit;
 }
+
+div.sequential-report .report-row {
+    padding: 3px;
+}
+
+div.sequential-report .report-row:nth-child(even) {
+    background-color: var(--switch-bg);
+}
+
+div.sequential-report .report-row .source-name {
+    color: var(--primary-btn-bg);
+}
+
+div.sequential-report .report-row .path {
+    font-style: italic;
+    color: var(--th-clr);
+}
+
+div.sequential-report .report-row .value {
+}

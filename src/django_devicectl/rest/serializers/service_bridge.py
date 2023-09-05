@@ -90,9 +90,6 @@ class DeviceOperationalStatus(ModelSerializer):
         """
 
         validated_data = self.validated_data
-
-        print(validated_data)
-
         device = validated_data["device"]
         status = validated_data["status"]
         error_message = validated_data.get("error_message")
@@ -128,6 +125,15 @@ class DeviceOperationalStatus(ModelSerializer):
 
         return device_operational_status
 
+@register
+class DeviceRefereeReport(ModelSerializer):
+    class Meta:
+        model = models.DeviceRefereeReport
+        fields = [
+            "id",
+            "device",
+            "report",
+        ]
 
 @register
 class Port(ModelSerializer):
