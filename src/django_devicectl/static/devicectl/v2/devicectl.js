@@ -320,6 +320,160 @@ $ctl.application.Devicectl.ConfigLoader = $tc.extend(
 );
 
 /**
+ * Report listing widget, with functionality to expand and pretty-render
+ * referee reports depending on report type
+ * 
+ * @class DeviceReportList
+ * @extends twentyc.rest.List
+ * @namespace $ctl.application.Devicectl
+ * @constructor
+ */
+
+$ctl.application.Devicectl.DeviceReportList = $tc.extend(
+  "DeviceReportList",
+  {
+    DeviceReportList: function(jq) {
+      this.List(jq);
+      this.device_id = 0;
+    
+      this.local_action("toggle_view_report", this.toggle_view_report.bind(this));
+      this.formatters.row = (row, data) => {
+        let button_download = row.find("[data-element=button_download_report]");
+        let device_id = this.device_id;
+        button_download.attr("href", this.base_url.replace("/0/", `/${device_id}/`) + "/" + data.id + "/plain");
+      };
+    },
+
+    /**
+     * Will toggle the visibility of the report for a row
+     * 
+     * Toggling visibility on will also load the report if it has not been loaded yet
+     * 
+     * @method toggle_view_report
+     * @param {*} data 
+     * @param {*} row 
+     * @returns 
+     */
+
+    toggle_view_report : function(data, row) {
+      let report_container = $(row.get(1))
+
+      if(report_container.is(":visible")) {
+        report_container.hide();
+        return;
+      }
+
+      report_container.show();
+      this.get(data.id).then((response) => {
+        let report = response.first();
+        report_container.find('div.report').empty().append(
+          this.render_report(report.kind, report.report_data)
+        );
+      });
+    },
+
+    /**
+     * renders a report
+     * 
+     * @method render_report
+     * @param {String} kind
+     * @param {Object} report_data
+     * @returns {jQuery} report element
+     */
+
+    render_report : function(kind, report_data) {
+      let method_name = `_render_${kind}_report`;
+      if(typeof this[method_name] == "function") {
+        return this[method_name](report_data);
+      }
+      return $("<pre>").text(report_data);
+    },
+
+    /**
+     * Renders a stacked report 
+     * 
+     * report data will be an object literal that will be stringified
+     * and rendered with syntax highlighting set to json
+     * 
+     * @method _render_stacked_report
+     * @param {Object} report_data
+     * @returns {jQuery} report element
+     */
+
+    _render_stacked_report : function(report_data) {
+      let report_string = JSON.stringify(report_data, null, 2);
+      let report = $("<pre>").addClass("language-json").text(report_string);
+      hljs.highlightBlock(report[0]);
+      return report;
+    },
+
+    /**
+     * Renders a snapshot report
+     * 
+     * report data will be an object literal that will be stringified
+     * and rendered with syntax highlighting set to json
+     */
+
+    _render_snapshot_report : function(report_data) {
+      let report_string = JSON.stringify(report_data, null, 2);
+      let report = $("<pre>").addClass("language-json").text(report_string);
+      hljs.highlightBlock(report[0]);
+      return report;
+    },
+
+    /**
+     * renders a sequential report row by row
+     * 
+     * report_data will be an array of strings representing each row
+     * 
+     * row format is: [{source name}] {path}: {value}
+     * 
+     * @method _render_sequential_report
+     * @param {Array} report_data
+     * @returns {jQuery} report element
+     */
+
+    _render_sequential_report : function(report_data) {
+
+      let report = $("<div>").addClass("sequential-report");
+
+      $(report_data).each(function() {
+
+        // regex parse row into source_name, path and value
+
+        let row = this.match(/^\[(.*)\] (.*)\: (.*)$/);
+
+        // create row element
+
+        let row_element = $("<div>").addClass("row report-row");
+
+        // create source name element
+
+        let source_name = $("<div>").addClass("col-2 source-name").text(row[1]);
+        row_element.append(source_name);
+
+        // create path element
+
+        let path = $("<div>").addClass("col-7 path").text(row[2]);
+        row_element.append(path);
+
+        // create value element
+
+        let value = $("<div>").addClass("col-3 value").text(row[3]);
+        row_element.append(value);
+
+        report.append(row_element);
+      });
+
+      return report;
+
+    }
+
+  },
+  twentyc.rest.List
+);
+
+/**
  * Device details tool
  */
 
@@ -330,6 +484,7 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
       this.Tool("device_details");
       this.device_id = 0;
       this.config_history_loaded = false;
+      this.reports_loaded = false;
 
       $("#deviceStatusTabs")
     },
@@ -384,6 +539,15 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
         )
       });
 
+      // create report listing widget
+
+      this.widget("reports", ($e) => {
+        return new $ctl.application.Devicectl.DeviceReportList(
+          this.template("device_reports", this.$e.device_reports_container)
+        )
+      });
+
+
       // url formatting to replace /0/ with /<device_id>/ across
       // all widgets
 
@@ -400,6 +564,11 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
       };
 
       this.$w.config_history.format_request_url = (url) => {
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+
+      this.$w.reports.format_request_url = (url) => {
+        console.log("URL", url, url.replace("/0/", "/"+this.device_id+"/"))
         return url.replace("/0/", "/"+this.device_id+"/");
       };
 
@@ -425,10 +594,18 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
 
       this.$w.config_history.formatters.created = fullctl.formatters.datetime;
 
+      this.$w.reports.formatters.created = fullctl.formatters.datetime;
+
       // upon showing the config history tab, load the config history
       // if it has not been loaded yet
       $('#history-tab').on('show.bs.tab', () => {
         this.$w.config_history.load().then(() => {this.config_history_loaded = true;})
+      });
+
+      // upon showing the reports tab, load the reports
+      // if they have not been loaded yet
+      $('#reports-tab').on('show.bs.tab', () => {
+        this.$w.reports.load().then(() => {this.reports_loaded = true;})
       });
 
       // upon showing the changes tab, load the config changes diff
@@ -452,6 +629,12 @@ $ctl.application.Devicectl.DeviceDetails = $tc.extend(
 
       this.device_id = device_id;
       this.config_history_loaded = false;
+      this.reports_loaded = false;
+      this.$w.reports.device_id = device_id;
+
+      // select device-detail-tab
+
+      $("#device-detail-tab").tab("show");
 
       this.$w.device.get(""+device_id).then(
         (response) => {

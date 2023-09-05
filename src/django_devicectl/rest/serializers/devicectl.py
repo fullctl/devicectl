@@ -1,3 +1,5 @@
+import json
+
 from django.utils.translation import ugettext_lazy as _
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
@@ -71,6 +73,22 @@ class DeviceConfigHistory(ModelSerializer):
     class Meta:
         model = models.DeviceConfigHistory
         fields = ["id", "device", "status", "error_message", "created"]
+
+
+@register
+class DeviceRefereeReport(ModelSerializer):
+    report_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.DeviceRefereeReport
+        fields = ["id", "device", "status", "kind", "created", "report_data"]
+
+    def get_report_data(self, report):
+        # we only want to include report data on single report serialization
+        # and not on list serialization
+
+        if isinstance(self.instance, models.DeviceRefereeReport):
+            return json.loads(report.report)
 
 
 class TagMixin:

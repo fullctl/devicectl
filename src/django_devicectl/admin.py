@@ -11,6 +11,7 @@ from django_devicectl.models import (
     Device,
     DeviceConfigHistory,
     DeviceOperationalStatus,
+    DeviceRefereeReport,
     Facility,
     IPAddress,
     LogicalPort,
@@ -84,6 +85,19 @@ class DeviceConfigHistoryAdmin(VersionAdmin):
         "error_message",
     )
     read_only_fields = ("current_config", "reference_config")
+
+
+@admin.register(DeviceRefereeReport)
+class DeviceRefereeReportAdmin(VersionAdmin):
+    list_display = ("id", "org", "device", "status", "kind", "created")
+    list_filter = ("kind",)
+    search_fields = (
+        "device__name",
+        "device__instance__org__slug",
+        "device__facility__slug",
+        "kind",
+    )
+    read_only_fields = ("report", "org")
 
 
 @admin.register(LogicalPort)

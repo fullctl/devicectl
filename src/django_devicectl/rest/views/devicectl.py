@@ -1,3 +1,4 @@
+import json
 import os
 import time
 
@@ -391,6 +392,76 @@ class Device(CachedObjectMixin, viewsets.GenericViewSet):
             many=True,
         )
         return Response(serializer.data)
+
+    @action(
+        detail=True,
+        serializer_class=Serializers.device_referee_report,
+        url_path="reports",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def reports(self, request, org, instance, device, *args, **kwargs):
+        """
+        Lists referee reports for this device
+        """
+
+        # get most recent config history entry to determine cutoff date
+
+        config_history = device.config_history.order_by("-created").first()
+
+        if not config_history:
+            return Response([])
+
+        cutoff_date = config_history.created
+
+        # get most recent referee reports
+
+        queryset = device.referee_reports.filter(created__gte=cutoff_date).order_by(
+            "-created"
+        )
+
+        serializer = Serializers.device_referee_report(
+            queryset,
+            many=True,
+        )
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        serializer_class=Serializers.device_referee_report,
+        url_path="reports/(?P<report_id>[^/.]+)",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def report(self, request, org, instance, device, report_id, *args, **kwargs):
+        """
+        Single referee reports for this device by report id.
+
+        Will return report data in `report_data`
+        """
+        serializer = Serializers.device_referee_report(
+            models.DeviceRefereeReport.objects.get(id=report_id, device=device),
+        )
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        serializer_class=Serializers.device_referee_report,
+        renderer_classes=[PlainTextRenderer],
+        url_path="reports/(?P<report_id>[^/.]+)/plain",
+    )
+    @grainy_endpoint(namespace="device.{request.org.permission_id}.{device_id}")
+    @load_object("device", models.Device, instance="instance", id="device_id")
+    def report_plain(self, request, org, instance, device, report_id, *args, **kwargs):
+        """
+        Single referee report for this device by report id.
+
+        Will return report data as plain text
+        """
+        serializer = Serializers.device_referee_report(
+            models.DeviceRefereeReport.objects.get(id=report_id, device=device),
+        )
+        return Response(json.dumps(serializer.data["report_data"], indent=4))
 
     @action(detail=True, serializer_class=Serializers.virtual_port)
     @grainy_endpoint(namespace="virtual_port.{request.org.permission_id}")

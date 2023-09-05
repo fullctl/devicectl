@@ -1,5 +1,6 @@
 import difflib
 import ipaddress
+import json
 
 import reversion
 from django.db import models, transaction
@@ -16,6 +17,8 @@ from fullctl.django.models.abstract import (
 from fullctl.django.models.concrete import Instance
 from fullctl.service_bridge import nautobot
 from netfields.fields import InetAddressField
+
+import django_devicectl.referee as referee_util
 
 
 @reversion.register()
@@ -550,6 +553,61 @@ class DeviceConfigHistory(DeviceConfigStatus):
     @property
     def org(self):
         return self.device.org
+
+
+@grainy_model(
+    namespace="device",
+    namespace_instance="device.{instance.org.permission_id}.{instance.id}",
+)
+class DeviceRefereeReport(HandleRefModel):
+
+    """
+    Describes referee report of device configuration, which will describe
+    source of truth for configuration.
+    """
+
+    device = models.ForeignKey(
+        Device,
+        related_name="referee_reports",
+        on_delete=models.CASCADE,
+    )
+
+    report = models.JSONField(help_text=_("Report contents"))
+
+    kind = models.CharField(
+        max_length=255,
+        help_text=_("Report type. For example: 'stacked', 'sequential' etc."),
+        blank=True,
+        null=True,
+    )
+
+    class HandleRef:
+        tag = "device_referee_report"
+
+    class Meta:
+        db_table = "devicectl_device_referee_report"
+        verbose_name = _("Device Referee Report")
+        verbose_name_plural = _("Device Referee Reports")
+
+    def __str__(self):
+        return f"DeviceRefereeReport({self.id}) {self.device.name}"
+
+    @property
+    def instance(self):
+        return self.device.instance
+
+    @property
+    def org(self):
+        return self.device.org
+
+    def clean(self):
+        self.set_report_kind()
+
+    def set_report_kind(self):
+        """
+        Will set the report kind based on the report contents
+        """
+        self.kind = referee_util.get_report_kind(self.report)
 
 
 @reversion.register()
