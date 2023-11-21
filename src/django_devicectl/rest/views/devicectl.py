@@ -150,7 +150,7 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
     @service_bridge_sync(pull="sot")
     @grainy_endpoint(namespace="device.{request.org.permission_id}")
     def devices(self, request, org, instance, *args, **kwargs):
-        ordering_filter = CaseInsensitiveOrderingFilter(["facility_id", "name", "type"])
+        ordering_filter = CaseInsensitiveOrderingFilter(["name", "type", "status"])
 
         facility = self.get_object()
 
@@ -159,12 +159,15 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         if request.GET.get("include-unassigned"):
             queryset |= models.Device.objects.filter(facility__isnull=True)
 
+        print(request)
+        queryset = queryset.order_by("name")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
         serializer = Serializers.device(
             queryset,
             many=True,
         )
+
         return Response(serializer.data)
 
     @action(detail=True, serializer_class=Serializers.logical_port)
