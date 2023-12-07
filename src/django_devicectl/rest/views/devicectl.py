@@ -159,7 +159,6 @@ class Facility(CachedObjectMixin, viewsets.GenericViewSet):
         if request.GET.get("include-unassigned"):
             queryset |= models.Device.objects.filter(facility__isnull=True)
 
-        print(request)
         queryset = queryset.order_by("name")
         queryset = ordering_filter.filter_queryset(request, queryset, self)
 
