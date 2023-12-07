@@ -8,10 +8,10 @@
   data-template="list">
   <thead>
     <tr>
-      <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
+      <th data-sort-target="name" class="sortable-button" data-sort-initial="yes" data-sort-secondary="status">{% trans "Name" %}</th>
       <th data-sort-target="type" class="sortable-button">{% trans "Type" %}</th>
-      <th data-sort-target="type" class="sortable-button">{% trans "IP" %}</th>
-      <th>{% trans "Status" %}</th>
+      <th>{% trans "IP" %}</th>
+      <th data-sort-target="status" class="sortable-button">{% trans "Status" %}</th>
       <th></th>
     </tr>
   </thead>

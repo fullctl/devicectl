@@ -1,6 +1,5 @@
 import difflib
 import ipaddress
-import json
 
 import reversion
 from django.db import models, transaction
