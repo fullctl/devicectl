@@ -1,6 +1,8 @@
 from collections.abc import Iterable
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import Q
 from fullctl.django.rest.decorators import serializer_registry
 from fullctl.django.rest.serializers import ModelSerializer
 from rest_framework import serializers
@@ -64,6 +66,78 @@ class Device(ModelSerializer):
 
 
 @register
+class DeviceOperationalStatus(ModelSerializer):
+    status = serializers.ChoiceField(choices=("ok", "error"))
+
+    class Meta:
+        model = models.DeviceOperationalStatus
+        fields = [
+            "id",
+            "device",
+            "status",
+            "error_message",
+            "event",
+            "url_current",
+            "url_reference",
+            "config_current",
+            "config_reference",
+        ]
+
+    def _save(self):
+        """
+        When saving a device operational status, we need to either create
+        or update the device's operational status relation.
+        """
+
+        validated_data = self.validated_data
+        device = validated_data["device"]
+        status = validated_data["status"]
+        error_message = validated_data.get("error_message")
+        event = validated_data.get("event")
+        url_current = validated_data.get("url_current")
+        url_reference = validated_data.get("url_reference")
+        config_current = validated_data.get("config_current")
+        config_reference = validated_data.get("config_reference")
+
+        try:
+            device_operational_status = models.DeviceOperationalStatus.objects.get(
+                device=device
+            )
+            device_operational_status.status = status
+            device_operational_status.error_message = error_message
+            device_operational_status.event = event
+            device_operational_status.url_current = url_current
+            device_operational_status.url_reference = url_reference
+            device_operational_status.config_current = config_current
+            device_operational_status.config_reference = config_reference
+            device_operational_status.save()
+        except ObjectDoesNotExist:
+            device_operational_status = models.DeviceOperationalStatus.objects.create(
+                device=device,
+                status=status,
+                error_message=error_message,
+                event=event,
+                url_current=url_current,
+                url_reference=url_reference,
+                config_current=config_current,
+                config_reference=config_reference,
+            )
+
+        return device_operational_status
+
+
+@register
+class DeviceRefereeReport(ModelSerializer):
+    class Meta:
+        model = models.DeviceRefereeReport
+        fields = [
+            "id",
+            "device",
+            "report",
+        ]
+
+
+@register
 class Port(ModelSerializer):
     org_id = serializers.SerializerMethodField()
 
@@ -76,10 +150,11 @@ class Port(ModelSerializer):
     is_management = serializers.BooleanField(
         read_only=True, source="port_info.is_management"
     )
-
     logical_port_name = serializers.SerializerMethodField()
+    virtual_port_description = serializers.SerializerMethodField()
     virtual_port_name = serializers.SerializerMethodField()
     device = serializers.SerializerMethodField()
+    physical_ports = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Port
@@ -98,6 +173,8 @@ class Port(ModelSerializer):
             "is_management",
             "logical_port_name",
             "virtual_port_name",
+            "virtual_port_description",
+            "physical_ports",
         ]
 
     def get_org_id(self, port):
@@ -109,15 +186,30 @@ class Port(ModelSerializer):
     def get_virtual_port_name(self, port):
         return port.virtual_port.name
 
+    def get_virtual_port_description(self, port):
+        return port.virtual_port.description
+
     def get_device(self, port):
         if "device" in self.context.get("joins", []):
             # device from preloaded cache
             device = self.devices.get(port.device_id)
 
+            if not device:
+                return None
+
             # device.facility from preloaded cache
             device.facility = self.facilities.get(device.facility_id)
 
             return Device(instance=device).data
+        return None
+
+    def get_physical_ports(self, port):
+        if "physical_ports" in self.context.get("joins", []):
+            physical_ports = port.virtual_port.physical_ports
+            if not physical_ports:
+                return None
+
+            return PhysicalPort(instance=physical_ports, many=True).data
         return None
 
     @property
@@ -152,7 +244,9 @@ class Port(ModelSerializer):
                 facility.id: facility
                 for facility in models.Facility.objects.filter(
                     id__in=[
-                        self.devices.get(port.device_id).facility_id for port in ports
+                        self.devices.get(port.device_id).facility_id
+                        for port in ports
+                        if port.device_id
                     ]
                 )
             }
@@ -208,8 +302,21 @@ class VirtualPort(ModelSerializer):
             "reference_is_sot",
             "name",
             "display_name",
+            "description",
         ]
         read_only_fields = ["port"]
+
+
+@register
+class PhysicalPort(ModelSerializer):
+    class Meta:
+        model = models.PhysicalPort
+        fields = [
+            "id",
+            "name",
+            "device_id",
+            "device_name",
+        ]
 
 
 @register
@@ -255,33 +362,60 @@ class RequestDummyPorts(serializers.Serializer):
 
             for _port in port_data:
                 virtual_port, _ = models.VirtualPort.objects.get_or_create(
-                    name=f"{name_prefix}:virt:{_port['id']}",
+                    name=f"{name_prefix}:{device_id}:virt:{_port['id']}",
                     logical_port=device.physical_ports.first().logical_port,
                     vlan_id=0,
                 )
 
                 port, port_created = models.Port.objects.get_or_create(
-                    virtual_port=virtual_port, name=f"{name_prefix}:{_port['id']}"
+                    virtual_port=virtual_port
                 )
+
+                if port_created or not port.name:
+                    port.name = f"{name_prefix}:{_port['id']}"
+                    port.save()
 
                 ip4_incoming = _port.get("ip_address_4")
                 ip6_incoming = _port.get("ip_address_6")
                 ip4 = None
                 ip6 = None
 
-                if ip4_incoming:
-                    ip4 = models.IPAddress.objects.filter(
-                        instance=instance, address=ip4_incoming
-                    ).first()
-                if ip6_incoming:
-                    ip6 = models.IPAddress.objects.filter(
-                        instance=instance, address=ip6_incoming
-                    ).first()
+                name_query = (
+                    Q(port_info__port__name__startswith=f"{name_prefix}:")
+                    | Q(port_info__port__name__startswith="pdb:")
+                    | Q(port_info__port__name__startswith="ixctl:")
+                )
 
-                if ip4:
-                    created_ports.append(ip4.port_info.port)
-                if ip6:
-                    created_ports.append(ip6.port_info.port)
+                if ip4_incoming:
+                    ip4 = (
+                        models.IPAddress.objects.filter(
+                            instance=instance, address=ip4_incoming
+                        )
+                        .exclude(name_query)
+                        .first()
+                    )
+                if ip6_incoming:
+                    ip6 = (
+                        models.IPAddress.objects.filter(
+                            instance=instance, address=ip6_incoming
+                        )
+                        .exclude(name_query)
+                        .first()
+                    )
+
+                try:
+                    if ip4:
+                        created_ports.append(ip4.port_info.port)
+                except ObjectDoesNotExist:
+                    pass
+
+                try:
+                    if ip6:
+                        created_ports.append(ip6.port_info.port)
+                except ObjectDoesNotExist:
+                    pass
+
+                port.refresh_from_db()
 
                 if port_created or not port.port_info_id:
                     port.port_info = models.PortInfo.objects.create(
@@ -289,12 +423,31 @@ class RequestDummyPorts(serializers.Serializer):
                     )
                     port.save()
 
-                    if not ip4:
-                        port.port_info.ip_address_4 = ip4_incoming
+                if not ip4 and ip4_incoming:
+                    port.port_info.ip_address_4 = ip4_incoming
 
-                    if not ip6:
-                        port.port_info.ip_address_6 = ip6_incoming
+                if not ip6 and ip6_incoming:
+                    port.port_info.ip_address_6 = ip6_incoming
 
                 created_ports.append(port)
 
         return created_ports
+
+
+class Traffic(serializers.Serializer):
+    id = serializers.IntegerField(allow_null=True)
+    bps_in = serializers.IntegerField(allow_null=True)
+    bps_out = serializers.IntegerField(allow_null=True)
+    bps_in_max = serializers.IntegerField(allow_null=True)
+    bps_out_max = serializers.IntegerField(allow_null=True)
+    timestamp = serializers.IntegerField(allow_null=True)
+
+    class Meta:
+        fields = ["id", "bps_in", "bps_out", "bps_in_max", "bps_out_max", "timestamp"]
+
+
+@register
+class PortTraffic(serializers.ListSerializer):
+    child = Traffic()
+
+    ref_tag = "port_traffic"

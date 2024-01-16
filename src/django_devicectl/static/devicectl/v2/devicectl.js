@@ -15,8 +15,16 @@ $ctl.application.Devicectl = $tc.extend(
 
       this.$c.header.app_slug = "device";
 
+      this.tool("dashboard", () => {
+        return new $ctl.application.Devicectl.DeviceDashboard();
+      })
+
       this.tool("devices", () => {
         return new $ctl.application.Devicectl.Devices();
+      });
+
+      this.tool("device", () => {
+        return new $ctl.application.Devicectl.DeviceDetails();
       });
 
       this.tool("logical_ports", () => {
@@ -35,6 +43,9 @@ $ctl.application.Devicectl = $tc.extend(
         fullctl.devicectl.page('facilities');
         fullctl.devicectl.$t.settings.create_facility();
       });
+      $(this.$c.toolbar.$e.return_to_dashboard).click(() => {
+        fullctl.devicectl.page("dashboard");
+      });
 
       $(this).one("no-containers", () => {
         fullctl.devicectl.page('facilities');
@@ -43,36 +54,19 @@ $ctl.application.Devicectl = $tc.extend(
 
 
       this.$c.toolbar.widget("select_device", ($e) => {
-        var e = $e["select_device"];
+        const e = $e["select_device"];
 
-        var w = new twentyc.rest.Select(e);
-
-        w.format_request_url = (url) => {
-          return url.replace(/facility_tag/g, this.facility_slug());
-        };
-
-        $(w).on("load:after", (event, element, data) => {
-          this.$t.virtual_ports.sync();
-          this.$t.logical_ports.sync();
-          this.$t.physical_ports.sync();
-        });
-        $(w.element).on("change", (event, element, data) => {
-          this.$t.virtual_ports.sync();
-          this.$t.logical_ports.sync();
-          this.$t.physical_ports.sync();
-        });
-
-
-
-        return w;
+        return new $ctl.application.Devicectl.DeviceSelect(e);
       });
 
       $(this.$c.toolbar.$w.select_facility).on("load:after", () => {
-        this.$c.toolbar.$w.select_device.load();
+        this.$c.toolbar.$w.select_device.load().then(() => {
+        });
       });
 
       $(this.$c.toolbar.$w.select_facility.element).on("change", () => {
-        this.$c.toolbar.$w.select_device.load();
+        this.$c.toolbar.$w.select_device.load().then(() => {
+        });
       });
 
 
@@ -82,6 +76,27 @@ $ctl.application.Devicectl = $tc.extend(
       });
       $('#ports-tab').on('hide.bs.tab', () => { this.$c.toolbar.$e.select_device_toggle.hide(); });
 
+      // dont show facility selection toolbar in dashboard
+      // TODO: move toolbar to be tabbed
+
+      $('#dashboard-tab').on('show.bs.tab', () => {
+        $('#facility-select-toolbar').hide();
+        this.$t.dashboard.sync();
+      });
+      $('#dashboard-tab').on('hide.bs.tab', () => {
+        $('#facility-select-toolbar').show();
+      });
+
+      $('#ports-tab').on('show.bs.tab', () => {
+        $('[data-element=button_create_facility]').hide();
+        $('[data-component=virtual_ports').appendTo($("#device-detail"));
+        $('[data-component=logical_ports').appendTo($("#device-detail"));
+        $('[data-component=physical_ports').appendTo($("#device-detail"));
+      });
+
+      $('#tab-overview').on('show.bs.tab', () => {
+        $('[data-element=button_create_facility]').show();
+      });
 
       $($ctl).trigger("init_tools", [this]);
 
@@ -93,6 +108,19 @@ $ctl.application.Devicectl = $tc.extend(
       this.sync();
 
       this.autoload_page();
+    },
+
+    page: function(page) {
+      switch(page) {
+        case "device-details":
+        case "changes":
+        case "current-config":
+        case "reference-config":
+        case "history":
+          page = "ports";
+      }
+
+      this.ContainerApplication_page(page);
     },
 
     device_id: function () {
@@ -113,7 +141,6 @@ $ctl.application.Devicectl = $tc.extend(
 
     },
 
-
     permission_ui: function () {
       //let $e = this.$c.toolbar.$e;
       //let facility = this.facilities[this.facility()];
@@ -122,10 +149,673 @@ $ctl.application.Devicectl = $tc.extend(
       //$e.button_import_facility.grainy_toggle(`facility.${org}`, "c");
     }
 
-
   },
   $ctl.application.ContainerApplication
 );
+
+/**
+ * Extends the twentyc.rest.Select widget to show and process the device
+ * currently selected for the application.
+ *
+ * @class $ctl.application.Devicectl.DeviceSelect
+ * @extends twentyc.rest.Select
+ * @namespoace $ctl.application.Devicectl
+ * @constructor
+ */
+
+$ctl.application.Devicectl.DeviceSelect = $tc.extend(
+  "DeviceSelect",
+  {
+    DeviceSelect: function (jq) {
+      this.Select(jq);
+
+      $(this).on("load:after", (event, element, data) => {
+        if(!data.length) {
+          $('.no-devices').show();
+          $('.device-container').hide();
+        } else {
+          $('.no-devices').hide();
+          $('.device-container').show();
+          this.sync();
+        }
+      });
+
+      $(this.element).on("change", () => {
+        this.sync();
+      });
+    },
+
+    sync : function() {
+      $ctl.devicectl.$t.virtual_ports.sync();
+      $ctl.devicectl.$t.logical_ports.sync();
+      $ctl.devicectl.$t.physical_ports.sync();
+      $ctl.devicectl.$t.device.show_device(this.element.val());
+    },
+
+    format_request_url : function(url) {
+      return url.replace(/facility_tag/g, $ctl.devicectl.facility_slug());
+    }
+  },
+  twentyc.rest.Select
+);
+
+/**
+ * Extended twentyc.rest list widget that will render a device
+ * dashboard of device tiles, showing devices that are currently
+ * showing operational issues
+ *
+ * @class $ctl.application.Devicectl.DeviceDashboard
+ * @extends $ctl.application.Tool
+ * @namespoace $ctl.application.Devicectl
+ * @constructor
+ */
+
+$ctl.application.Devicectl.DeviceDashboard = $tc.extend(
+  "DeviceDashboard",
+  {
+    DeviceDashboard: function () {
+      this.Tool("device_dashboard");
+    },
+
+    init: function() {
+      this.widget("list", ($e) => {
+        return new twentyc.rest.List(
+          this.template("list", this.$e.body)
+        );
+      });
+
+      this.$w.list.formatters.row = (row, data) => {
+        if(data.operational_status == "error") {
+          row.addClass("badge bg-danger");
+        }
+
+        row.click(() => {
+
+          $(fullctl.devicectl.$c.toolbar.$w.select_device).one("load:after", ()=> {
+            fullctl.devicectl.$c.toolbar.$w.select_device.element.val(data.id);
+            fullctl.devicectl.$c.toolbar.$w.select_device.sync();
+          })
+
+          if(data.facility != parseInt(fullctl.devicectl.facility())) {
+
+            fullctl.devicectl.select_facility(data.facility);
+
+          }
+
+          fullctl.devicectl.page("ports");
+        })
+      };
+
+      this.sync();
+    },
+
+    sync : function() {
+      if (!$ctl.devicectl) {
+        return;
+      }
+      let namespace = `device.${$ctl.org.id}`
+      if (!grainy.check(namespace, "r")) {
+        return;
+      }
+      this.$w.list.load();
+    }
+  },
+  $ctl.application.Tool
+);
+
+/**
+ * Config loader widget
+ *
+ * @class ConfigLoader
+ * @extends twentyc.rest.widget
+ * @namespace twentyc.rest
+ * @constructor
+ */
+
+
+$ctl.application.Devicectl.ConfigLoader = $tc.extend(
+  "ConfigLoader",
+  {
+    ConfigLoader: function(jq) {
+      var base_url = jq.data("api-base");
+      this.Widget(base_url, jq);
+    },
+
+    bind : function(jq) {
+      this.Widget_bind(jq);
+      this.config_content = jq.find(".config-content")
+      this.button_raw = jq.find("[data-element=button_raw]")
+      this.button_source = jq.find("[data-element=button_source]")
+      this.syntax_highlight = this.config_content.data("syntax-highlight")
+    },
+
+    /**
+     * loads config
+     *
+     * triggers load:after event
+     *
+     * @method load
+     */
+
+    load : function() {
+      this.config_content.empty();
+      return this.get(this.action, this.payload()).then(function(response) {
+        let config = response.first();
+        if(!config)
+          return;
+
+        let code_block = $("<pre>").addClass("language-diff").text(config.config);
+        this.config_content.append(code_block);
+
+        if(this.syntax_highlight) {
+          hljs.highlightBlock(code_block[0]);
+        }
+
+        this.button_raw.attr("href", this.format_request_url(this.base_url) + "/plain");
+        this.button_source.attr("href", config.url);
+      }.bind(this));
+    },
+  },
+  twentyc.rest.Widget
+);
+
+/**
+ * Report listing widget, with functionality to expand and pretty-render
+ * referee reports depending on report type
+ * 
+ * @class DeviceReportList
+ * @extends twentyc.rest.List
+ * @namespace $ctl.application.Devicectl
+ * @constructor
+ */
+
+$ctl.application.Devicectl.DeviceReportList = $tc.extend(
+  "DeviceReportList",
+  {
+    DeviceReportList: function(jq) {
+      this.List(jq);
+      this.device_id = 0;
+    
+      this.local_action("toggle_view_report", this.toggle_view_report.bind(this));
+      this.formatters.row = (row, data) => {
+        let button_download = row.find("[data-element=button_download_report]");
+        let device_id = this.device_id;
+        button_download.attr("href", this.base_url.replace("/0/", `/${device_id}/`) + "/" + data.id + "/plain");
+      };
+    },
+
+    /**
+     * Will toggle the visibility of the report for a row
+     * 
+     * Toggling visibility on will also load the report if it has not been loaded yet
+     * 
+     * @method toggle_view_report
+     * @param {*} data 
+     * @param {*} row 
+     * @returns 
+     */
+
+    toggle_view_report : function(data, row) {
+      let report_container = $(row.get(1))
+
+      if(report_container.is(":visible")) {
+        report_container.hide();
+        return;
+      }
+
+      report_container.show();
+      this.get(data.id).then((response) => {
+        let report = response.first();
+        report_container.find('div.report').empty().append(
+          this.render_report(report.kind, report.report_data)
+        );
+      });
+    },
+
+    /**
+     * renders a report
+     * 
+     * @method render_report
+     * @param {String} kind
+     * @param {Object} report_data
+     * @returns {jQuery} report element
+     */
+
+    render_report : function(kind, report_data) {
+      let method_name = `_render_${kind}_report`;
+      if(typeof this[method_name] == "function") {
+        return this[method_name](report_data);
+      }
+      return $("<pre>").text(report_data);
+    },
+
+    /**
+     * Renders a stacked report 
+     * 
+     * report data will be an object literal that will be stringified
+     * and rendered with syntax highlighting set to json
+     * 
+     * @method _render_stacked_report
+     * @param {Object} report_data
+     * @returns {jQuery} report element
+     */
+
+    _render_stacked_report : function(report_data) {
+      let report_string = JSON.stringify(report_data, null, 2);
+      let report = $("<pre>").addClass("language-json").text(report_string);
+      hljs.highlightBlock(report[0]);
+      return report;
+    },
+
+    /**
+     * Renders a snapshot report
+     * 
+     * report data will be an object literal that will be stringified
+     * and rendered with syntax highlighting set to json
+     */
+
+    _render_snapshot_report : function(report_data) {
+      let report_string = JSON.stringify(report_data, null, 2);
+      let report = $("<pre>").addClass("language-json").text(report_string);
+      hljs.highlightBlock(report[0]);
+      return report;
+    },
+
+    /**
+     * renders a sequential report row by row
+     * 
+     * report_data will be an array of strings representing each row
+     * 
+     * row format is: [{source name}] {path}: {value}
+     * 
+     * @method _render_sequential_report
+     * @param {Array} report_data
+     * @returns {jQuery} report element
+     */
+
+    _render_sequential_report : function(report_data) {
+
+      let report = $("<div>").addClass("sequential-report");
+
+      $(report_data).each(function() {
+
+        // regex parse row into source_name, path and value
+
+        let row = this.match(/^\[(.*)\] (.*)\: (.*)$/);
+
+        // create row element
+
+        let row_element = $("<div>").addClass("row report-row");
+
+        // create source name element
+
+        let source_name = $("<div>").addClass("col-2 source-name").text(row[1]);
+        row_element.append(source_name);
+
+        // create path element
+
+        let path = $("<div>").addClass("col-7 path").text(row[2]);
+        row_element.append(path);
+
+        // create value element
+
+        let value = $("<div>").addClass("col-3 value").text(row[3]);
+        row_element.append(value);
+
+        report.append(row_element);
+      });
+
+      return report;
+
+    }
+
+  },
+  twentyc.rest.List
+);
+
+/**
+ * Device details tool
+ */
+
+$ctl.application.Devicectl.DeviceDetails = $tc.extend(
+  "DeviceDetails",
+  {
+    DeviceDetails: function () {
+      this.Tool("device_details");
+      this.device_id = 0;
+      this.config_history_loaded = false;
+      this.reports_loaded = false;
+
+      $("#deviceStatusTabs")
+    },
+
+    init : function() {
+
+      // create device details widget that holds device kind, facility, sessions and events
+
+      this.widget("device", ($e) => {
+        return new $ctl.application.Devicectl.DeviceWidget(
+          this.template("device_widget", this.$e.device_container)
+        );
+      });
+
+      // create operational status widget (will show error message if status is error)
+
+      this.widget("operational_status", ($e) => {
+        return new twentyc.rest.Form(
+          this.template("device_operational_status", this.$e.operational_status_container)
+        );
+      });
+
+      // create config history listing widget
+
+      this.widget("config_history", ($e) => {
+        return new twentyc.rest.List(
+          this.template("device_config_history", this.$e.config_history_container)
+        )
+      });
+
+      // create config changes widget
+
+      this.widget("config_changes", ($e) => {
+        return new $ctl.application.Devicectl.ConfigLoader(
+          this.template("device_config_changes", this.$e.config_changes_container)
+        )
+      });
+
+      // create current config widget
+
+      this.widget("current_config", ($e) => {
+        return new $ctl.application.Devicectl.ConfigLoader(
+          this.template("device_current_config", this.$e.current_config_container)
+        )
+      });
+
+      // create reference config widget
+
+      this.widget("reference_config", ($e) => {
+        return new $ctl.application.Devicectl.ConfigLoader(
+          this.template("device_reference_config", this.$e.reference_config_container)
+        )
+      });
+
+      // create report listing widget
+
+      this.widget("reports", ($e) => {
+        return new $ctl.application.Devicectl.DeviceReportList(
+          this.template("device_reports", this.$e.device_reports_container)
+        )
+      });
+
+
+      // url formatting to replace /0/ with /<device_id>/ across
+      // all widgets
+
+      this.$w.config_changes.format_request_url = (url) => {
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+
+      this.$w.current_config.format_request_url = (url) => {
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+
+      this.$w.reference_config.format_request_url = (url) => {
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+
+      this.$w.config_history.format_request_url = (url) => {
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+
+      this.$w.reports.format_request_url = (url) => {
+        console.log("URL", url, url.replace("/0/", "/"+this.device_id+"/"))
+        return url.replace("/0/", "/"+this.device_id+"/");
+      };
+
+      // set up config history listing widget
+
+      this.$w.config_history.formatters.error_message = (value, data) => {
+        if(value) {
+          return $("<div class='text-danger'>").text(value);
+        }
+        return value;
+      };
+      // format status to be a badge
+
+      this.$w.config_history.formatters.status = (value, data) => {
+        let badge = $("<span>").addClass("badge");
+        if(data.status=="ok") {
+          badge.addClass("bg-success");
+        } else if(data.status=="error") {
+          badge.addClass("bg-danger");
+        }
+        return badge.text(data.status);
+      };
+
+      this.$w.config_history.formatters.created = fullctl.formatters.datetime;
+
+      this.$w.reports.formatters.created = fullctl.formatters.datetime;
+
+      // upon showing the config history tab, load the config history
+      // if it has not been loaded yet
+      $('#history-tab').on('show.bs.tab', () => {
+        this.$w.config_history.load().then(() => {this.config_history_loaded = true;})
+      });
+
+      // upon showing the reports tab, load the reports
+      // if they have not been loaded yet
+      $('#reports-tab').on('show.bs.tab', () => {
+        this.$w.reports.load().then(() => {this.reports_loaded = true;})
+      });
+
+      // upon showing the changes tab, load the config changes diff
+      $('#changes-tab').on('show.bs.tab', () => {
+        this.$w.config_changes.load();
+      });
+
+      // upon showing the current-config tab, load the current config
+      $('#current-config-tab').on('show.bs.tab', () => {
+        this.$w.current_config.load();
+      });
+
+      // upon showing the reference-config tab, load the reference config
+      $('#reference-config-tab').on('show.bs.tab', () => {
+        this.$w.reference_config.load();
+      });
+
+    },
+
+    show_device : function(device_id) {
+
+      this.device_id = device_id;
+      this.config_history_loaded = false;
+      this.reports_loaded = false;
+      this.$w.reports.device_id = device_id;
+
+      // select device-detail-tab
+
+      $("#device-detail-tab").tab("show");
+
+      this.$w.device.get(""+device_id).then(
+        (response) => {
+          let device = response.first();
+          this.$e.menu.find('.device-name').text(device.display_name);
+          this.$e.menu.find('.operational-status').text(
+            device.operational_status == "error" ? "Issues" : "Ok"
+          ).addClass(
+            device.operational_status == "error" ? "bg-danger" : "bg-success"
+          ).removeClass(
+            device.operational_status == "error" ? "bg-success" : "bg-danger"
+          );
+          this.$w.device.fill(device);
+          //$("#device-detail-tab").tab("show");
+
+          this.render_service_links(device);
+          this.show_graph_controls(device);
+          this.show_graph(device);
+        }
+      )
+
+      this.$w.operational_status.get(device_id+"/operational_status").then(
+        (response) => {
+
+          // 200 response, check device operational status
+
+          let status = response.first();
+
+          if(status.status == "error")
+            this.$w.operational_status.element.find('.error-message').show();
+          else
+            this.$w.operational_status.element.find('.error-message').hide();
+
+          this.$w.operational_status.fill(status);
+
+        },
+        () => {
+
+          // fail response (404 when device has never had operational status set, for now just assume device is ok)
+
+          this.$w.operational_status.element.find('.error-message').hide();
+          this.$w.operational_status.fill({
+            status: "ok"
+          });
+
+        }
+      )
+    },
+
+    /**
+     * Will render relevant service links (like peerctl session overview)
+     *
+     * This is called automatically when the device is loaded
+     * @method render_service_links
+     */
+
+    render_service_links: function(device) {
+      // first we check if the app link to peerctl exists for the user
+      // by finding a[data-slug=peerctl]
+
+      let $peerctl_link = $('a[data-slug=peerctl]').attr('href');
+      let $auditctl_link = $('a[data-slug=auditctl]').attr('href');
+
+      let facility_slug = device.facility_slug;
+      let device_id = device.id;
+      let device_name = device.name;
+
+      if($peerctl_link) {
+        this.$w.device.element.find('[data-field="peerctl_sessions_url"]').empty().append(
+          $('<a>').attr('href', $peerctl_link + `#page-summary-sessions;${facility_slug};${device_id};;`).append(
+            $('<img>').attr('src', `${fullctl.static_path}common/logos/peerctl-dark.svg`).addClass("service-link")
+          ).append(
+            $('<span class="icon icon-logout">')
+          )
+        )
+        this.$w.device.element.find('.peerctl-link').show();
+      } else {
+        this.$w.device.element.find('.peerctl-link').hide();
+      }
+
+      if($auditctl_link) {
+        this.$w.device.element.find('[data-field="auditctl_events_url"]').empty().append(
+          $('<a>').attr('href', $auditctl_link + `/?q=config/device/${device_name}`).append(
+            $('<img>').attr('src', `${fullctl.static_path}common/logos/auditctl-dark.svg`).addClass("service-link")
+          ).append(
+            $('<span class="icon icon-logout">')
+          )
+        )
+        this.$w.device.element.find('.auditctl-link').show();
+      } else {
+        this.$w.device.element.find('.auditctl-link').hide();
+      }
+    },
+
+    // Function to indicate loading
+    indicate_loading : function() {
+      let graph_container = this.$w.device.element.find("[data-element=graph_container]");
+      console.log("LOADING GRAPH", graph_container.length, fullctl.template("graph_placeholder"))
+      graph_container.empty().append(
+        fullctl.template("graph_placeholder")
+      );
+      return this;
+    },
+
+    show_graph_controls(device) {
+      let node = this.$w.device.element;
+      fullctl.graphs.init_controls(node, this, (end_date, duration)=>{
+        this.indicate_loading().show_graph(device, end_date, duration);
+      });
+      node.find('.graph-controls').show();
+      return this;
+    },
+
+    // Function to show graphs
+    show_graph : function(device, end_date, duration) {
+      let graph_container = this.$w.device.element.find("[data-element=graph_container]");
+      let url = twentyc.rest.url.url_join(
+        this.$w.device.element.data('api-base'),
+        device.id,
+        "traffic"
+      );
+      let params = [];
+      if (end_date) {
+        params.push('start_time=' + end_date);
+      }
+      if (end_date && duration) {
+        params.push('duration=' + duration);
+      }
+      if (params.length > 0) {
+        url += '?' + params.join('&');
+      }
+      fullctl.graphs.render_graph_from_file(
+        url,
+        ".graph_container",
+        device.display_name,
+      ).then(() => {
+        // check if a svg has been added to the container, if not, graph data was empty
+        if(graph_container.find("svg").length == 0) {
+          graph_container.empty().append(
+            $('<div class="alert alert-info">').append(
+              $('<p>').text("No traffic data available for this device.")
+            )
+          )
+        } else {
+          this.$e.refresh_traffic_graph.show();
+        }
+      })
+    }
+
+  },
+  $ctl.application.Tool
+);
+
+$ctl.application.Devicectl.DeviceWidget = $tc.extend(
+  "DeviceWidget",
+  {
+    DeviceWidget: function (jq) {
+      this.Form(jq);
+    },
+
+    fill : function(data) {
+      this.Form_fill(data);
+      this.element.find('.meta-row').remove();
+      if (!data.meta) {
+        return;
+      }
+      for (const key in data.meta) {
+        const row = this.template("device_widget_info_row");
+        row.addClass("meta-row");
+
+        let formatted_key = key.split('_').join(' '); // replace underscores with sapces
+        row.find(".key").text(formatted_key);
+
+        row.find(".value").text(data.meta[key]);
+        this.element.find("#management-ips").before(row);
+      }
+    }
+  },
+  twentyc.rest.Form
+);
+
 
 $ctl.application.Devicectl.Devices = $tc.extend(
   "Devices",
@@ -136,9 +826,9 @@ $ctl.application.Devicectl.Devices = $tc.extend(
     },
 
     init: function () {
-      // v2 - create delete selected button
+
       this.delete_selected_button = this.$t.button_delete_selected;
-      // v2 - create SelectionList
+
       this.widget("list", ($e) => {
         return new $ctl.widget.SelectionList(
           this.template("list", this.$e.body),
@@ -176,6 +866,12 @@ $ctl.application.Devicectl.Devices = $tc.extend(
             $(this).hide()
           }
         });
+
+        let view_api_btn = row.find('a[data-action="view_api"]');
+        view_api_btn.click(() => {
+          let device = row.data("apiobject");
+          window.open($(view_api_btn).attr("data-api-url").replace("0", device.id) + "?pretty");
+        })
 
         if (!grainy.check(data.grainy, "d")) {
           row.find('a[data-api-method="DELETE"]').hide();
@@ -607,7 +1303,7 @@ $ctl.application.Devicectl.ModalPhysicalPort = $tc.extend(
       )
 
       logical_port_select.format_request_url = (url) => {
-        return url.replace("/0/", "/" + fullctl.devicectl.device_id() + "/");
+        return url.replace("/fac_tag/", "/" + fullctl.devicectl.facility_slug() + "/");
       };
 
       logical_port_select.load().then(() => {

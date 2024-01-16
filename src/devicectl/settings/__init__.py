@@ -97,6 +97,9 @@ settings_manager.set_option("SERVICE_BRIDGE_REF_PORT_INFO", "")
 settings_manager.set_option(
     "SERVICE_BRIDGE_REF_FACILITY", "fullctl.service_bridge.pdbctl.Facility"
 )
+settings_manager.set_option(
+    "SERVICE_BRIDGE_REF_EVENT", "fullctl.service_bridge.auditctl.Event"
+)
 
 # OUTSIDE SERVICES
 
@@ -105,6 +108,7 @@ settings_manager.set_option("GOOGLE_ANALYTICS_ID", "")
 settings_manager.set_option("NAUTOBOT_URL", "")
 settings_manager.set_option("NAUTOBOT_TOKEN", "")
 settings_manager.set_option("NAUTOBOT_DEVICE_ROLE", ["Edge Router"])
+settings_manager.set_option("NAUTOBOT_INTERFACE_PHYSICAL", ["sfp"])
 
 # FINALIZE
 
@@ -119,3 +123,12 @@ settings.print_debug(f"loaded settings for version {PACKAGE_VERSION} (DEBUG: {DE
 
 
 settings_manager.set_option("PREFIXCTL_URL", "")
+settings_manager.set_option("PEERCTL_URL", "")
+settings_manager.set_option("AUDITCTL_URL", "")
+
+
+settings_manager.set_option("GRAPHS_PATH", "../graphs")
+settings_manager.set_option("GRAPHS_URL", "/graphs")
+
+# when are referee reports discarded (seconds, default=30 days)
+settings_manager.set_option("REFEREE_REPORT_MAX_AGE", 86400 * 30)

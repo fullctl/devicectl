@@ -8,10 +8,10 @@
   data-template="list">
   <thead>
     <tr>
-      <th data-sort-target="name" class="sortable-button">{% trans "Name" %}</th>
+      <th data-sort-target="name" class="sortable-button" data-sort-initial="yes" data-sort-secondary="status">{% trans "Name" %}</th>
       <th data-sort-target="type" class="sortable-button">{% trans "Type" %}</th>
-      <th data-sort-target="type" class="sortable-button">{% trans "IP" %}</th>
-      <th>{% trans "Status" %}</th>
+      <th>{% trans "IP" %}</th>
+      <th data-sort-target="status" class="sortable-button">{% trans "Status" %}</th>
       <th></th>
     </tr>
   </thead>
@@ -57,11 +57,12 @@
         </div>
 
         <div style="display:none;" data-sot="devicectl">
-          <a class="button btn" data-action="edit_device" data-hover="show">
+          <a class="button btn" data-action="edit_device" data-hover="show" title="Edit Device">
             <span class="icon icon-edit"></span>
           </a>
           <a
             class="button btn delete"
+            title="Delete Device"
             data-hover="show"
             data-api-action="remove_device/{id}"
             data-api-callback="remove"
@@ -69,6 +70,15 @@
             data-api-method="DELETE"
           >
             <span class="icon icon-delete"></span>
+          </a>
+          <a
+            class="button btn"
+            title="View API"
+            data-hover="show"
+            data-action="view_api"
+            data-api-url="{% url "devicectl_api:device-detail" org_tag=org.slug device_id=0 %}"
+          >
+            <span class="icon icon-api"></span>
           </a>
           <button class="btn">
             <span class="icon icon-options"></span>

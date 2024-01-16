@@ -1,3 +1,7 @@
+ARG base_repo=python
+ARG base_tag=3.11-alpine
+ARG builder_repo=ghcr.io/fullctl/fullctl-builder-alpine
+ARG builder_tag=prep-release
 
 ARG virtual_env=/venv
 ARG install_to=/srv/service
@@ -5,12 +9,14 @@ ARG build_deps=""
 ARG run_deps=" \
     libgcc \
     postgresql-libs \
+    rrdtool-dev \
+    libstdc++ \
     "
 # XXX ARG extra_pip_install
 ARG uid=6300
 ARG user=fullctl
 
-FROM python:3.9-alpine as base
+FROM ${base_repo}:${base_tag} as base
 
 ARG virtual_env
 ARG install_to
@@ -23,7 +29,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 
 # build container
-FROM ghcr.io/fullctl/fullctl-builder-alpine:prep-release as builder
+FROM $builder_repo:$builder_tag as builder
 
 ARG extra_pip_install_dir
 
@@ -31,7 +37,12 @@ ARG extra_pip_install_dir
 COPY pyproject.toml poetry.lock $extra_pip_install_dir ./
 
 # Need to upgrade pip and wheel within Poetry for all its installs
+RUN apk add rrdtool-dev
 RUN poetry install --no-root
+
+# Cant be in poetry because that fails to install unless rrdtool
+# is installed in the system, so it breaks github CI for linting and stuff
+RUN pip install rrdtool
 
 RUN test -z "$extra_pip_install_dir" || pip install *.tar.gz
 

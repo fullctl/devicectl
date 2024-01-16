@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "devicectl"
 repository = "https://github.com/fullctl/devicectl"
-version = "0.3.1-rc14"
+version = "1.0.0"
 description = "device control"
 authors = ["20C <code@20c.com>"]
 license = "Apache-2.0"
@@ -19,12 +19,17 @@ devicectl = "devicectl.cli:main"
 
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.9"
 fullctl = { git = "https://github.com/fullctl/fullctl.git", branch = "prep-release" }
+pygments = "^2.14"
+
+# graphs
+matplotlib = "^3.7.2"
+pandas = "^2.0.3"
+cairosvg = "^2.7.0"
 
 [tool.poetry.dev-dependencies]
 # testing
-codecov = ">=2"
 coverage = ">=5"
 pytest = ">=6"
 pytest-django = ">=3.8"

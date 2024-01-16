@@ -101,6 +101,30 @@ def sync_custom_fields():
     )
 
 
+def sync_tags(nautobot_object, devicectl_object):
+    """
+    Will transfer the tags from a nautobot object to a devicectl object
+
+    Requires the devicectl model to have a `meta` JSON field
+
+    Will return True if the tags have changed, False if not
+    """
+
+    if not nautobot_object.tags:
+        return False
+
+    if not devicectl_object._meta.get_field("meta"):
+        return False
+
+    tags = sorted([tag["slug"] for tag in nautobot_object.tags])
+
+    if tags != devicectl_object.meta.get("tags", []):
+        devicectl_object.meta["tags"] = tags
+        return True
+
+    return False
+
+
 def pull_ip_addresses(virtual_port):
     """
     Pull ip addresses into port infos from nautobot for the specified virtualport
@@ -132,15 +156,37 @@ def pull_ip_addresses(virtual_port):
         virtual_port.port.port_info.ip_address_6 = None
 
 
+def interface_is_physical(typ):
+    """
+    For interfaces that arent marked as logical or virtual in nautobot
+
+    Compares the nautobot interface type value against a list of
+    tokens to determine if we want to pull the interface into devicectl
+
+    If any token is found inside the type identifier of the interface
+    devicectl will pull it in and create a physical, logical and virtual port chain
+    for it.
+    """
+
+    for phy_if_name in settings.NAUTOBOT_INTERFACE_PHYSICAL:
+        if phy_if_name.lower() in typ.lower():
+            return True
+    return False
+
+
 def pull_interfaces(device):
     """
     Pulls interfaces into virtual ports from nautobot for the specified devices
     """
 
-    for nautobot_if in nautobot.Interface().objects(device_id=str(device.reference)):
+    for nautobot_if in nautobot.Interface().objects(
+        device_id=str(device.reference), limit=NAUTOBOT_PAGE_LIMIT
+    ):
         # for now only pull virtual and lag  interfaces
 
-        if nautobot_if.type.value in ["virtual", "lag"]:
+        if nautobot_if.type.value in ["virtual", "lag"] or interface_is_physical(
+            nautobot_if.type.value
+        ):
             pull_interface(nautobot_if, device)
 
 
@@ -164,6 +210,20 @@ def pull_interface(nautobot_if, device):
                 instance=device.instance,
             )
             models.PhysicalPort.objects.create(device=device, logical_port=logical_port)
+        elif interface_is_physical(nautobot_if.type.value):
+            if getattr(nautobot_if, "lag", None):
+                # we dont want to pull in lag interfaces through this
+                return
+
+            # interface is physical
+            logical_port = models.LogicalPort.objects.create(
+                name=nautobot_if.display,
+                instance=device.instance,
+            )
+            models.PhysicalPort.objects.create(
+                device=device, logical_port=logical_port, name=nautobot_if.display
+            )
+
         virtual_port = models.VirtualPort.objects.create(
             reference=nautobot_if.id,
             vlan_id=0,
@@ -171,12 +231,16 @@ def pull_interface(nautobot_if, device):
             name=nautobot_if.display,
         )
 
-    changed = virtual_port.sync_from_reference(ref_obj=nautobot_if)
+    changed = virtual_port.sync_from_reference(ref_obj=nautobot_if) or sync_tags(
+        nautobot_if, virtual_port
+    )
+
     if changed:
         virtual_port.save()
-
         if nautobot_if.type.value == "lag":
             virtual_port.logical_port.name = virtual_port.name
+            virtual_port.logical_port.description = virtual_port.description
+            sync_tags(nautobot_if, virtual_port.logical_port)
             virtual_port.logical_port.save()
 
     try:
@@ -239,7 +303,15 @@ def pull(org, *args, **kwargs):
         )
         print(f"[PULL] Nautobot device {nautobot_device.name} {device.reference} ...")
         references.append(device.reference)
-        changed = device.sync_from_reference(ref_obj=nautobot_device)
+        changed = device.sync_from_reference(ref_obj=nautobot_device) or sync_tags(
+            nautobot_device, device
+        )
+
+        if nautobot_device.platform:
+            platform = nautobot_device.platform.slug
+            if platform != device.meta.get("platform"):
+                device.meta["platform"] = platform
+                changed = True
 
         if changed or created:
             device.save()
@@ -281,7 +353,6 @@ def push(org, *args, **kwargs):
     """
     Push data to nautobot
     """
-
     # make sure required custom fields exist on the nautobot side
 
     sync_custom_fields()
@@ -289,38 +360,36 @@ def push(org, *args, **kwargs):
     # preload nautobot data
 
     nautobot_sites = [fac for fac in nautobot.Site().objects(limit=NAUTOBOT_PAGE_LIMIT)]
-    # nautobot_devices = [
-    #
-    #     dev for dev in nautobot.Device().objects(limit=NAUTOBOT_PAGE_LIMIT)
-    # ]
 
     # sync devicectl facility -> nautobot site
 
-    for fac in models.Facility.objects.exclude(slug="pdb"):
+    for fac in models.Facility.objects.exclude(slug="pdb").exclude(slug="peerctl"):
         exists = False
 
         for nautobot_site in nautobot_sites:
+            # check if id match exists
             if nautobot_site.custom_fields.devicectl_id == fac.id:
                 exists = nautobot_site
                 break
 
         if not exists:
+            # check if slug match exists
+            for nautobot_site in nautobot_sites:
+                if nautobot_site.slug.lower() == fac.slug.lower():
+                    exists = nautobot_site
+                    break
+
+        if not exists:
+            # site does not exist (searched slug and devicectl reference id matches)
+            # create it
+
             nautobot_site = nautobot.Site().create(fac.service_bridge_data("nautobot"))
-            # nautobot_site = nautobot.Site().object(data["id"])
+
         else:
+            # site exists (searched slug and devicectl reference id matches)
+            # update it
+
             nautobot.Site().update(exists, fac.service_bridge_data("nautobot"))
-
-        # assign nautobot facility to site accordign to devicectl
-        # facility device allocation
-
-        # device location managed in nautobot for now. this needs to support stuff like
-        # rack location otherwise. TODO: revisit if needed
-        # for device in fac.devices.all():
-        #    for nautobot_device in nautobot_devices:
-        #        if str(nautobot_device.id) == str(device.reference):
-        #            nautobot.Device().partial_update(
-        #                nautobot_device, {"site": str(nautobot_site.id)}
-        #            )
 
     # delete nautobot sites if they no longer exist as facilities in devicectl
     for site in nautobot_sites:

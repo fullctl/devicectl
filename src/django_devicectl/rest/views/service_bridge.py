@@ -1,7 +1,8 @@
 from fullctl.django.rest.route.service_bridge import route
-from fullctl.django.rest.views.service_bridge import (  # MethodFilter,
+from fullctl.django.rest.views.service_bridge import (
     DataViewSet,
     HeartbeatViewSet,
+    MethodFilter,
     StatusViewSet,
 )
 from rest_framework.decorators import action
@@ -9,6 +10,7 @@ from rest_framework.response import Response
 
 import django_devicectl.models.devicectl as models
 from django_devicectl.rest.serializers.service_bridge import Serializers
+from django_devicectl.rest.views.devicectl import PortTrafficMixin
 
 
 @route
@@ -52,6 +54,7 @@ class Device(DataViewSet):
         ("port", "physical_ports__logical_port__virtual_ports__port__in"),
         ("facility", "facility_id"),
         ("facility_slug", "facility__slug"),
+        ("device", "physical_ports__device_id"),
     ]
     autocomplete = "name"
     allow_unfiltered = True
@@ -66,14 +69,73 @@ class Device(DataViewSet):
             obj.facility_id = data.get("facility")
             obj.save()
 
+    @action(
+        detail=True,
+        methods=["POST"],
+        serializer_class=Serializers.device_operational_status,
+    )
+    def set_operational_status(self, request, pk, *args, **kwargs):
+        device = self.get_object()
+
+        data = self.prepare_write_data(request)
+        data["device"] = device.id
+
+        # check if DeviceOperationalStatus already exists for device
+
+        try:
+            device_operational_status = models.DeviceOperationalStatus.objects.get(
+                device=device
+            )
+        except models.DeviceOperationalStatus.DoesNotExist:
+            device_operational_status = None
+
+        slz = Serializers.device_operational_status(
+            instance=device_operational_status, data=data
+        )
+        slz.is_valid(raise_exception=True)
+        instance = slz.save()
+
+        models.DeviceConfigHistory.objects.create(
+            device=instance.device,
+            status=instance.status,
+            error_message=instance.error_message,
+            event=instance.event,
+            url_current=instance.url_current,
+            url_reference=instance.url_reference,
+            config_current=instance.config_current,
+            config_reference=instance.config_reference,
+        )
+
+        return Response(slz.data)
+
+    @action(
+        detail=True,
+        methods=["POST"],
+        serializer_class=Serializers.device_referee_report,
+    )
+    def push_referee_report(self, request, pk, *args, **kwargs):
+        device = self.get_object()
+        data = self.prepare_write_data(request)
+        data["device"] = device.id
+        slz = Serializers.device_referee_report(data=data)
+        slz.is_valid(raise_exception=True)
+        instance = slz.save()
+        return Response(Serializers.device_referee_report(instance).data)
+
 
 @route
 class Port(DataViewSet):
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
+        ("ids", "id__in"),
         ("org", "virtual_port__logical_port__instance__org__remote_id"),
+        ("org_slug", "virtual_port__logical_port__instance__org__slug"),
         ("device", "virtual_port__logical_port__physical_ports__device_id"),
+        ("devices", "virtual_port__logical_port__physical_ports__device_id__in"),
+        ("ip", MethodFilter("ip")),
+        ("has_ips", MethodFilter("has_ips")),
+        ("q", MethodFilter("autocomplete")),
     ]
     allow_unfiltered = True
 
@@ -82,6 +144,7 @@ class Port(DataViewSet):
 
     join_xl = {
         "device": [],
+        "physical_ports": [],
     }
 
     def filter(self, qset, request):
@@ -94,6 +157,15 @@ class Port(DataViewSet):
         )
 
         return qset
+
+    def filter_ip(self, qset, value):
+        return qset.filter(port_info__ips__address__host=value)
+
+    def filter_has_ips(self, qset, value):
+        return qset.filter(port_info__ips__isnull=False).distinct("pk")
+
+    def filter_autocomplete(self, qset, value):
+        return models.Port.search(value, qset).distinct("pk")
 
     @action(
         detail=False, methods=["POST"], serializer_class=Serializers.request_dummy_ports
@@ -123,7 +195,7 @@ class Portinfo(DataViewSet):
 
 
 @route
-class VirtualPort(DataViewSet):
+class VirtualPort(PortTrafficMixin, DataViewSet):
     path_prefix = "/data"
     allowed_http_methods = ["GET"]
     valid_filters = [
@@ -147,6 +219,17 @@ class VirtualPort(DataViewSet):
                 data["vlan_id"] = 0
 
         return data
+
+    @action(detail=True, methods=["GET"], serializer_class=Serializers.port_traffic)
+    def traffic(self, request, pk, *args, **kwargs):
+        """
+        Returns current traffic data for the virtual port
+        """
+        return self._get_traffic(
+            self.get_queryset().get(id=pk),
+            request.GET.get("start_time"),
+            request.GET.get("duration"),
+        )
 
 
 @route

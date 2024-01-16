@@ -1,7 +1,9 @@
+import difflib
 import ipaddress
 
 import reversion
 from django.db import models, transaction
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from django_grainy.decorators import grainy_model
 from fullctl.django.fields.service_bridge import ReferencedObjectCharField
@@ -14,6 +16,8 @@ from fullctl.django.models.abstract import (
 from fullctl.django.models.concrete import Instance
 from fullctl.service_bridge import nautobot
 from netfields.fields import InetAddressField
+
+import django_devicectl.referee as referee_util
 
 
 @reversion.register()
@@ -113,6 +117,18 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
         except TypeError:
             return None
 
+    @property
+    def logical_ports(self):
+        """
+        returns all logical ports at the facility through device -> physical ports
+        """
+
+        logical_port_ids = [
+            p["physical_ports__logical_port_id"]
+            for p in self.devices.all().values("physical_ports__logical_port_id")
+        ]
+        return LogicalPort.objects.filter(id__in=logical_port_ids).distinct("id")
+
     def __str__(self):
         return f"{self.name} [#{self.id}]"
 
@@ -170,6 +186,13 @@ class Device(ServiceBridgeReferenceModel):
         help_text=_("Remote reference id"),
     )
 
+    meta = models.JSONField(
+        help_text=_("Meta data for this device"),
+        blank=True,
+        null=True,
+        default=dict,
+    )
+
     class HandleRef:
         tag = "device"
         unique_together = (("instance", "name"),)
@@ -191,7 +214,7 @@ class Device(ServiceBridgeReferenceModel):
 
     @property
     def display_name(self):
-        return f"{self.name} ({self.type})"
+        return self.name
 
     @property
     def logical_ports(self):
@@ -281,6 +304,7 @@ class Device(ServiceBridgeReferenceModel):
         management_port = self.management_port
 
         if ip.version == 4:
+            management_port.ip_address_4 = None
             if (
                 management_port.ip_address_4
                 and ipaddress.ip_interface(management_port.ip_address_4) == ip
@@ -288,6 +312,7 @@ class Device(ServiceBridgeReferenceModel):
                 return
             management_port.ip_address_4 = ip
         else:
+            management_port.ip_address_6 = None
             if (
                 management_port.ip_address_6
                 and ipaddress.ip_interface(management_port.ip_address_6) == ip
@@ -300,7 +325,7 @@ class Device(ServiceBridgeReferenceModel):
     def management_ip_address_4(self):
         return self.management_port.ip_address_4
 
-    def managmeent_ip_address_6(self):
+    def management_ip_address_6(self):
         return self.management_port.ip_address_6
 
     def setup(self):
@@ -328,6 +353,262 @@ class Device(ServiceBridgeReferenceModel):
         super().delete()
 
 
+class DeviceConfigStatus(HandleRefModel):
+
+    """
+    Abstract model for device config status models
+
+    Contains a diff of the configuration change
+
+    Stores config status (error or ok), error message and auditCtl event reference
+    """
+
+    status = models.CharField(
+        max_length=255,
+        choices=(
+            ("ok", "ok"),
+            ("error", "Error"),
+        ),
+        default="ok",
+        help_text=_("Configuration status"),
+    )
+
+    error_message = models.TextField(
+        null=True, blank=True, help_text=_("Configuration error")
+    )
+    event = ReferencedObjectCharField(
+        max_length=255,
+        bridge_type="event",
+        null=True,
+        blank=True,
+        help_text=_("auditCtl event reference"),
+    )  # type: ignore
+
+    config_current = models.TextField(
+        help_text=_("Current config contents"), blank=True, null=True
+    )
+    config_reference = models.TextField(
+        help_text=_("Reference config contents"), blank=True, null=True
+    )
+
+    url_current = models.URLField(
+        null=True, blank=True, help_text=_("Current config url")
+    )
+    url_reference = models.URLField(
+        null=True, blank=True, help_text=_("Reference config url")
+    )
+
+    class Meta:
+        abstract = True
+
+    @property
+    def diff(self):
+        """
+        Returns the diff between the current and reference config using difflib
+
+        TODO: cache in a field?
+        """
+
+        a = self.config_current or ""
+        b = self.config_reference or ""
+
+        if not a and not b:
+            return ""
+
+        a = a.splitlines(keepends=True)
+        b = b.splitlines(keepends=True)
+
+        diff = difflib.unified_diff(a, b, lineterm="")
+
+        return "\n".join(diff)
+
+
+@grainy_model(
+    namespace="device",
+    namespace_instance="device.{instance.org.permission_id}.{instance.id}",
+)
+class DeviceOperationalStatus(DeviceConfigStatus):
+
+    """
+    Describes a device's current operational status.
+
+    auditCtl will post to this model to indicate the operational status of a device when
+    it receives a device status event.
+    """
+
+    device = models.OneToOneField(
+        Device,
+        related_name="operational_status",
+        on_delete=models.CASCADE,
+    )
+
+    class HandleRef:
+        tag = "device_operational_status"
+
+    class Meta:
+        db_table = "devicectl_device_operational_status"
+        verbose_name = _("Device Operational Status")
+        verbose_name_plural = _("Device Operational Statuses")
+
+    @property
+    def instance(self):
+        return self.device.instance
+
+    @property
+    def org(self):
+        return self.device.org
+
+    def get_current_config(self):
+        return (
+            DeviceConfigHistory.objects.filter(device=self.device)
+            .exclude(config_current__isnull=True)
+            .order_by("-created")
+            .first()
+        )
+
+    def get_reference_config(self):
+        return (
+            DeviceConfigHistory.objects.filter(device=self.device)
+            .exclude(config_reference__isnull=True)
+            .order_by("-created")
+            .first()
+        )
+
+    def __str__(self):
+        return f"DeviceOperationalStatus({self.id}) {self.device.name} {self.status}"
+
+
+@grainy_model(
+    namespace="device",
+    namespace_instance="device.{instance.org.permission_id}.{instance.id}",
+)
+class DeviceConfigHistory(DeviceConfigStatus):
+
+    """
+    Describes historical log of device configuration changes
+
+    auditCtl will post to this model to indicate the configuration of a device changed
+    """
+
+    device = models.ForeignKey(
+        Device,
+        related_name="config_history",
+        on_delete=models.CASCADE,
+    )
+
+    class HandleRef:
+        tag = "device_config_history"
+
+    class Meta:
+        db_table = "devicectl_device_config_history"
+        verbose_name = _("Device Config History")
+        verbose_name_plural = _("Device Config Histories")
+
+    @classmethod
+    def diff(cls, device):
+        """
+        Returns the diff between the current and reference config using difflib
+        for a specified device.
+
+        Will use the most recent reference and current config pushed to the history
+        for the device.
+
+        They may exist on separate history records.
+        """
+
+        current = (
+            DeviceConfigHistory.objects.filter(device=device)
+            .exclude(config_current__isnull=True)
+            .order_by("-created")
+            .first()
+        )
+
+        if not current:
+            return ""
+
+        reference = (
+            DeviceConfigHistory.objects.filter(device=device)
+            .exclude(config_reference__isnull=True)
+            .order_by("-created")
+            .first()
+        )
+
+        if not reference:
+            return ""
+
+        a = current.config_current or ""
+        b = reference.config_reference or ""
+
+        if not a and not b:
+            return ""
+
+        a = a.splitlines(keepends=True)
+        b = b.splitlines(keepends=True)
+
+        diff = difflib.unified_diff(a, b, lineterm="")
+
+        return "\n".join(diff)
+
+    @property
+    def org(self):
+        return self.device.org
+
+
+@grainy_model(
+    namespace="device",
+    namespace_instance="device.{instance.org.permission_id}.{instance.id}",
+)
+class DeviceRefereeReport(HandleRefModel):
+
+    """
+    Describes referee report of device configuration, which will describe
+    source of truth for configuration.
+    """
+
+    device = models.ForeignKey(
+        Device,
+        related_name="referee_reports",
+        on_delete=models.CASCADE,
+    )
+
+    report = models.JSONField(help_text=_("Report contents"))
+
+    kind = models.CharField(
+        max_length=255,
+        help_text=_("Report type. For example: 'stacked', 'sequential' etc."),
+        blank=True,
+        null=True,
+    )
+
+    class HandleRef:
+        tag = "device_referee_report"
+
+    class Meta:
+        db_table = "devicectl_device_referee_report"
+        verbose_name = _("Device Referee Report")
+        verbose_name_plural = _("Device Referee Reports")
+
+    def __str__(self):
+        return f"DeviceRefereeReport({self.id}) {self.device.name}"
+
+    @property
+    def instance(self):
+        return self.device.instance
+
+    @property
+    def org(self):
+        return self.device.org
+
+    def clean(self):
+        self.set_report_kind()
+
+    def set_report_kind(self):
+        """
+        Will set the report kind based on the report contents
+        """
+        self.kind = referee_util.get_report_kind(self.report)
+
+
 @reversion.register()
 @grainy_model(
     namespace="physical_port",
@@ -347,6 +628,13 @@ class PhysicalPort(HandleRefModel):
         help_text=_("Logical port this physical port is a member of"),
         related_name="physical_ports",
         on_delete=models.CASCADE,
+    )
+
+    meta = models.JSONField(
+        help_text=_("Meta data for this physical port"),
+        blank=True,
+        null=True,
+        default=dict,
     )
 
     class HandleRef:
@@ -407,6 +695,13 @@ class LogicalPort(HandleRefModel):
     description = DeviceDescriptionField()
     trunk = models.IntegerField(blank=True, null=True)
     channel = models.IntegerField(blank=True, null=True)
+
+    meta = models.JSONField(
+        help_text=_("Meta data for this logical port"),
+        blank=True,
+        null=True,
+        default=dict,
+    )
 
     class HandleRef:
         tag = "logical_port"
@@ -470,12 +765,22 @@ class VirtualPort(ServiceBridgeReferenceModel):
         help_text=_("Remote reference id"),
     )
 
+    meta = models.JSONField(
+        help_text=_("Meta data for this virtual port"),
+        blank=True,
+        null=True,
+        default=dict,
+    )
+
+    description = DeviceDescriptionField()
+
     class HandleRef:
         tag = "virtual_port"
 
     class ServiceBridge:
         map_nautobot = {
             "display": "name",
+            "description": "description",
         }
 
     class Meta:
@@ -624,16 +929,11 @@ class PortInfo(HandleRefModel):
         if address:
             family = ipaddress.ip_interface(address).version
             ip = self.ips.filter(address__family=family).first()
-
             if ip and str(ip.address) == str(address):
                 return
 
         if address:
-            ip_other = (
-                self.instance.ips.filter(address=address)
-                .exclude(port_info=self)
-                .first()
-            )
+            ip_other = self.instance.ips.filter(address=address).first()
 
         if not ip and address:
             if not ip_other and reference:
@@ -653,6 +953,9 @@ class PortInfo(HandleRefModel):
                 ip_other.save()
         else:
             if address and ip:
+                if ip_other:
+                    ip_other.delete()
+
                 ip.address = address
                 ip.reference = reference
                 ip.save()
@@ -734,6 +1037,43 @@ class Port(HandleRefModel):
         verbose_name = _("Port")
         verbose_name_plural = _("Ports")
 
+    @classmethod
+    def search(cls, value, qset=None):
+        """
+        Autocomplete search for ports
+        """
+
+        if not qset:
+            qset = cls.objects
+
+        filters = (
+            Q(name__icontains=value)
+            | Q(
+                virtual_port__logical_port__physical_ports__device__name__icontains=value
+            )
+            | Q(
+                virtual_port__logical_port__physical_ports__device__facility__name__icontains=value
+            )
+            | Q(
+                virtual_port__logical_port__physical_ports__device__facility__slug__iexact=value
+            )
+            | Q(virtual_port__name__icontains=value)
+            | Q(virtual_port__logical_port__name__icontains=value)
+            | Q(virtual_port__logical_port__physical_ports__name__icontains=value)
+            | Q(port_info__ips__address__startswith=value)
+        )
+
+        # check if value is ip
+        try:
+            ipaddress.ip_address(value)
+            filters |= Q(port_info__ips__address__host=value)
+            print("filtering by ip", value)
+        except ValueError:
+            print("not filtering by ip", value)
+            pass
+
+        return qset.filter(filters)
+
     @property
     def org(self):
         try:
@@ -762,7 +1102,10 @@ class Port(HandleRefModel):
 
     @property
     def device_id(self):
-        return self.device.id
+        try:
+            return self.device.id
+        except AttributeError:
+            return None
 
     @property
     def device_name(self):
