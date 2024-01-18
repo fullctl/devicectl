@@ -30,10 +30,18 @@ class OrgConcurrencyLimit(qualifiers.Base):
     def check(self, task):
         return (
             task.__class__.objects.filter(
-                status="pending", queue_id__isnull=False, op=task.op, org=task.org
+                status__in=["running", "pending"],
+                queue_id__isnull=False,
+                op=task.op,
+                org=task.org,
             ).count()
             < self.limit
         )
+
+    def ids(self, task):
+        return {
+            "org_id": task.org_id,
+        }
 
 
 @register
