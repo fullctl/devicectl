@@ -38,6 +38,11 @@ class OrgConcurrencyLimit(qualifiers.Base):
             < self.limit
         )
 
+    def ids(self, task):
+        return {
+            "org_id": task.org_id,
+        }
+
 
 @register
 class NautobotPull(Task):
