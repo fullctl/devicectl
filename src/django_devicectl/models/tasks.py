@@ -1,12 +1,12 @@
-import os
 import json
+import os
 
 import fullctl.django.tasks.qualifiers as qualifiers
 import fullctl.graph.mrtg.rrd as mrtg_rrd
+import fullctl.service_bridge.auditctl as auditctl
 import fullctl.service_bridge.ixctl as ixctl
 import fullctl.service_bridge.nautobot as nautobot
 import fullctl.service_bridge.peerctl as peerctl
-import fullctl.service_bridge.auditctl as auditctl
 from django.conf import settings
 from fullctl.django.models import Task
 from fullctl.django.models.concrete import OrganizationFile
@@ -173,7 +173,6 @@ class UpdateTrafficGraphs(Task):
             UpdateIxctlIxTrafficGraphs.create_task(
                 org=self.org,
             )
-
 
     def update_rrd(self, data):
         """
@@ -377,7 +376,6 @@ class RenderTrafficGraphs(Task):
         for graph_file in args:
             self.render_from_rrd(graph_file)
 
-
     def render_from_rrd(self, filepath):
         self.ix_graphs = {}
         for period, resolution, suffix in self.periods:
@@ -419,7 +417,6 @@ class RenderTrafficGraphs(Task):
             service = "ixctl"
             public = True
             self.ix_graphs.setdefault(obj_id, []).append(filename)
-
 
         filepath = os.path.join(settings.GRAPHS_PATH, filepath)
 
@@ -483,9 +480,13 @@ class AuditCtlIXTrafficReceived(Task):
         for ix_id, ports in self.exchanges():
             ix = ixctl.InternetExchange().object(ix_id)
             event_id = f"{base_event_id}{ix_id}/{ix.slug}/received"
-            virtual_ports = [vp.id for vp in models.VirtualPort.objects.filter(port__id__in=ports)]
+            virtual_ports = [
+                vp.id for vp in models.VirtualPort.objects.filter(port__id__in=ports)
+            ]
 
-            ix_traffic_data = [traffic for traffic in traffic_data if traffic["id"] in virtual_ports]
+            ix_traffic_data = [
+                traffic for traffic in traffic_data if traffic["id"] in virtual_ports
+            ]
 
             if not ix_traffic_data:
                 auditctl.Event().create(
@@ -502,10 +503,9 @@ class AuditCtlIXTrafficReceived(Task):
                                     "id": ix_id,
                                     "name": ix.name,
                                 }
-                            ]
-                        }
+                            ],
+                        },
                     }
-
                 )
                 continue
 
@@ -525,11 +525,12 @@ class AuditCtlIXTrafficReceived(Task):
                                 "kind": "ix",
                                 "id": ix_id,
                                 "name": ix.name,
-                            }
+                            },
                         ]
-                    }
+                    },
                 },
             )
+
 
 @register
 class AuditCtlIXTrafficProcessed(Task):
@@ -568,12 +569,11 @@ class AuditCtlIXTrafficProcessed(Task):
                                 "id": ix_id,
                                 "name": ix.name,
                             }
-                        ]
-                    }
+                        ],
+                    },
                 }
             )
             return
-
 
         auditctl.Event().create(
             {
@@ -591,8 +591,8 @@ class AuditCtlIXTrafficProcessed(Task):
                         {
                             "kind": "graphs",
                             "blob": json.dumps(graphs),
-                        }
+                        },
                     ]
-                }
+                },
             },
         )
