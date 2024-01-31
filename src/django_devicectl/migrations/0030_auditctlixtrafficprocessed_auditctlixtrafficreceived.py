@@ -6,7 +6,6 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("django_fullctl", "0033_alter_servicebridgeaction_function"),
         ("django_devicectl", "0029_devicerefereereport"),
     ]
 
