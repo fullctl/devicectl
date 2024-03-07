@@ -84,6 +84,20 @@ class Facility(GeoModel, ServiceBridgeReferenceModel):
             "longitude": "longitude_float",
         }
 
+        map_netbox = {
+            "name": "slug",
+            "slug": "slug",
+            "facility": "name",
+            "custom_fields.devicectl_id": "fullctl_id",
+            "city": "city",
+            "state": "state",
+            "zipcode": "zipcode",
+            "country": "country",
+            "physical_address": "address1",
+            "latitude": "latitude_float",
+            "longitude": "longitude_float",
+        }
+
         lookup_nautobot = "cf_devicectl_id"
 
     class Meta:
