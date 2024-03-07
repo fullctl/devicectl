@@ -1,7 +1,6 @@
 import fullctl.service_bridge.netbox as netbox
+
 import django_devicectl.models.devicectl as models
-
-
 
 NETBOX_PAGE_LIMIT = 999999
 
