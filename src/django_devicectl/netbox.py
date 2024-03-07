@@ -10,7 +10,6 @@ def sync_custom_fields():
     Make sure the necessary custom fields exist in netbox
     """
 
-
     netbox.CustomField().sync(
         [
             {
