@@ -143,12 +143,12 @@ def pull_ip_addresses(virtual_port):
             ip6 = netbox_ip
 
     if ip4:
-        virtual_port.port.port_info.ip_address_4 = (ip4.address, ip4.id)
+        virtual_port.port.port_info.ip_address_4 = (ip4.address, str(ip4.id))
     else:
         virtual_port.port.port_info.ip_address_4 = None
 
     if ip6:
-        virtual_port.port.port_info.ip_address_6 = (ip6.address, ip6.id)
+        virtual_port.port.port_info.ip_address_6 = (ip6.address, str(ip6.id))
     else:
         virtual_port.port.port_info.ip_address_6 = None
 
