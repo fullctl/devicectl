@@ -2,11 +2,11 @@ from fullctl.django.management.commands.base import CommandInterface
 from fullctl.django.models.concrete import Organization
 from fullctl.service_bridge.context import ServiceBridgeContext
 
-import django_devicectl.nautobot as nautobot
+import django_devicectl.netbox as netbox
 
 
 class Command(CommandInterface):
-    help = "Pull nautobot data for specified organization"
+    help = "Pull netbox data for specified organization"
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -18,12 +18,12 @@ class Command(CommandInterface):
         org = Organization.objects.get(slug=org_slug)
 
         with ServiceBridgeContext(org):
-            self.log_info(f"Pushing updates to nautobot for {org_slug}")
+            self.log_info(f"Pushing updates to netbox for {org_slug}")
 
-            nautobot.push(org)
+            netbox.push(org)
 
-            self.log_info(f"Pulling nautobot data for {org_slug}")
+            self.log_info(f"Pulling netbox data for {org_slug}")
 
-            nautobot.pull(org)
+            netbox.pull(org)
 
-            self.log_info(f"Pulled nautobot data for {org_slug}")
+            self.log_info(f"Pulled netbox data for {org_slug}")
